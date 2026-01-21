@@ -38,11 +38,7 @@ import {
   FileText,
   Search,
   Trash2,
-  Users,
-  BarChart3,
-  Calendar,
-  Hash,
-  Sparkles,
+  Download,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -173,22 +169,65 @@ export default function AdminModuloRisposte() {
 
   const schema = form.form_schema as FormField[];
 
+  const handleExportCSV = () => {
+    if (!form || responses.length === 0) return;
+
+    const headers = ['Data Risposta', ...schema.map(f => f.label)];
+    
+    const rows = responses.map(response => {
+      const data = response.data as Record<string, unknown>;
+      const createdAt = format(new Date(response.created_at), 'dd/MM/yyyy HH:mm', { locale: it });
+      
+      const values = schema.map(field => {
+        const value = data[field.name];
+        const strValue = String(value ?? '').replace(/"/g, '""');
+        return `"${strValue}"`;
+      });
+      
+      return [`"${createdAt}"`, ...values].join(',');
+    });
+
+    const csv = [headers.map(h => `"${h}"`).join(','), ...rows].join('\n');
+    
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${form.slug}-risposte-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <MainLayout title={`Risposte: ${form.name}`}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/admin/moduli">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold text-foreground">{form.name}</h2>
-            <p className="text-sm text-muted-foreground">
-              {responses.length} rispost{responses.length === 1 ? 'a' : 'e'} totali
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center gap-4 flex-1">
+            <Button variant="ghost" size="icon" asChild>
+              <Link to="/admin/moduli">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">{form.name}</h2>
+              <p className="text-sm text-muted-foreground">
+                {responses.length} rispost{responses.length === 1 ? 'a' : 'e'} totali
+              </p>
+            </div>
           </div>
+          <Button 
+            onClick={handleExportCSV} 
+            disabled={responses.length === 0}
+            className="w-full sm:w-auto"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Scarica CSV
+          </Button>
         </div>
 
         {/* Dynamic Statistics */}

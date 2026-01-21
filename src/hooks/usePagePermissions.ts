@@ -39,6 +39,12 @@ export const availablePages: PageInfo[] = [
     defaultRoles: ['admin', 'tesoriere', 'visualizzatore'],
   },
   {
+    path: '/visualizza-moduli',
+    title: 'Visualizza Moduli',
+    description: 'Consulta risposte e statistiche dei moduli',
+    defaultRoles: ['admin', 'tesoriere', 'visualizzatore'],
+  },
+  {
     path: '/admin/permessi',
     title: 'Gestione Utenti',
     description: 'Crea utenti e assegna ruoli',
@@ -54,6 +60,18 @@ export const availablePages: PageInfo[] = [
     path: '/admin/permessi-pagine',
     title: 'Permessi Pagine',
     description: 'Configura accesso pagine per utente',
+    defaultRoles: ['admin'],
+  },
+  {
+    path: '/admin/moduli',
+    title: 'Gestione Moduli',
+    description: 'Crea, modifica ed elimina moduli',
+    defaultRoles: ['admin'],
+  },
+  {
+    path: '/admin/ruoli',
+    title: 'Gestione Ruoli',
+    description: 'Crea e configura ruoli e permessi',
     defaultRoles: ['admin'],
   },
 ];

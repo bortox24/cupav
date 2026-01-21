@@ -221,6 +221,7 @@ export const availablePages = [
   { path: '/home', title: 'Home', description: 'Dashboard principale' },
   { path: '/registrazione-spese-prelievi', title: 'Registrazione Transazioni', description: 'Inserisci spese, prelievi ed entrate' },
   { path: '/controllo-spese', title: 'Dashboard Controllo', description: 'Visualizza grafici e statistiche' },
+  { path: '/visualizza-moduli', title: 'Visualizza Moduli', description: 'Consulta risposte e statistiche dei moduli' },
   { path: '/admin/permessi', title: 'Gestione Utenti', description: 'Crea utenti e assegna ruoli' },
   { path: '/admin/categorie', title: 'Gestione Categorie', description: 'Configura le categorie' },
   { path: '/admin/permessi-pagine', title: 'Permessi Pagine Utente', description: 'Configura accesso pagine per utente' },

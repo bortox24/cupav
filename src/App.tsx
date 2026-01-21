@@ -16,6 +16,8 @@ import AdminPermessiPagine from "./pages/AdminPermessiPagine";
 import AdminModuli from "./pages/AdminModuli";
 import AdminModuloRisposte from "./pages/AdminModuloRisposte";
 import AdminRuoli from "./pages/AdminRuoli";
+import VisualizzaModuli from "./pages/VisualizzaModuli";
+import VisualizzaModuloRisposte from "./pages/VisualizzaModuloRisposte";
 import ModuloForm from "./pages/public/ModuloForm";
 import NotFound from "./pages/NotFound";
 
@@ -58,6 +60,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['admin', 'tesoriere', 'visualizzatore']}>
             <ControlloSpese />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/visualizza-moduli"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'tesoriere', 'visualizzatore']}>
+            <VisualizzaModuli />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/visualizza-moduli/:id/risposte"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'tesoriere', 'visualizzatore']}>
+            <VisualizzaModuloRisposte />
           </ProtectedRoute>
         }
       />
