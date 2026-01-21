@@ -46,48 +46,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Defer data fetching to avoid blocking
-          setTimeout(async () => {
-            const data = await fetchUserData(session.user.id);
-            setIsAdmin(data.isAdmin);
-            setIsActive(data.isActive);
-            setProfile(data.profile);
-          }, 0);
+    let isMounted = true;
+
+    const applyUserData = async (userId: string) => {
+      const data = await fetchUserData(userId);
+      if (!isMounted) return;
+      setIsAdmin(data.isAdmin);
+      setIsActive(data.isActive);
+      setProfile(data.profile);
+    };
+
+    // Listener for ongoing auth changes (does NOT control initial loading)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!isMounted) return;
+
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        // Fire-and-forget to keep UI responsive; initial load handles readiness.
+        void applyUserData(nextSession.user.id);
+      } else {
+        setIsAdmin(false);
+        setIsActive(true);
+        setProfile(null);
+      }
+    });
+
+    // Initial load (controls loading state)
+    const initializeAuth = async () => {
+      try {
+        const {
+          data: { session: initialSession },
+        } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+
+        if (initialSession?.user) {
+          await applyUserData(initialSession.user.id);
         } else {
           setIsAdmin(false);
           setIsActive(true);
           setProfile(null);
         }
-        
-        setLoading(false);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    );
+    };
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserData(session.user.id).then((data) => {
-          setIsAdmin(data.isAdmin);
-          setIsActive(data.isActive);
-          setProfile(data.profile);
-          setLoading(false);
-        });
-      } else {
-        setLoading(false);
-      }
-    });
+    void initializeAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
