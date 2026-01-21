@@ -8,7 +8,6 @@ import {
   Users, 
   FolderOpen,
   ArrowRight,
-  Shield,
   FileKey,
   FileText,
   Eye,
@@ -47,7 +46,7 @@ const allQuickAccessCards: QuickAccessCard[] = [
   },
   {
     title: 'Gestione Utenti',
-    description: 'Crea utenti e assegna ruoli',
+    description: 'Crea utenti e gestisci accessi',
     icon: <Users className="h-8 w-8" />,
     path: '/admin/permessi',
     color: 'bg-destructive/10 text-destructive',
@@ -72,13 +71,6 @@ const allQuickAccessCards: QuickAccessCard[] = [
     icon: <FileText className="h-8 w-8" />,
     path: '/admin/moduli',
     color: 'bg-primary/10 text-primary',
-  },
-  {
-    title: 'Gestione Ruoli',
-    description: 'Crea e configura ruoli e permessi',
-    icon: <Shield className="h-8 w-8" />,
-    path: '/admin/ruoli',
-    color: 'bg-destructive/10 text-destructive',
   },
 ];
 
