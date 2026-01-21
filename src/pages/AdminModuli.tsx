@@ -35,6 +35,7 @@ import {
   Trash2,
   Copy,
   Check,
+  Pencil,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -46,6 +47,7 @@ export default function AdminModuli() {
   const deleteForm = useDeleteForm();
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [showFormBuilder, setShowFormBuilder] = useState(false);
+  const [editingForm, setEditingForm] = useState<Form | null>(null);
 
   const handleToggleActive = async (form: Form) => {
     await updateForm.mutateAsync({
@@ -67,6 +69,18 @@ export default function AdminModuli() {
 
   const handleDeleteForm = async (formId: string) => {
     await deleteForm.mutateAsync(formId);
+  };
+
+  const handleEditForm = (form: Form) => {
+    setEditingForm(form);
+    setShowFormBuilder(true);
+  };
+
+  const handleCloseFormBuilder = (open: boolean) => {
+    setShowFormBuilder(open);
+    if (!open) {
+      setEditingForm(null);
+    }
   };
 
   if (isLoading) {
@@ -96,7 +110,11 @@ export default function AdminModuli() {
           </Button>
         </div>
 
-        <FormBuilder open={showFormBuilder} onOpenChange={setShowFormBuilder} />
+        <FormBuilder 
+          open={showFormBuilder} 
+          onOpenChange={handleCloseFormBuilder}
+          editForm={editingForm}
+        />
 
         {forms.length === 0 ? (
           <Card>
@@ -151,6 +169,14 @@ export default function AdminModuli() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditForm(form)}
+                          title="Modifica"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"

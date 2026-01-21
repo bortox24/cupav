@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { FormField, useCreateForm } from '@/hooks/useForms';
+import { FormField, Form, useCreateForm, useUpdateForm } from '@/hooks/useForms';
 import { Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
 
 const fieldTypes = [
@@ -37,10 +37,12 @@ const fieldTypes = [
 interface FormBuilderProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editForm?: Form | null;
 }
 
-export function FormBuilder({ open, onOpenChange }: FormBuilderProps) {
+export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) {
   const createForm = useCreateForm();
+  const updateFormMutation = useUpdateForm();
   const [formName, setFormName] = useState('');
   const [formSlug, setFormSlug] = useState('');
   const [formDescription, setFormDescription] = useState('');
@@ -55,6 +57,27 @@ export function FormBuilder({ open, onOpenChange }: FormBuilderProps) {
   const [fieldType, setFieldType] = useState<FormField['type']>('text');
   const [fieldRequired, setFieldRequired] = useState(false);
   const [fieldOptions, setFieldOptions] = useState('');
+
+  const isEditMode = !!editForm;
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editForm) {
+      setFormName(editForm.name);
+      setFormSlug(editForm.slug);
+      setFormDescription(editForm.description || '');
+      setFields(editForm.form_schema || []);
+    } else {
+      resetForm();
+    }
+  }, [editForm, open]);
+
+  const resetForm = () => {
+    setFormName('');
+    setFormSlug('');
+    setFormDescription('');
+    setFields([]);
+  };
 
   const resetFieldEditor = () => {
     setFieldName('');
@@ -131,7 +154,8 @@ export function FormBuilder({ open, onOpenChange }: FormBuilderProps) {
 
   const handleNameChange = (name: string) => {
     setFormName(name);
-    if (!formSlug || formSlug === generateSlug(formName)) {
+    // Only auto-generate slug for new forms
+    if (!isEditMode && (!formSlug || formSlug === generateSlug(formName))) {
       setFormSlug(generateSlug(name));
     }
   };
@@ -139,30 +163,40 @@ export function FormBuilder({ open, onOpenChange }: FormBuilderProps) {
   const handleSubmit = async () => {
     if (!formName || !formSlug || fields.length === 0) return;
 
-    await createForm.mutateAsync({
-      name: formName,
-      slug: formSlug,
-      description: formDescription || undefined,
-      form_schema: fields,
-    });
+    if (isEditMode && editForm) {
+      await updateFormMutation.mutateAsync({
+        id: editForm.id,
+        name: formName,
+        slug: formSlug,
+        description: formDescription || undefined,
+        form_schema: fields,
+      });
+    } else {
+      await createForm.mutateAsync({
+        name: formName,
+        slug: formSlug,
+        description: formDescription || undefined,
+        form_schema: fields,
+      });
+    }
 
     // Reset and close
-    setFormName('');
-    setFormSlug('');
-    setFormDescription('');
-    setFields([]);
+    resetForm();
     onOpenChange(false);
   };
 
   const isValid = formName && formSlug && fields.length > 0;
+  const isPending = createForm.isPending || updateFormMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crea nuovo modulo</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Modifica modulo' : 'Crea nuovo modulo'}</DialogTitle>
           <DialogDescription>
-            Configura il tuo modulo personalizzato aggiungendo i campi necessari.
+            {isEditMode
+              ? 'Modifica i campi e le impostazioni del modulo.'
+              : 'Configura il tuo modulo personalizzato aggiungendo i campi necessari.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -186,9 +220,11 @@ export function FormBuilder({ open, onOpenChange }: FormBuilderProps) {
                   placeholder="es. iscrizione-evento"
                   value={formSlug}
                   onChange={(e) => setFormSlug(e.target.value)}
+                  disabled={isEditMode} // Can't change slug when editing
                 />
                 <p className="text-xs text-muted-foreground">
                   URL: /modulo/{formSlug || 'slug'}
+                  {isEditMode && ' (non modificabile)'}
                 </p>
               </div>
             </div>
@@ -369,9 +405,9 @@ export function FormBuilder({ open, onOpenChange }: FormBuilderProps) {
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annulla
           </Button>
-          <Button onClick={handleSubmit} disabled={!isValid || createForm.isPending}>
-            {createForm.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Crea modulo
+          <Button onClick={handleSubmit} disabled={!isValid || isPending}>
+            {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {isEditMode ? 'Salva modifiche' : 'Crea modulo'}
           </Button>
         </DialogFooter>
       </DialogContent>
