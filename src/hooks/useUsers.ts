@@ -57,32 +57,23 @@ export function useCreateUser() {
       fullName: string;
       role: AppRole;
     }) => {
-      // Create user via Supabase Auth Admin API
-      // Note: This requires admin privileges or an edge function
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
+      // IMPORTANT:
+      // Creating a user via auth.signUp() would switch the current session to the new user.
+      // We instead call a backend function that creates the auth user + profile + role
+      // using privileged credentials, without changing the admin session.
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email,
+          password,
+          fullName,
+          role,
         },
       });
-      
+
       if (error) throw error;
-      if (!data.user) throw new Error('User creation failed');
+      if (!data?.user?.id) throw new Error('User creation failed');
 
-      // Assign role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: data.user.id,
-          role,
-        });
-
-      if (roleError) throw roleError;
-
-      return data.user;
+      return data.user as { id: string };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
