@@ -16,82 +16,79 @@ export interface PageInfo {
   path: string;
   title: string;
   description: string;
-  defaultRoles: ('admin' | 'tesoriere' | 'visualizzatore')[];
 }
 
+// All available pages in the system (simplified - no defaultRoles)
 export const availablePages: PageInfo[] = [
   {
     path: '/home',
     title: 'Home',
     description: 'Dashboard principale',
-    defaultRoles: ['admin', 'tesoriere', 'visualizzatore'],
   },
   {
     path: '/registrazione-spese-prelievi',
     title: 'Registrazione Transazioni',
     description: 'Inserisci spese, prelievi ed entrate',
-    defaultRoles: ['admin', 'tesoriere'],
   },
   {
     path: '/controllo-spese',
     title: 'Dashboard Controllo',
-    description: 'Visualizza grafici e statistiche',
-    defaultRoles: ['admin', 'tesoriere', 'visualizzatore'],
+    description: 'Visualizza grafici e statistiche delle spese',
   },
   {
     path: '/visualizza-moduli',
     title: 'Visualizza Moduli',
     description: 'Consulta risposte e statistiche dei moduli',
-    defaultRoles: ['admin', 'tesoriere', 'visualizzatore'],
   },
   {
     path: '/visualizza-moduli/:id/risposte',
     title: 'Risposte Modulo',
     description: 'Visualizza risposte e statistiche di un modulo',
-    defaultRoles: ['admin', 'tesoriere', 'visualizzatore'],
   },
   {
     path: '/admin/permessi',
     title: 'Gestione Utenti',
-    description: 'Crea utenti e assegna ruoli',
-    defaultRoles: ['admin'],
+    description: 'Crea utenti e gestisci accessi',
   },
   {
     path: '/admin/categorie',
     title: 'Gestione Categorie',
-    description: 'Configura le categorie',
-    defaultRoles: ['admin'],
+    description: 'Configura le categorie delle transazioni',
   },
   {
     path: '/admin/permessi-pagine',
     title: 'Permessi Pagine',
     description: 'Configura accesso pagine per utente',
-    defaultRoles: ['admin'],
   },
   {
     path: '/admin/moduli',
     title: 'Gestione Moduli',
     description: 'Crea, modifica ed elimina moduli',
-    defaultRoles: ['admin'],
   },
   {
     path: '/admin/moduli/:id/risposte',
     title: 'Risposte Modulo (Admin)',
     description: 'Gestisci risposte modulo',
-    defaultRoles: ['admin'],
-  },
-  {
-    path: '/admin/ruoli',
-    title: 'Gestione Ruoli',
-    description: 'Crea e configura ruoli e permessi',
-    defaultRoles: ['admin'],
   },
 ];
 
-// Hook to get current user's page permissions
-export function useMyPagePermissions() {
-  const { user, userRole } = useAuth();
+// Helper to match dynamic routes (e.g., /visualizza-moduli/:id/risposte)
+const matchPath = (pattern: string, path: string): boolean => {
+  const patternParts = pattern.split('/');
+  const pathParts = path.split('/');
+  
+  if (patternParts.length !== pathParts.length) return false;
+  
+  return patternParts.every((part, i) => {
+    if (part.startsWith(':')) return true; // Dynamic segment matches anything
+    return part === pathParts[i];
+  });
+};
 
+// Hook for current user's permissions
+export function useMyPagePermissions() {
+  const { user, isAdmin } = useAuth();
+  
   const { data: permissions = [], isLoading } = useQuery({
     queryKey: ['my-page-permissions', user?.id],
     queryFn: async () => {
@@ -108,55 +105,52 @@ export function useMyPagePermissions() {
     enabled: !!user?.id,
   });
 
-  // Helper to match dynamic routes (e.g., /visualizza-moduli/:id/risposte)
-  const matchPath = (pattern: string, path: string): boolean => {
-    const patternParts = pattern.split('/');
-    const pathParts = path.split('/');
-    
-    if (patternParts.length !== pathParts.length) return false;
-    
-    return patternParts.every((part, i) => {
-      if (part.startsWith(':')) return true; // Dynamic segment matches anything
-      return part === pathParts[i];
-    });
-  };
-
   const canAccessPage = (pagePath: string): boolean => {
     // Admin always has access to everything
-    if (userRole === 'admin') return true;
+    if (isAdmin) return true;
 
     // Check for custom permission (exact match first, then pattern match)
     const customPermission = permissions.find(p => 
       p.page_path === pagePath || matchPath(p.page_path, pagePath)
     );
+    
     if (customPermission) {
       return customPermission.can_access;
     }
 
-    // Fall back to role-based default (exact match first, then pattern match)
+    // If no custom permission exists, find if any parent pattern grants access
     const pageInfo = availablePages.find(p => 
       p.path === pagePath || matchPath(p.path, pagePath)
     );
-    if (pageInfo && userRole) {
-      return pageInfo.defaultRoles.includes(userRole);
+    
+    if (pageInfo) {
+      // Check if there's a permission for the pattern
+      const patternPermission = permissions.find(p => 
+        p.page_path === pageInfo.path
+      );
+      if (patternPermission) {
+        return patternPermission.can_access;
+      }
     }
 
+    // No permission found = no access (for non-admin users)
     return false;
   };
 
   const getAccessiblePages = (): PageInfo[] => {
+    if (isAdmin) return availablePages;
     return availablePages.filter(page => canAccessPage(page.path));
   };
 
   return {
     permissions,
-    isLoading,
     canAccessPage,
     getAccessiblePages,
+    isLoading,
   };
 }
 
-// Hook to get all users' permissions (admin only)
+// Hook for admin to view all user permissions
 export function useAllPagePermissions() {
   return useQuery({
     queryKey: ['all-page-permissions'],
@@ -171,20 +165,12 @@ export function useAllPagePermissions() {
   });
 }
 
-// Hook to set a user's page permission
+// Hook for admin to set a user's page permission
 export function useSetPagePermission() {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
-    mutationFn: async ({ 
-      userId, 
-      pagePath, 
-      canAccess 
-    }: { 
-      userId: string; 
-      pagePath: string; 
-      canAccess: boolean;
-    }) => {
+    mutationFn: async ({ userId, pagePath, canAccess }: { userId: string; pagePath: string; canAccess: boolean }) => {
       // First try to find existing permission
       const { data: existing } = await supabase
         .from('user_page_permissions')
@@ -192,12 +178,12 @@ export function useSetPagePermission() {
         .eq('user_id', userId)
         .eq('page_path', pagePath)
         .maybeSingle();
-
+      
       if (existing) {
         // Update existing
         const { error } = await supabase
           .from('user_page_permissions')
-          .update({ can_access: canAccess })
+          .update({ can_access: canAccess, updated_at: new Date().toISOString() })
           .eq('id', existing.id);
         
         if (error) throw error;
@@ -205,11 +191,7 @@ export function useSetPagePermission() {
         // Insert new
         const { error } = await supabase
           .from('user_page_permissions')
-          .insert({ 
-            user_id: userId, 
-            page_path: pagePath, 
-            can_access: canAccess 
-          });
+          .insert({ user_id: userId, page_path: pagePath, can_access: canAccess });
         
         if (error) throw error;
       }
@@ -218,21 +200,20 @@ export function useSetPagePermission() {
       queryClient.invalidateQueries({ queryKey: ['all-page-permissions'] });
       queryClient.invalidateQueries({ queryKey: ['my-page-permissions'] });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Errore',
-        description: 'Impossibile aggiornare il permesso',
         variant: 'destructive',
+        title: 'Errore',
+        description: error.message,
       });
-      console.error('Error updating permission:', error);
     },
   });
 }
 
-// Hook to reset a user's permissions to default (remove custom)
+// Hook for admin to reset all permissions for a user
 export function useResetUserPermissions() {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
     mutationFn: async (userId: string) => {
       const { error } = await supabase
@@ -246,17 +227,16 @@ export function useResetUserPermissions() {
       queryClient.invalidateQueries({ queryKey: ['all-page-permissions'] });
       queryClient.invalidateQueries({ queryKey: ['my-page-permissions'] });
       toast({
-        title: 'Successo',
-        description: 'Permessi ripristinati ai valori predefiniti',
+        title: 'Permessi resettati',
+        description: 'I permessi personalizzati sono stati rimossi',
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Errore',
-        description: 'Impossibile ripristinare i permessi',
         variant: 'destructive',
+        title: 'Errore',
+        description: error.message,
       });
-      console.error('Error resetting permissions:', error);
     },
   });
 }

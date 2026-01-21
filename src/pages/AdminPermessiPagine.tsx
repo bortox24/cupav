@@ -5,25 +5,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, RotateCcw, Shield, Users, Eye } from 'lucide-react';
-import { useUsers } from '@/hooks/useUsers';
+import { Loader2, RotateCcw, Shield, Users } from 'lucide-react';
+import { useUsers, type UserWithStatus } from '@/hooks/useUsers';
 import { 
   useAllPagePermissions, 
   useSetPagePermission, 
   useResetUserPermissions,
   availablePages,
-  type PageInfo 
 } from '@/hooks/usePagePermissions';
 import { toast } from '@/hooks/use-toast';
-import type { Database } from '@/integrations/supabase/types';
-
-type AppRole = Database['public']['Enums']['app_role'];
-
-const roleLabels: Record<AppRole, { label: string; icon: React.ReactNode; color: string }> = {
-  admin: { label: 'Admin', icon: <Shield className="h-3 w-3" />, color: 'bg-destructive/10 text-destructive' },
-  tesoriere: { label: 'Tesoriere', icon: <Users className="h-3 w-3" />, color: 'bg-primary/10 text-primary' },
-  visualizzatore: { label: 'Visualizzatore', icon: <Eye className="h-3 w-3" />, color: 'bg-secondary text-secondary-foreground' },
-};
 
 export default function AdminPermessiPagine() {
   const { data: users = [], isLoading: usersLoading } = useUsers();
@@ -35,25 +25,14 @@ export default function AdminPermessiPagine() {
   const isLoading = usersLoading || permissionsLoading;
 
   // Get effective access for a user/page combo
-  const getEffectiveAccess = (userId: string, userRole: AppRole | null, page: PageInfo): boolean => {
-    // Check custom permission first
+  const getEffectiveAccess = (userId: string, pagePath: string): boolean => {
     const customPermission = allPermissions.find(
-      p => p.user_id === userId && p.page_path === page.path
+      p => p.user_id === userId && p.page_path === pagePath
     );
-    
-    if (customPermission) {
-      return customPermission.can_access;
-    }
-    
-    // Fall back to role default
-    if (userRole) {
-      return page.defaultRoles.includes(userRole);
-    }
-    
-    return false;
+    return customPermission?.can_access ?? false;
   };
 
-  // Check if user has custom permission (different from default)
+  // Check if user has custom permission
   const hasCustomPermission = (userId: string, pagePath: string): boolean => {
     return allPermissions.some(p => p.user_id === userId && p.page_path === pagePath);
   };
@@ -82,7 +61,10 @@ export default function AdminPermessiPagine() {
   };
 
   // Filter out admin users - they always have full access
-  const nonAdminUsers = users.filter(u => u.role !== 'admin');
+  const nonAdminUsers = users.filter((u: UserWithStatus) => !u.is_admin);
+
+  // Filter out dynamic route patterns for the table header (show base pages only)
+  const displayPages = availablePages.filter(p => !p.path.includes(':id'));
 
   if (isLoading) {
     return (
@@ -102,8 +84,8 @@ export default function AdminPermessiPagine() {
           <CardHeader>
             <CardTitle className="text-lg">Configurazione Accesso Pagine</CardTitle>
             <CardDescription>
-              Personalizza l'accesso alle pagine per ogni utente. Gli amministratori hanno sempre accesso completo.
-              Le caselle colorate indicano permessi personalizzati (diversi dal default del ruolo).
+              Abilita o disabilita l'accesso alle pagine per ogni utente. 
+              Gli amministratori hanno sempre accesso completo e non sono mostrati qui.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -125,7 +107,7 @@ export default function AdminPermessiPagine() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="min-w-[200px]">Utente</TableHead>
-                      {availablePages.map(page => (
+                      {displayPages.map(page => (
                         <TableHead key={page.path} className="text-center min-w-[120px]">
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-xs font-medium">{page.title}</span>
@@ -136,31 +118,29 @@ export default function AdminPermessiPagine() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {nonAdminUsers.map(user => (
-                      <TableRow key={user.id}>
+                    {nonAdminUsers.map((user: UserWithStatus) => (
+                      <TableRow key={user.id} className={!user.is_active ? 'opacity-50' : ''}>
                         <TableCell>
                           <div className="flex flex-col gap-1">
                             <span className="font-medium text-sm">{user.full_name}</span>
                             <span className="text-xs text-muted-foreground truncate max-w-[180px]">
                               {user.email}
                             </span>
-                            {user.role && (
-                              <Badge variant="outline" className={`w-fit text-xs ${roleLabels[user.role].color}`}>
-                                {roleLabels[user.role].icon}
-                                <span className="ml-1">{roleLabels[user.role].label}</span>
+                            {!user.is_active && (
+                              <Badge variant="outline" className="w-fit text-xs bg-destructive/10 text-destructive">
+                                Disattivato
                               </Badge>
                             )}
                           </div>
                         </TableCell>
-                        {availablePages.map(page => {
-                          const hasAccess = getEffectiveAccess(user.id, user.role, page);
+                        {displayPages.map(page => {
+                          const hasAccess = getEffectiveAccess(user.id, page.path);
                           const isCustom = hasCustomPermission(user.id, page.path);
                           const isPending = pendingChanges.has(`${user.id}-${page.path}`);
-                          const isDefaultAccess = user.role && page.defaultRoles.includes(user.role);
                           
                           return (
                             <TableCell key={page.path} className="text-center">
-                              <div className={`flex justify-center p-2 rounded ${isCustom ? 'bg-primary/10' : ''}`}>
+                              <div className={`flex justify-center p-2 rounded ${isCustom && hasAccess ? 'bg-primary/10' : ''}`}>
                                 {isPending ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
@@ -169,20 +149,11 @@ export default function AdminPermessiPagine() {
                                     onCheckedChange={(checked) => 
                                       handlePermissionChange(user.id, page.path, !!checked)
                                     }
+                                    disabled={!user.is_active}
                                     aria-label={`Accesso a ${page.title} per ${user.full_name}`}
                                   />
                                 )}
                               </div>
-                              {isCustom && (
-                                <span className="text-[10px] text-primary">
-                                  personalizzato
-                                </span>
-                              )}
-                              {!isCustom && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  {isDefaultAccess ? 'default ✓' : 'default ✗'}
-                                </span>
-                              )}
                             </TableCell>
                           );
                         })}
@@ -210,22 +181,15 @@ export default function AdminPermessiPagine() {
         {/* Legend */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Legenda Ruoli Default</CardTitle>
+            <CardTitle className="text-sm">Nota</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-destructive">Admin:</span>
-                <span className="text-muted-foreground ml-2">Accesso a tutte le pagine</span>
-              </div>
-              <div>
-                <span className="font-medium text-primary">Tesoriere:</span>
-                <span className="text-muted-foreground ml-2">Home, Registrazione, Dashboard</span>
-              </div>
-              <div>
-                <span className="font-medium">Visualizzatore:</span>
-                <span className="text-muted-foreground ml-2">Home, Dashboard (solo lettura)</span>
-              </div>
+            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+              <Shield className="h-4 w-4 mt-0.5 text-destructive" />
+              <p>
+                Gli amministratori hanno sempre accesso a tutte le pagine e non vengono mostrati in questa tabella.
+                Per rendere un utente amministratore, vai su "Gestione Utenti".
+              </p>
             </div>
           </CardContent>
         </Card>
