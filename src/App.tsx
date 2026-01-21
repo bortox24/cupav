@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { Loader2 } from "lucide-react";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import RegistrazioneSpesePrelievi from "./pages/RegistrazioneSpesePrelievi";
@@ -26,7 +27,14 @@ function AppRoutes() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Caricamento...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

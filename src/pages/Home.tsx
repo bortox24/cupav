@@ -14,8 +14,68 @@ import {
   TreePine,
   Sun,
   Mountain,
+  Calendar,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
+import { useState, useEffect } from 'react';
+
+// Countdown Component
+function CountdownBox({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="bg-white/20 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 min-w-[40px] sm:min-w-[50px] text-center transition-all">
+        <span className="text-xl sm:text-2xl font-bold tabular-nums">{value.toString().padStart(2, '0')}</span>
+      </div>
+      <span className="text-[10px] sm:text-xs text-white/70 mt-1">{label}</span>
+    </div>
+  );
+}
+
+function CampingCountdown() {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  
+  useEffect(() => {
+    const targetDate = new Date('2026-06-27T00:00:00');
+    
+    const updateCountdown = () => {
+      const now = new Date();
+      const diff = targetDate.getTime() - now.getTime();
+      
+      if (diff > 0) {
+        setTimeLeft({
+          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((diff / (1000 * 60)) % 60),
+          seconds: Math.floor((diff / 1000) % 60),
+        });
+      }
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="mt-4 pt-4 border-t border-white/20">
+      <div className="flex items-center gap-2 text-white/80 mb-3">
+        <Calendar className="h-4 w-4 shrink-0" />
+        <span className="text-xs sm:text-sm font-medium">Mancano al Campeggio Estate 2026 (27 Giugno)</span>
+      </div>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <CountdownBox value={timeLeft.days} label="Giorni" />
+        <span className="text-white/50 text-lg font-light">:</span>
+        <CountdownBox value={timeLeft.hours} label="Ore" />
+        <span className="text-white/50 text-lg font-light">:</span>
+        <CountdownBox value={timeLeft.minutes} label="Min" />
+        <span className="text-white/50 text-lg font-light hidden sm:block">:</span>
+        <div className="hidden sm:block">
+          <CountdownBox value={timeLeft.seconds} label="Sec" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface QuickAccessCard {
   title: string;
@@ -147,10 +207,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-2 text-white/80">
-              <TreePine className="h-5 w-5 shrink-0" />
-              <span className="font-medium text-sm sm:text-base">Campeggio Estate 2026 - L'avventura ti aspetta!</span>
-            </div>
+            <CampingCountdown />
           </div>
         </div>
 
