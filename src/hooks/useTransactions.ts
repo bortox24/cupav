@@ -29,8 +29,7 @@ export function useTransactions(filters?: TransactionFilters) {
         .from('transactions')
         .select(`
           *,
-          category:categories(id, name, type),
-          profile:profiles!transactions_user_id_fkey(full_name, email)
+          category:categories(id, name, type)
         `)
         .order('data_transazione', { ascending: false });
       
