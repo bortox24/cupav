@@ -206,61 +206,79 @@ export default function VisualizzaModuloRisposte() {
           </Card>
         </div>
 
-        {/* Dynamic Stats */}
+        {/* Dynamic Stats Section */}
         {responses.length > 0 && (
-          <DynamicStats schema={schema} responses={responses} />
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-primary" />
+              <h3 className="text-lg font-semibold text-foreground">Statistiche</h3>
+            </div>
+            <DynamicStats schema={schema} responses={responses} />
+          </div>
         )}
 
-        {/* AI Analysis */}
+        {/* AI Analysis Section */}
         {responses.length > 0 && (
-          <AIAnalysis formId={form.id} formName={form.name} schema={schema} responses={responses} />
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-primary" />
+              <h3 className="text-lg font-semibold text-foreground">Analisi AI</h3>
+            </div>
+            <AIAnalysis formId={form.id} formName={form.name} schema={schema} responses={responses} />
+          </div>
         )}
 
-        {/* Filters */}
+        {/* Filters Section */}
         {responses.length > 0 && (
-          <Card className="border-dashed">
-            <CardContent className="pt-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Cerca nelle risposte..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Select value={filterField} onValueChange={(value) => {
-                  setFilterField(value);
-                  setFilterValue('all');
-                }}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="Filtra per campo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tutti i campi</SelectItem>
-                    {schema.filter(f => f.type === 'select' || f.type === 'radio')
-                      .map(field => (
-                        <SelectItem key={field.name} value={field.name}>{field.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {filterField !== 'all' && (
-                  <Select value={filterValue} onValueChange={setFilterValue}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Seleziona valore" />
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-primary" />
+              <h3 className="text-lg font-semibold text-foreground">Filtri</h3>
+            </div>
+            <Card className="border-2 bg-muted/30">
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Cerca nelle risposte..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9 bg-background"
+                    />
+                  </div>
+                  <Select value={filterField} onValueChange={(value) => {
+                    setFilterField(value);
+                    setFilterValue('all');
+                  }}>
+                    <SelectTrigger className="w-full sm:w-48 bg-background">
+                      <SelectValue placeholder="Filtra per campo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tutti</SelectItem>
-                      {filterOptions.map(option => (
-                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      <SelectItem value="all">Tutti i campi</SelectItem>
+                      {schema.filter(f => f.type === 'select' || f.type === 'radio')
+                        .map(field => (
+                          <SelectItem key={field.name} value={field.name}>{field.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  {filterField !== 'all' && (
+                    <Select value={filterValue} onValueChange={setFilterValue}>
+                      <SelectTrigger className="w-full sm:w-48 bg-background">
+                        <SelectValue placeholder="Seleziona valore" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tutti</SelectItem>
+                        {filterOptions.map(option => (
+                          <SelectItem key={option} value={option}>{option}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Responses Table */}
