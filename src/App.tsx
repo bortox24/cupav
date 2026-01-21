@@ -2,11 +2,81 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Login from "./pages/Login";
+import Home from "./pages/Home";
+import RegistrazioneSpesePrelievi from "./pages/RegistrazioneSpesePrelievi";
+import ControlloSpese from "./pages/ControlloSpese";
+import AdminPermessi from "./pages/AdminPermessi";
+import AdminCategorie from "./pages/AdminCategorie";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function AppRoutes() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  return (
+    <Routes>
+      {/* Public route - Login */}
+      <Route 
+        path="/" 
+        element={user ? <Navigate to="/home" replace /> : <Login />} 
+      />
+
+      {/* Protected routes */}
+      <Route
+        path="/home"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'tesoriere', 'visualizzatore']}>
+            <Home />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/registrazione-spese-prelievi"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'tesoriere']}>
+            <RegistrazioneSpesePrelievi />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/controllo-spese"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'tesoriere', 'visualizzatore']}>
+            <ControlloSpese />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/permessi"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminPermessi />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/categorie"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminCategorie />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch-all */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -14,11 +84,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
