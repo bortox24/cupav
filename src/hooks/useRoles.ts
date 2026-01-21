@@ -222,10 +222,12 @@ export const availablePages = [
   { path: '/registrazione-spese-prelievi', title: 'Registrazione Transazioni', description: 'Inserisci spese, prelievi ed entrate' },
   { path: '/controllo-spese', title: 'Dashboard Controllo', description: 'Visualizza grafici e statistiche' },
   { path: '/visualizza-moduli', title: 'Visualizza Moduli', description: 'Consulta risposte e statistiche dei moduli' },
+  { path: '/visualizza-moduli/:id/risposte', title: 'Risposte Modulo', description: 'Visualizza risposte e statistiche di un modulo' },
   { path: '/admin/permessi', title: 'Gestione Utenti', description: 'Crea utenti e assegna ruoli' },
   { path: '/admin/categorie', title: 'Gestione Categorie', description: 'Configura le categorie' },
   { path: '/admin/permessi-pagine', title: 'Permessi Pagine Utente', description: 'Configura accesso pagine per utente' },
   { path: '/admin/moduli', title: 'Gestione Moduli', description: 'Crea e gestisci moduli pubblici' },
+  { path: '/admin/moduli/:id/risposte', title: 'Risposte Modulo (Admin)', description: 'Gestisci risposte modulo' },
   { path: '/admin/ruoli', title: 'Gestione Ruoli', description: 'Crea e configura ruoli' },
 ];
 

@@ -45,6 +45,12 @@ export const availablePages: PageInfo[] = [
     defaultRoles: ['admin', 'tesoriere', 'visualizzatore'],
   },
   {
+    path: '/visualizza-moduli/:id/risposte',
+    title: 'Risposte Modulo',
+    description: 'Visualizza risposte e statistiche di un modulo',
+    defaultRoles: ['admin', 'tesoriere', 'visualizzatore'],
+  },
+  {
     path: '/admin/permessi',
     title: 'Gestione Utenti',
     description: 'Crea utenti e assegna ruoli',
@@ -66,6 +72,12 @@ export const availablePages: PageInfo[] = [
     path: '/admin/moduli',
     title: 'Gestione Moduli',
     description: 'Crea, modifica ed elimina moduli',
+    defaultRoles: ['admin'],
+  },
+  {
+    path: '/admin/moduli/:id/risposte',
+    title: 'Risposte Modulo (Admin)',
+    description: 'Gestisci risposte modulo',
     defaultRoles: ['admin'],
   },
   {
@@ -96,18 +108,35 @@ export function useMyPagePermissions() {
     enabled: !!user?.id,
   });
 
+  // Helper to match dynamic routes (e.g., /visualizza-moduli/:id/risposte)
+  const matchPath = (pattern: string, path: string): boolean => {
+    const patternParts = pattern.split('/');
+    const pathParts = path.split('/');
+    
+    if (patternParts.length !== pathParts.length) return false;
+    
+    return patternParts.every((part, i) => {
+      if (part.startsWith(':')) return true; // Dynamic segment matches anything
+      return part === pathParts[i];
+    });
+  };
+
   const canAccessPage = (pagePath: string): boolean => {
     // Admin always has access to everything
     if (userRole === 'admin') return true;
 
-    // Check for custom permission
-    const customPermission = permissions.find(p => p.page_path === pagePath);
+    // Check for custom permission (exact match first, then pattern match)
+    const customPermission = permissions.find(p => 
+      p.page_path === pagePath || matchPath(p.page_path, pagePath)
+    );
     if (customPermission) {
       return customPermission.can_access;
     }
 
-    // Fall back to role-based default
-    const pageInfo = availablePages.find(p => p.path === pagePath);
+    // Fall back to role-based default (exact match first, then pattern match)
+    const pageInfo = availablePages.find(p => 
+      p.path === pagePath || matchPath(p.path, pagePath)
+    );
     if (pageInfo && userRole) {
       return pageInfo.defaultRoles.includes(userRole);
     }
