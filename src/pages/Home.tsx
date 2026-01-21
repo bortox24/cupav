@@ -19,58 +19,74 @@ interface QuickAccessCard {
   description: string;
   icon: React.ReactNode;
   path: string;
-  color: string;
+  bgColor: string;
+  borderColor: string;
+  iconColor: string;
 }
 
 const allQuickAccessCards: QuickAccessCard[] = [
   {
     title: 'Registra Transazione',
     description: 'Inserisci una nuova spesa, prelievo o entrata',
-    icon: <Receipt className="h-8 w-8" />,
+    icon: <Receipt className="h-7 w-7" />,
     path: '/registrazione-spese-prelievi',
-    color: 'bg-primary/10 text-primary',
+    bgColor: 'bg-green-50 dark:bg-green-950/30',
+    borderColor: 'border-green-300 dark:border-green-800',
+    iconColor: 'text-green-600 dark:text-green-400',
   },
   {
     title: 'Dashboard Controllo',
     description: 'Visualizza grafici e statistiche in tempo reale',
-    icon: <PieChart className="h-8 w-8" />,
+    icon: <PieChart className="h-7 w-7" />,
     path: '/controllo-spese',
-    color: 'bg-secondary/20 text-secondary-foreground',
+    bgColor: 'bg-teal-50 dark:bg-teal-950/30',
+    borderColor: 'border-teal-300 dark:border-teal-800',
+    iconColor: 'text-teal-600 dark:text-teal-400',
   },
   {
     title: 'Visualizza Moduli',
     description: 'Consulta risposte e statistiche dei moduli',
-    icon: <Eye className="h-8 w-8" />,
+    icon: <Eye className="h-7 w-7" />,
     path: '/visualizza-moduli',
-    color: 'bg-accent text-accent-foreground',
+    bgColor: 'bg-blue-50 dark:bg-blue-950/30',
+    borderColor: 'border-blue-300 dark:border-blue-800',
+    iconColor: 'text-blue-600 dark:text-blue-400',
   },
   {
     title: 'Gestione Utenti',
     description: 'Crea utenti e gestisci accessi',
-    icon: <Users className="h-8 w-8" />,
+    icon: <Users className="h-7 w-7" />,
     path: '/admin/permessi',
-    color: 'bg-destructive/10 text-destructive',
+    bgColor: 'bg-red-50 dark:bg-red-950/30',
+    borderColor: 'border-red-300 dark:border-red-800',
+    iconColor: 'text-red-600 dark:text-red-400',
   },
   {
     title: 'Gestione Categorie',
     description: 'Configura le categorie per spese, prelievi ed entrate',
-    icon: <FolderOpen className="h-8 w-8" />,
+    icon: <FolderOpen className="h-7 w-7" />,
     path: '/admin/categorie',
-    color: 'bg-muted text-muted-foreground',
+    bgColor: 'bg-purple-50 dark:bg-purple-950/30',
+    borderColor: 'border-purple-300 dark:border-purple-800',
+    iconColor: 'text-purple-600 dark:text-purple-400',
   },
   {
     title: 'Permessi Pagine',
     description: 'Configura accesso pagine per singolo utente',
-    icon: <FileKey className="h-8 w-8" />,
+    icon: <FileKey className="h-7 w-7" />,
     path: '/admin/permessi-pagine',
-    color: 'bg-muted text-muted-foreground',
+    bgColor: 'bg-amber-50 dark:bg-amber-950/30',
+    borderColor: 'border-amber-300 dark:border-amber-800',
+    iconColor: 'text-amber-600 dark:text-amber-400',
   },
   {
     title: 'Gestione Moduli',
     description: 'Crea moduli pubblici e visualizza risposte',
-    icon: <FileText className="h-8 w-8" />,
+    icon: <FileText className="h-7 w-7" />,
     path: '/admin/moduli',
-    color: 'bg-primary/10 text-primary',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
+    borderColor: 'border-emerald-300 dark:border-emerald-800',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
   },
 ];
 
@@ -118,27 +134,21 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {accessibleCards.map((card) => (
                 <Link 
                   key={card.path} 
                   to={card.path}
                   className="group block"
                 >
-                  <Card className="h-full hover:shadow-lg transition-all duration-200 hover:scale-[1.02] hover:border-primary/50 cursor-pointer">
-                    <CardHeader className="pb-2">
-                      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center ${card.color} transition-transform group-hover:scale-110`}>
+                  <Card className={`h-full hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer border-2 ${card.borderColor} ${card.bgColor}`}>
+                    <CardContent className="flex flex-col items-center justify-center py-6 px-3">
+                      <div className={`w-14 h-14 bg-white dark:bg-gray-800 rounded-xl shadow-sm flex items-center justify-center mb-3 transition-transform group-hover:scale-110 ${card.iconColor}`}>
                         {card.icon}
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                          {card.title}
-                          <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                        </CardTitle>
-                        <CardDescription className="mt-1 text-sm">{card.description}</CardDescription>
-                      </div>
+                      <CardTitle className="text-center text-sm sm:text-base font-semibold text-foreground">
+                        {card.title}
+                      </CardTitle>
                     </CardContent>
                   </Card>
                 </Link>
