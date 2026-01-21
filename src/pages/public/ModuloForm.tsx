@@ -185,7 +185,7 @@ export default function ModuloForm() {
         <header className="bg-card border-b border-border shadow-sm">
           <div className="container mx-auto px-4 py-6 flex items-center justify-between">
             <div className="w-9" />
-            <img src={logoCupav} alt="Logo CUPAV" className="h-16 w-auto object-contain" />
+            <img src={logoCupav} alt="Logo CUPAV" className="h-24 md:h-28 w-auto object-contain" />
             <ThemeToggle />
           </div>
         </header>
@@ -210,7 +210,7 @@ export default function ModuloForm() {
         <header className="bg-card border-b border-border shadow-sm">
           <div className="container mx-auto px-4 py-6 flex items-center justify-between">
             <div className="w-9" />
-            <img src={logoCupav} alt="Logo CUPAV" className="h-16 w-auto object-contain" />
+            <img src={logoCupav} alt="Logo CUPAV" className="h-24 md:h-28 w-auto object-contain" />
             <ThemeToggle />
           </div>
         </header>
@@ -241,7 +241,7 @@ export default function ModuloForm() {
       <header className="bg-card border-b border-border shadow-sm">
         <div className="container mx-auto px-4 py-6 flex items-center justify-between">
           <div className="w-9" />
-          <img src={logoCupav} alt="Logo CUPAV" className="h-16 w-auto object-contain" />
+          <img src={logoCupav} alt="Logo CUPAV" className="h-24 md:h-28 w-auto object-contain" />
           <ThemeToggle />
         </div>
       </header>
