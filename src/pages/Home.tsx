@@ -11,6 +11,7 @@ import {
   Shield,
   FileKey,
   FileText,
+  Eye,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 
@@ -38,6 +39,13 @@ const allQuickAccessCards: QuickAccessCard[] = [
     color: 'bg-secondary/20 text-secondary-foreground',
   },
   {
+    title: 'Visualizza Moduli',
+    description: 'Consulta risposte e statistiche dei moduli',
+    icon: <Eye className="h-8 w-8" />,
+    path: '/visualizza-moduli',
+    color: 'bg-accent text-accent-foreground',
+  },
+  {
     title: 'Gestione Utenti',
     description: 'Crea utenti e assegna ruoli',
     icon: <Users className="h-8 w-8" />,
@@ -49,7 +57,7 @@ const allQuickAccessCards: QuickAccessCard[] = [
     description: 'Configura le categorie per spese, prelievi ed entrate',
     icon: <FolderOpen className="h-8 w-8" />,
     path: '/admin/categorie',
-    color: 'bg-accent text-accent-foreground',
+    color: 'bg-muted text-muted-foreground',
   },
   {
     title: 'Permessi Pagine',
