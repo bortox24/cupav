@@ -99,13 +99,15 @@ export function DynamicStats({ schema, responses }: DynamicStatsProps) {
       {stats.numberStats.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.numberStats.map((stat) => (
-            <Card key={stat.field.name}>
+            <Card key={stat.field.name} className="bg-gradient-to-br from-blue-50 to-sky-50 dark:from-blue-950/40 dark:to-sky-950/40 border-blue-200 dark:border-blue-800">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2">
-                  <Hash className="h-5 w-5 text-blue-500" />
+                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
+                    <Hash className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
                   <div>
-                    <p className="text-2xl font-bold">{stat.avg.toFixed(1)}</p>
-                    <p className="text-sm text-muted-foreground">{stat.field.label} (media)</p>
+                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stat.avg.toFixed(1)}</p>
+                    <p className="text-sm text-blue-600/80 dark:text-blue-400/80">{stat.field.label} (media)</p>
                   </div>
                 </div>
               </CardContent>
@@ -116,12 +118,15 @@ export function DynamicStats({ schema, responses }: DynamicStatsProps) {
 
       {/* Select/Radio field distributions */}
       {stats.selectRadioStats.map((stat) => (
-        <Card key={stat.field.name}>
+        <Card key={stat.field.name} className="bg-white dark:bg-gray-900 border-2 border-border shadow-sm">
           <CardContent className="pt-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                <h4 className="font-medium">{stat.field.label}</h4>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                </div>
+                <h4 className="font-semibold text-lg">{stat.field.label}</h4>
+                <span className="ml-auto text-sm text-muted-foreground">{stat.total} risposte</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {Object.entries(stat.distribution)
@@ -134,17 +139,29 @@ export function DynamicStats({ schema, responses }: DynamicStatsProps) {
                     return (
                       <div
                         key={value}
-                        className="flex items-center gap-2 p-3 rounded-lg bg-muted/50"
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                          isPositive 
+                            ? 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800' 
+                            : isNegative 
+                              ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800'
+                              : 'bg-white dark:bg-gray-800 border-border'
+                        }`}
                       >
                         {isPositive ? (
-                          <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                          <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-900">
+                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          </div>
                         ) : isNegative ? (
-                          <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+                          <div className="p-1.5 rounded-full bg-red-100 dark:bg-red-900">
+                            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          </div>
                         ) : (
-                          <div className="h-4 w-4 rounded-full bg-primary/20 shrink-0" />
+                          <div className="p-1.5 rounded-full bg-primary/10">
+                            <div className="h-4 w-4 rounded-full bg-primary/40" />
+                          </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate">{value}</p>
+                          <p className="font-semibold truncate">{value}</p>
                           <p className="text-sm text-muted-foreground">
                             {count} ({percentage}%)
                           </p>

@@ -7,10 +7,13 @@ import {
   PieChart, 
   Users, 
   FolderOpen,
-  ArrowRight,
   FileKey,
   FileText,
   Eye,
+  Tent,
+  TreePine,
+  Sun,
+  Mountain,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 
@@ -19,8 +22,9 @@ interface QuickAccessCard {
   description: string;
   icon: React.ReactNode;
   path: string;
-  bgColor: string;
+  gradient: string;
   borderColor: string;
+  iconBg: string;
   iconColor: string;
 }
 
@@ -30,63 +34,70 @@ const allQuickAccessCards: QuickAccessCard[] = [
     description: 'Inserisci una nuova spesa, prelievo o entrata',
     icon: <Receipt className="h-7 w-7" />,
     path: '/registrazione-spese-prelievi',
-    bgColor: 'bg-green-50 dark:bg-green-950/30',
-    borderColor: 'border-green-300 dark:border-green-800',
-    iconColor: 'text-green-600 dark:text-green-400',
+    gradient: 'bg-gradient-to-br from-green-100 via-emerald-50 to-teal-50 dark:from-green-950/50 dark:via-emerald-950/30 dark:to-teal-950/30',
+    borderColor: 'border-green-300 dark:border-green-700',
+    iconBg: 'bg-gradient-to-br from-green-500 to-emerald-600',
+    iconColor: 'text-white',
   },
   {
     title: 'Dashboard Controllo',
     description: 'Visualizza grafici e statistiche in tempo reale',
     icon: <PieChart className="h-7 w-7" />,
     path: '/controllo-spese',
-    bgColor: 'bg-teal-50 dark:bg-teal-950/30',
-    borderColor: 'border-teal-300 dark:border-teal-800',
-    iconColor: 'text-teal-600 dark:text-teal-400',
+    gradient: 'bg-gradient-to-br from-teal-100 via-cyan-50 to-sky-50 dark:from-teal-950/50 dark:via-cyan-950/30 dark:to-sky-950/30',
+    borderColor: 'border-teal-300 dark:border-teal-700',
+    iconBg: 'bg-gradient-to-br from-teal-500 to-cyan-600',
+    iconColor: 'text-white',
   },
   {
     title: 'Visualizza Moduli',
     description: 'Consulta risposte e statistiche dei moduli',
     icon: <Eye className="h-7 w-7" />,
     path: '/visualizza-moduli',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/30',
-    borderColor: 'border-blue-300 dark:border-blue-800',
-    iconColor: 'text-blue-600 dark:text-blue-400',
+    gradient: 'bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-50 dark:from-sky-950/50 dark:via-blue-950/30 dark:to-indigo-950/30',
+    borderColor: 'border-sky-300 dark:border-sky-700',
+    iconBg: 'bg-gradient-to-br from-sky-500 to-blue-600',
+    iconColor: 'text-white',
   },
   {
     title: 'Gestione Utenti',
     description: 'Crea utenti e gestisci accessi',
     icon: <Users className="h-7 w-7" />,
     path: '/admin/permessi',
-    bgColor: 'bg-red-50 dark:bg-red-950/30',
-    borderColor: 'border-red-300 dark:border-red-800',
-    iconColor: 'text-red-600 dark:text-red-400',
+    gradient: 'bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-50 dark:from-orange-950/50 dark:via-amber-950/30 dark:to-yellow-950/30',
+    borderColor: 'border-orange-300 dark:border-orange-700',
+    iconBg: 'bg-gradient-to-br from-orange-500 to-amber-600',
+    iconColor: 'text-white',
   },
   {
     title: 'Gestione Categorie',
     description: 'Configura le categorie per spese, prelievi ed entrate',
     icon: <FolderOpen className="h-7 w-7" />,
     path: '/admin/categorie',
-    bgColor: 'bg-purple-50 dark:bg-purple-950/30',
-    borderColor: 'border-purple-300 dark:border-purple-800',
-    iconColor: 'text-purple-600 dark:text-purple-400',
+    gradient: 'bg-gradient-to-br from-purple-100 via-violet-50 to-fuchsia-50 dark:from-purple-950/50 dark:via-violet-950/30 dark:to-fuchsia-950/30',
+    borderColor: 'border-purple-300 dark:border-purple-700',
+    iconBg: 'bg-gradient-to-br from-purple-500 to-violet-600',
+    iconColor: 'text-white',
   },
   {
     title: 'Permessi Pagine',
     description: 'Configura accesso pagine per singolo utente',
     icon: <FileKey className="h-7 w-7" />,
     path: '/admin/permessi-pagine',
-    bgColor: 'bg-amber-50 dark:bg-amber-950/30',
-    borderColor: 'border-amber-300 dark:border-amber-800',
-    iconColor: 'text-amber-600 dark:text-amber-400',
+    gradient: 'bg-gradient-to-br from-amber-100 via-yellow-50 to-lime-50 dark:from-amber-950/50 dark:via-yellow-950/30 dark:to-lime-950/30',
+    borderColor: 'border-amber-300 dark:border-amber-700',
+    iconBg: 'bg-gradient-to-br from-amber-500 to-yellow-600',
+    iconColor: 'text-white',
   },
   {
     title: 'Gestione Moduli',
     description: 'Crea moduli pubblici e visualizza risposte',
-    icon: <FileText className="h-7 w-7" />,
+    icon: <Tent className="h-7 w-7" />,
     path: '/admin/moduli',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
-    borderColor: 'border-emerald-300 dark:border-emerald-800',
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    gradient: 'bg-gradient-to-br from-emerald-100 via-green-50 to-teal-50 dark:from-emerald-950/50 dark:via-green-950/30 dark:to-teal-950/30',
+    borderColor: 'border-emerald-300 dark:border-emerald-700',
+    iconBg: 'bg-gradient-to-br from-emerald-500 to-green-600',
+    iconColor: 'text-white',
   },
 ];
 
@@ -104,21 +115,51 @@ export default function Home() {
   return (
     <MainLayout title="Home">
       <div className="space-y-8">
-        {/* Welcome Section */}
-        <div className="bg-card rounded-xl p-6 border shadow-sm">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              Ciao, {profile?.full_name || 'Utente'}! 👋
-            </h2>
-            <p className="text-muted-foreground mt-1">
-              Benvenuto nella dashboard CUPAV
-            </p>
+        {/* Welcome Section - Camping Theme */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500 rounded-2xl p-8 text-white shadow-xl">
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-4 -right-4 opacity-10">
+              <Mountain className="h-32 w-32" />
+            </div>
+            <div className="absolute bottom-2 right-20 opacity-10">
+              <TreePine className="h-24 w-24" />
+            </div>
+            <div className="absolute top-4 right-40 opacity-20">
+              <Sun className="h-16 w-16" />
+            </div>
+            <div className="absolute bottom-4 right-48 opacity-10">
+              <Tent className="h-20 w-20" />
+            </div>
+          </div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-3">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Tent className="h-8 w-8" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold">
+                  Ciao, {profile?.full_name || 'Utente'}! 👋
+                </h2>
+                <p className="text-white/90 text-lg mt-1">
+                  Benvenuto nella dashboard CUPAV
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center gap-2 text-white/80">
+              <TreePine className="h-5 w-5" />
+              <span className="font-medium">Campeggio Estate 2025 - L'avventura ti aspetta!</span>
+            </div>
           </div>
         </div>
 
         {/* Quick Access Cards */}
         <div>
-          <h3 className="text-lg font-semibold text-foreground mb-4">Accesso rapido</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Sun className="h-5 w-5 text-amber-500" />
+            Accesso rapido
+          </h3>
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[1, 2, 3, 4].map(i => (
@@ -141,9 +182,9 @@ export default function Home() {
                   to={card.path}
                   className="group block"
                 >
-                  <Card className={`h-full hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer border-2 ${card.borderColor} ${card.bgColor}`}>
+                  <Card className={`h-full hover:shadow-xl transition-all duration-300 hover:scale-[1.03] cursor-pointer border-2 ${card.borderColor} ${card.gradient}`}>
                     <CardContent className="flex flex-col items-center justify-center py-6 px-3">
-                      <div className={`w-14 h-14 bg-white dark:bg-gray-800 rounded-xl shadow-sm flex items-center justify-center mb-3 transition-transform group-hover:scale-110 ${card.iconColor}`}>
+                      <div className={`w-14 h-14 ${card.iconBg} rounded-xl shadow-lg flex items-center justify-center mb-3 transition-transform group-hover:scale-110 group-hover:rotate-3 ${card.iconColor}`}>
                         {card.icon}
                       </div>
                       <CardTitle className="text-center text-sm sm:text-base font-semibold text-foreground">
