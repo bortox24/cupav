@@ -95,35 +95,24 @@ export function DynamicStats({ schema, responses }: DynamicStatsProps) {
 
   return (
     <div className="space-y-4">
-      {/* Total responses */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-sm text-muted-foreground">Risposte</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Number field stats */}
-        {stats.numberStats.map((stat) => (
-          <Card key={stat.field.name}>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <Hash className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">{stat.avg.toFixed(1)}</p>
-                  <p className="text-sm text-muted-foreground">{stat.field.label} (media)</p>
+      {/* Number field stats */}
+      {stats.numberStats.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {stats.numberStats.map((stat) => (
+            <Card key={stat.field.name}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <Hash className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{stat.avg.toFixed(1)}</p>
+                    <p className="text-sm text-muted-foreground">{stat.field.label} (media)</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Select/Radio field distributions */}
       {stats.selectRadioStats.map((stat) => (

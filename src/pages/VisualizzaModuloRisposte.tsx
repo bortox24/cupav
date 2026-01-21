@@ -1,9 +1,12 @@
+import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Download, FileText, Calendar, Users } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Download, FileText, Calendar, Users, Search } from 'lucide-react';
 import { useFormById, useFormResponses, FormField } from '@/hooks/useForms';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -22,10 +25,49 @@ export default function VisualizzaModuloRisposte() {
   const { id } = useParams<{ id: string }>();
   const { data: form, isLoading: formLoading } = useFormById(id!);
   const { data: responses = [], isLoading: responsesLoading } = useFormResponses(id!);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterField, setFilterField] = useState<string>('all');
+  const [filterValue, setFilterValue] = useState<string>('all');
 
   const isLoading = formLoading || responsesLoading;
 
   const schema = (form?.form_schema || []) as FormField[];
+
+  // Get unique values for selected filter field
+  const filterOptions = useMemo(() => {
+    if (filterField === 'all') return [];
+    const values = new Set<string>();
+    responses.forEach((response) => {
+      const data = response.data as Record<string, string>;
+      const value = data[filterField];
+      if (value) values.add(value);
+    });
+    return Array.from(values).sort();
+  }, [responses, filterField]);
+
+  // Filter responses based on search and field filters
+  const filteredResponses = useMemo(() => {
+    return responses.filter((response) => {
+      const data = response.data as Record<string, string>;
+      
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = Object.values(data).some(
+          (value) => value && String(value).toLowerCase().includes(searchLower)
+        );
+        if (!matchesSearch) return false;
+      }
+      
+      // Field filter
+      if (filterField !== 'all' && filterValue !== 'all') {
+        if (data[filterField] !== filterValue) return false;
+      }
+      
+      return true;
+    });
+  }, [responses, searchTerm, filterField, filterValue]);
 
   const handleExportCSV = () => {
     if (!form || responses.length === 0) return;
@@ -174,18 +216,71 @@ export default function VisualizzaModuloRisposte() {
           <AIAnalysis formId={form.id} formName={form.name} schema={schema} responses={responses} />
         )}
 
+        {/* Filters */}
+        {responses.length > 0 && (
+          <Card className="border-dashed">
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Cerca nelle risposte..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={filterField} onValueChange={(value) => {
+                  setFilterField(value);
+                  setFilterValue('all');
+                }}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filtra per campo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i campi</SelectItem>
+                    {schema.filter(f => f.type === 'select' || f.type === 'radio')
+                      .map(field => (
+                        <SelectItem key={field.name} value={field.name}>{field.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {filterField !== 'all' && (
+                  <Select value={filterValue} onValueChange={setFilterValue}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="Seleziona valore" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutti</SelectItem>
+                      {filterOptions.map(option => (
+                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Responses Table */}
         <Card>
           <CardHeader>
             <CardTitle>Tutte le Risposte</CardTitle>
             <CardDescription>
-              {responses.length} {responses.length === 1 ? 'risposta' : 'risposte'} ricevute
+              {filteredResponses.length === responses.length 
+                ? `${responses.length} ${responses.length === 1 ? 'risposta' : 'risposte'} ricevute`
+                : `${filteredResponses.length} di ${responses.length} risposte`}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {responses.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 Nessuna risposta ricevuta per questo modulo
+              </div>
+            ) : filteredResponses.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nessuna risposta corrisponde ai filtri selezionati
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -199,7 +294,7 @@ export default function VisualizzaModuloRisposte() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {responses.map((response) => {
+                    {filteredResponses.map((response) => {
                       const data = response.data as Record<string, unknown>;
                       return (
                         <TableRow key={response.id}>
@@ -209,11 +304,17 @@ export default function VisualizzaModuloRisposte() {
                           {schema.map((field) => {
                             const value = data[field.name];
                             
-                            // Smart rendering based on field type
+                            // Smart rendering based on field type with color coding
                             if (field.type === 'select' || field.type === 'radio') {
+                              const strValue = String(value ?? '-');
+                              const isPositive = ['sì', 'si', 'yes', 'true', 'confermato', 'presente'].includes(strValue.toLowerCase());
+                              const isNegative = ['no', 'false', 'annullato', 'assente'].includes(strValue.toLowerCase());
+                              
                               return (
                                 <TableCell key={field.name}>
-                                  <Badge variant="outline">{String(value ?? '-')}</Badge>
+                                  <Badge variant={isPositive ? 'default' : isNegative ? 'secondary' : 'outline'}>
+                                    {strValue}
+                                  </Badge>
                                 </TableCell>
                               );
                             }
