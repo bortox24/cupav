@@ -2,21 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +25,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useForms, useUpdateForm, useDeleteForm, Form } from '@/hooks/useForms';
+import { FormBuilder } from '@/components/forms/FormBuilder';
 import {
   Plus,
   FileText,
@@ -56,6 +45,7 @@ export default function AdminModuli() {
   const updateForm = useUpdateForm();
   const deleteForm = useDeleteForm();
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+  const [showFormBuilder, setShowFormBuilder] = useState(false);
 
   const handleToggleActive = async (form: Form) => {
     await updateForm.mutateAsync({
@@ -100,27 +90,13 @@ export default function AdminModuli() {
               Crea moduli pubblici per raccogliere risposte
             </p>
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nuovo Modulo
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Funzionalità in arrivo</DialogTitle>
-                <DialogDescription>
-                  La creazione di nuovi moduli personalizzati sarà disponibile presto.
-                  Per ora, contatta l'amministratore per creare nuovi moduli.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline">Chiudi</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button className="gap-2" onClick={() => setShowFormBuilder(true)}>
+            <Plus className="h-4 w-4" />
+            Nuovo Modulo
+          </Button>
         </div>
+
+        <FormBuilder open={showFormBuilder} onOpenChange={setShowFormBuilder} />
 
         {forms.length === 0 ? (
           <Card>
