@@ -199,8 +199,9 @@ export function useUpdateForm() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
+      queryClient.invalidateQueries({ queryKey: ['form-by-id', variables.id] });
       toast({
         title: 'Successo',
         description: 'Modulo aggiornato correttamente.',

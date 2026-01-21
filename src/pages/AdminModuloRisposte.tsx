@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useFormById, useFormResponses, useDeleteFormResponse, FormField } from '@/hooks/useForms';
+import { useFormById, useFormResponses, useDeleteFormResponse, FormField, FormResponse } from '@/hooks/useForms';
 import {
   ArrowLeft,
   Loader2,
@@ -39,12 +39,15 @@ import {
   Search,
   Trash2,
   Users,
-  TrendingUp,
-  Check,
-  X,
+  BarChart3,
+  Calendar,
+  Hash,
+  Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { DynamicStats } from '@/components/forms/DynamicStats';
+import { AIAnalysis } from '@/components/forms/AIAnalysis';
 
 export default function AdminModuloRisposte() {
   const { id } = useParams<{ id: string }>();
@@ -95,36 +98,55 @@ export default function AdminModuloRisposte() {
     });
   }, [responses, searchTerm, filterField, filterValue]);
 
-  // Calculate statistics
-  const stats = useMemo(() => {
-    if (!form) return null;
-    
-    const schema = form.form_schema as FormField[];
-    const turnoField = schema.find((f) => f.name === 'turno');
-    const interessatoField = schema.find((f) => f.name === 'interessato');
-    
-    let turno4 = 0;
-    let turno5 = 0;
-    let interessati = 0;
-    let nonInteressati = 0;
-    
-    responses.forEach((response) => {
-      const data = response.data as Record<string, string>;
+  // Format cell value based on field type
+  const formatCellValue = (field: FormField, value: unknown): React.ReactNode => {
+    if (value === null || value === undefined || value === '') {
+      return <span className="text-muted-foreground">-</span>;
+    }
+
+    const stringValue = String(value);
+
+    // Select/Radio fields get badges
+    if (field.type === 'select' || field.type === 'radio') {
+      const isPositive = ['sì', 'si', 'yes', 'true', 'confermato', 'presente'].includes(stringValue.toLowerCase());
+      const isNegative = ['no', 'false', 'annullato', 'assente'].includes(stringValue.toLowerCase());
       
-      if (data.turno === '4 Elementare') turno4++;
-      if (data.turno === '5 Elementare') turno5++;
-      if (data.interessato === 'Sì') interessati++;
-      if (data.interessato === 'No') nonInteressati++;
-    });
-    
-    return {
-      total: responses.length,
-      turno4,
-      turno5,
-      interessati,
-      nonInteressati,
-    };
-  }, [form, responses]);
+      return (
+        <Badge variant={isPositive ? 'default' : isNegative ? 'secondary' : 'outline'}>
+          {stringValue}
+        </Badge>
+      );
+    }
+
+    // Date fields get formatted
+    if (field.type === 'date') {
+      try {
+        return format(new Date(stringValue), 'dd/MM/yyyy');
+      } catch {
+        return stringValue;
+      }
+    }
+
+    // Email fields
+    if (field.type === 'email') {
+      return (
+        <a href={`mailto:${stringValue}`} className="text-primary hover:underline">
+          {stringValue}
+        </a>
+      );
+    }
+
+    // Textarea fields get truncated
+    if (field.type === 'textarea' && stringValue.length > 50) {
+      return (
+        <span title={stringValue}>
+          {stringValue.substring(0, 50)}...
+        </span>
+      );
+    }
+
+    return stringValue;
+  };
 
   if (isLoading) {
     return (
@@ -161,7 +183,7 @@ export default function AdminModuloRisposte() {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div>
+          <div className="flex-1">
             <h2 className="text-xl font-semibold text-foreground">{form.name}</h2>
             <p className="text-sm text-muted-foreground">
               {responses.length} rispost{responses.length === 1 ? 'a' : 'e'} totali
@@ -169,54 +191,14 @@ export default function AdminModuloRisposte() {
           </div>
         </div>
 
-        {/* Statistics Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.total}</p>
-                    <p className="text-sm text-muted-foreground">Totale</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-blue-500" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.turno4}</p>
-                    <p className="text-sm text-muted-foreground">4° Elementare</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-purple-500" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.turno5}</p>
-                    <p className="text-sm text-muted-foreground">5° Elementare</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.interessati}</p>
-                    <p className="text-sm text-muted-foreground">Interessati</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Dynamic Statistics */}
+        {responses.length > 0 && (
+          <DynamicStats schema={schema} responses={responses} />
+        )}
+
+        {/* AI Analysis */}
+        {responses.length > 0 && (
+          <AIAnalysis formId={form.id} formName={form.name} schema={schema} responses={responses} />
         )}
 
         {/* Filters */}
@@ -298,7 +280,7 @@ export default function AdminModuloRisposte() {
               </TableHeader>
               <TableBody>
                 {filteredResponses.map((response) => {
-                  const data = response.data as Record<string, string>;
+                  const data = response.data as Record<string, unknown>;
                   return (
                     <TableRow key={response.id}>
                       <TableCell className="text-sm text-muted-foreground">
@@ -306,20 +288,7 @@ export default function AdminModuloRisposte() {
                       </TableCell>
                       {schema.map((field) => (
                         <TableCell key={field.name}>
-                          {field.name === 'interessato' ? (
-                            <Badge variant={data[field.name] === 'Sì' ? 'default' : 'secondary'}>
-                              {data[field.name] === 'Sì' ? (
-                                <Check className="h-3 w-3 mr-1" />
-                              ) : (
-                                <X className="h-3 w-3 mr-1" />
-                              )}
-                              {data[field.name]}
-                            </Badge>
-                          ) : field.name === 'data_nascita' ? (
-                            data[field.name] ? format(new Date(data[field.name]), 'dd/MM/yyyy') : '-'
-                          ) : (
-                            data[field.name] || '-'
-                          )}
+                          {formatCellValue(field, data[field.name])}
                         </TableCell>
                       ))}
                       <TableCell>
