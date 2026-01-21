@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useFormBySlug, useSubmitFormResponse, FormField } from '@/hooks/useForms';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,16 @@ export default function ModuloForm() {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Update document title when form loads
+  useEffect(() => {
+    if (form?.name) {
+      document.title = form.name;
+    }
+    return () => {
+      document.title = 'CUPAV';
+    };
+  }, [form?.name]);
 
   const handleFieldChange = (fieldName: string, value: string) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
