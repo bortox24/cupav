@@ -1,18 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import type { Database } from '@/integrations/supabase/types';
+import { toast } from '@/hooks/use-toast';
 
-type AppRole = Database['public']['Enums']['app_role'];
-
-interface UserWithRole {
+export interface UserWithStatus {
   id: string;
   email: string;
   full_name: string;
   created_at: string;
-  role: AppRole | null;
+  is_active: boolean;
+  is_admin: boolean;
 }
 
+// Fetch all users with their admin status and active status
 export function useUsers() {
   return useQuery({
     queryKey: ['users'],
@@ -20,152 +19,145 @@ export function useUsers() {
       // Fetch profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*')
-        .order('full_name');
+        .select('id, email, full_name, created_at, is_active')
+        .order('created_at', { ascending: false });
       
       if (profilesError) throw profilesError;
-
-      // Fetch all user roles
-      const { data: roles, error: rolesError } = await supabase
+      
+      // Fetch all admin roles
+      const { data: adminRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id, role');
+        .select('user_id, role')
+        .eq('role', 'admin');
       
       if (rolesError) throw rolesError;
-
-      // Combine data
-      const usersWithRoles: UserWithRole[] = profiles.map(profile => {
-        const userRole = roles.find(r => r.user_id === profile.id);
-        return {
-          ...profile,
-          role: userRole?.role || null,
-        };
-      });
-
-      return usersWithRoles;
+      
+      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+      
+      return (profiles || []).map(profile => ({
+        id: profile.id,
+        email: profile.email,
+        full_name: profile.full_name,
+        created_at: profile.created_at,
+        is_active: profile.is_active,
+        is_admin: adminUserIds.has(profile.id),
+      })) as UserWithStatus[];
     },
   });
 }
 
+// Create a new user (via edge function)
 export function useCreateUser() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
+  
   return useMutation({
-    mutationFn: async ({ email, password, fullName, role }: { 
+    mutationFn: async ({ email, password, fullName, isAdmin }: { 
       email: string; 
       password: string; 
       fullName: string;
-      role: AppRole;
+      isAdmin: boolean;
     }) => {
-      // IMPORTANT:
-      // Creating a user via auth.signUp() would switch the current session to the new user.
-      // We instead call a backend function that creates the auth user + profile + role
-      // using privileged credentials, without changing the admin session.
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          email,
-          password,
-          fullName,
-          role,
-        },
+        body: { email, password, fullName, isAdmin },
       });
-
+      
       if (error) throw error;
-      if (!data?.user?.id) throw new Error('User creation failed');
-
-      return data.user as { id: string };
+      if (data?.error) throw new Error(data.error);
+      
+      return data as { user: { id: string } };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: 'Utente creato',
-        description: 'L\'utente è stato creato con successo.',
+        description: 'Il nuovo utente è stato creato con successo',
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Errore',
-        description: 'Impossibile creare l\'utente.',
         variant: 'destructive',
+        title: 'Errore',
+        description: error.message,
       });
-      console.error('Error creating user:', error);
     },
   });
 }
 
-export function useUpdateUserRole() {
+// Toggle admin status for a user
+export function useToggleAdmin() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
+  
   return useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
-      // First, try to update existing role
-      const { data: existingRole } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (existingRole) {
+    mutationFn: async ({ userId, isAdmin }: { userId: string; isAdmin: boolean }) => {
+      if (isAdmin) {
+        // Add admin role
         const { error } = await supabase
           .from('user_roles')
-          .update({ role })
-          .eq('user_id', userId);
+          .upsert({ 
+            user_id: userId, 
+            role: 'admin' as const
+          }, { 
+            onConflict: 'user_id' 
+          });
         
         if (error) throw error;
       } else {
+        // Remove admin role
         const { error } = await supabase
           .from('user_roles')
-          .insert({ user_id: userId, role });
+          .delete()
+          .eq('user_id', userId);
         
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, { isAdmin }) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
-        title: 'Ruolo aggiornato',
-        description: 'Il ruolo dell\'utente è stato modificato con successo.',
+        title: isAdmin ? 'Promosso ad Admin' : 'Rimosso da Admin',
+        description: isAdmin 
+          ? 'L\'utente ora ha accesso amministratore' 
+          : 'L\'utente non è più amministratore',
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Errore',
-        description: 'Impossibile aggiornare il ruolo.',
         variant: 'destructive',
+        title: 'Errore',
+        description: error.message,
       });
-      console.error('Error updating user role:', error);
     },
   });
 }
 
-export function useDeleteUserRole() {
+// Toggle active status for a user
+export function useToggleActive() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
+  
   return useMutation({
-    mutationFn: async (userId: string) => {
+    mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
       const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
+        .from('profiles')
+        .update({ is_active: isActive })
+        .eq('id', userId);
       
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, { isActive }) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
-        title: 'Ruolo rimosso',
-        description: 'Il ruolo dell\'utente è stato rimosso.',
+        title: isActive ? 'Account attivato' : 'Account disattivato',
+        description: isActive 
+          ? 'L\'utente può ora accedere' 
+          : 'L\'utente non può più accedere',
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Errore',
-        description: 'Impossibile rimuovere il ruolo.',
         variant: 'destructive',
+        title: 'Errore',
+        description: error.message,
       });
-      console.error('Error deleting user role:', error);
     },
   });
 }

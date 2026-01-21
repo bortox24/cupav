@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Loader2, UserPlus, Shield, Wallet, Eye, Info } from 'lucide-react';
+import { Plus, Loader2, UserPlus, Shield, Info, Check, X } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -24,14 +26,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -40,35 +36,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useUsers, useCreateUser, useUpdateUserRole } from '@/hooks/useUsers';
+import { useUsers, useCreateUser, useToggleAdmin, useToggleActive } from '@/hooks/useUsers';
 import { useAuth } from '@/lib/auth';
-import type { Database } from '@/integrations/supabase/types';
-
-type AppRole = Database['public']['Enums']['app_role'];
-
-const roleLabels: Record<AppRole, { label: string; icon: React.ReactNode; color: string }> = {
-  admin: { 
-    label: 'Amministratore', 
-    icon: <Shield className="h-3 w-3" />,
-    color: 'bg-red-100 text-red-800 border-red-200'
-  },
-  tesoriere: { 
-    label: 'Tesoriere', 
-    icon: <Wallet className="h-3 w-3" />,
-    color: 'bg-blue-100 text-blue-800 border-blue-200'
-  },
-  visualizzatore: { 
-    label: 'Visualizzatore', 
-    icon: <Eye className="h-3 w-3" />,
-    color: 'bg-gray-100 text-gray-800 border-gray-200'
-  },
-};
 
 const createUserSchema = z.object({
   email: z.string().email('Email non valida'),
   password: z.string().min(6, 'La password deve avere almeno 6 caratteri'),
   fullName: z.string().min(2, 'Il nome deve avere almeno 2 caratteri'),
-  role: z.enum(['admin', 'tesoriere', 'visualizzatore']),
+  isAdmin: z.boolean(),
 });
 
 type CreateUserFormValues = z.infer<typeof createUserSchema>;
@@ -79,7 +54,8 @@ export default function AdminPermessi() {
   
   const { data: users, isLoading } = useUsers();
   const createUser = useCreateUser();
-  const updateUserRole = useUpdateUserRole();
+  const toggleAdmin = useToggleAdmin();
+  const toggleActive = useToggleActive();
 
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
@@ -87,7 +63,7 @@ export default function AdminPermessi() {
       email: '',
       password: '',
       fullName: '',
-      role: 'visualizzatore',
+      isAdmin: false,
     },
   });
 
@@ -96,14 +72,18 @@ export default function AdminPermessi() {
       email: values.email,
       password: values.password,
       fullName: values.fullName,
-      role: values.role,
+      isAdmin: values.isAdmin,
     });
     setIsCreateDialogOpen(false);
     form.reset();
   };
 
-  const handleRoleChange = async (userId: string, newRole: AppRole) => {
-    await updateUserRole.mutateAsync({ userId, role: newRole });
+  const handleToggleAdmin = async (userId: string, currentIsAdmin: boolean) => {
+    await toggleAdmin.mutateAsync({ userId, isAdmin: !currentIsAdmin });
+  };
+
+  const handleToggleActive = async (userId: string, currentIsActive: boolean) => {
+    await toggleActive.mutateAsync({ userId, isActive: !currentIsActive });
   };
 
   return (
@@ -114,7 +94,7 @@ export default function AdminPermessi() {
           <div>
             <h2 className="text-xl font-semibold text-foreground">Utenti registrati</h2>
             <p className="text-muted-foreground">
-              Gestisci gli utenti e i loro ruoli
+              Gestisci gli utenti e i loro accessi
             </p>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -128,7 +108,7 @@ export default function AdminPermessi() {
               <DialogHeader>
                 <DialogTitle>Crea nuovo utente</DialogTitle>
                 <DialogDescription>
-                  Inserisci i dati del nuovo utente e seleziona il ruolo
+                  Inserisci i dati del nuovo utente
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -174,28 +154,23 @@ export default function AdminPermessi() {
                   />
                   <FormField
                     control={form.control}
-                    name="role"
+                    name="isAdmin"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ruolo</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.entries(roleLabels).map(([value, { label, icon }]) => (
-                              <SelectItem key={value} value={value}>
-                                <div className="flex items-center gap-2">
-                                  {icon}
-                                  {label}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Amministratore
+                          </FormLabel>
+                          <FormDescription>
+                            Gli amministratori hanno accesso completo a tutte le pagine
+                          </FormDescription>
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -247,14 +222,13 @@ export default function AdminPermessi() {
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead className="hidden sm:table-cell">Email</TableHead>
-                      <TableHead>Ruolo attuale</TableHead>
-                      <TableHead>Modifica ruolo</TableHead>
+                      <TableHead className="text-center">Admin</TableHead>
+                      <TableHead className="text-center">Attivo</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users?.map((u) => {
                       const isCurrentUser = u.id === user?.id;
-                      const roleInfo = u.role ? roleLabels[u.role] : null;
                       
                       return (
                         <TableRow key={u.id}>
@@ -268,45 +242,46 @@ export default function AdminPermessi() {
                             </div>
                           </TableCell>
                           <TableCell className="text-muted-foreground hidden sm:table-cell">{u.email}</TableCell>
-                          <TableCell>
-                            {roleInfo ? (
-                              <Badge className={roleInfo.color} variant="outline">
-                                <span className="flex items-center gap-1">
-                                  {roleInfo.icon}
-                                  <span className="hidden sm:inline">{roleInfo.label}</span>
-                                </span>
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary">Nessun ruolo</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             {isCurrentUser ? (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Info className="h-4 w-4 flex-shrink-0" />
-                                <span className="hidden sm:inline">Non puoi modificare il tuo ruolo</span>
-                                <span className="sm:hidden">Bloccato</span>
+                              <div className="flex items-center justify-center">
+                                <Badge className="bg-destructive/10 text-destructive border-destructive/20" variant="outline">
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  Admin
+                                </Badge>
                               </div>
                             ) : (
-                              <Select
-                                value={u.role || ''}
-                                onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
-                                disabled={updateUserRole.isPending}
-                              >
-                                <SelectTrigger className="w-28 sm:w-40">
-                                  <SelectValue placeholder="Seleziona" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {Object.entries(roleLabels).map(([value, { label, icon }]) => (
-                                    <SelectItem key={value} value={value}>
-                                      <div className="flex items-center gap-2">
-                                        {icon}
-                                        {label}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <div className="flex items-center justify-center gap-2">
+                                <Switch
+                                  checked={u.is_admin}
+                                  onCheckedChange={() => handleToggleAdmin(u.id, u.is_admin)}
+                                  disabled={toggleAdmin.isPending}
+                                />
+                                {u.is_admin && (
+                                  <Shield className="h-4 w-4 text-destructive" />
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {isCurrentUser ? (
+                              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                                <Info className="h-4 w-4 flex-shrink-0" />
+                                <span className="hidden sm:inline">Non modificabile</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center gap-2">
+                                <Switch
+                                  checked={u.is_active}
+                                  onCheckedChange={() => handleToggleActive(u.id, u.is_active)}
+                                  disabled={toggleActive.isPending}
+                                />
+                                {u.is_active ? (
+                                  <Check className="h-4 w-4 text-primary" />
+                                ) : (
+                                  <X className="h-4 w-4 text-destructive" />
+                                )}
+                              </div>
                             )}
                           </TableCell>
                         </TableRow>
@@ -319,38 +294,29 @@ export default function AdminPermessi() {
           </CardContent>
         </Card>
 
-        {/* Role Legend */}
+        {/* Info Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Legenda Ruoli</CardTitle>
+            <CardTitle className="text-sm">Come funziona</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-lg border bg-red-50 border-red-200">
-                <div className="flex items-center gap-2 font-medium text-red-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="p-4 rounded-lg border bg-destructive/5 border-destructive/20">
+                <div className="flex items-center gap-2 font-medium text-destructive">
                   <Shield className="h-5 w-5" />
                   Amministratore
                 </div>
-                <p className="text-sm text-red-700 mt-1">
-                  Accesso completo: gestione utenti, categorie, modifica/elimina transazioni
+                <p className="text-muted-foreground mt-1">
+                  Accesso completo a tutte le pagine e funzionalità
                 </p>
               </div>
-              <div className="p-4 rounded-lg border bg-blue-50 border-blue-200">
-                <div className="flex items-center gap-2 font-medium text-blue-800">
-                  <Wallet className="h-5 w-5" />
-                  Tesoriere
+              <div className="p-4 rounded-lg border bg-muted/50">
+                <div className="flex items-center gap-2 font-medium">
+                  <Check className="h-5 w-5 text-primary" />
+                  Attivo / Disattivo
                 </div>
-                <p className="text-sm text-blue-700 mt-1">
-                  Registrazione transazioni, visualizzazione dashboard e report
-                </p>
-              </div>
-              <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
-                <div className="flex items-center gap-2 font-medium text-gray-800">
-                  <Eye className="h-5 w-5" />
-                  Visualizzatore
-                </div>
-                <p className="text-sm text-gray-700 mt-1">
-                  Solo visualizzazione dei dati e della dashboard
+                <p className="text-muted-foreground mt-1">
+                  Controlla se l'utente può accedere al sistema. Vai su "Permessi Pagine" per configurare l'accesso alle singole pagine.
                 </p>
               </div>
             </div>

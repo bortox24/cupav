@@ -117,6 +117,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_active: boolean
           updated_at: string
         }
         Insert: {
@@ -124,6 +125,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_active?: boolean
           updated_at?: string
         }
         Update: {
@@ -131,6 +133,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_active?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -307,6 +310,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_tesoriere: { Args: never; Returns: boolean }
+      is_user_active: { Args: never; Returns: boolean }
       is_visualizzatore: { Args: never; Returns: boolean }
     }
     Enums: {

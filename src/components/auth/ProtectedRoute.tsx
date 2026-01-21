@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'tesoriere' | 'visualizzatore')[];
 }
 
-export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, loading, userRole, signOut } = useAuth();
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, loading, isActive, signOut } = useAuth();
   const { canAccessPage, isLoading: permissionsLoading } = useMyPagePermissions();
   const location = useLocation();
 
@@ -29,15 +28,16 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <Navigate to="/" replace />;
   }
 
-  if (!userRole) {
+  // Check if user is active
+  if (!isActive) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center p-8">
           <h2 className="text-xl font-semibold text-foreground mb-2">
-            Accesso non autorizzato
+            Account disattivato
           </h2>
           <p className="text-muted-foreground">
-            Il tuo account non ha un ruolo assegnato. Contatta l'amministratore.
+            Il tuo account è stato disattivato. Contatta l'amministratore per riattivarlo.
           </p>
           <div className="mt-6 flex justify-center">
             <Button variant="outline" onClick={() => void signOut()}>
@@ -49,13 +49,8 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     );
   }
 
-  // Check custom page permissions
+  // Check page permissions
   if (!canAccessPage(location.pathname)) {
-    return <Navigate to="/home" replace />;
-  }
-
-  // Also check role-based access if specified (backup check)
-  if (allowedRoles && !allowedRoles.includes(userRole) && userRole !== 'admin') {
     return <Navigate to="/home" replace />;
   }
 

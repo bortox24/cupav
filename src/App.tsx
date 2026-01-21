@@ -15,7 +15,6 @@ import AdminCategorie from "./pages/AdminCategorie";
 import AdminPermessiPagine from "./pages/AdminPermessiPagine";
 import AdminModuli from "./pages/AdminModuli";
 import AdminModuloRisposte from "./pages/AdminModuloRisposte";
-import AdminRuoli from "./pages/AdminRuoli";
 import VisualizzaModuli from "./pages/VisualizzaModuli";
 import VisualizzaModuloRisposte from "./pages/VisualizzaModuloRisposte";
 import ModuloForm from "./pages/public/ModuloForm";
@@ -42,7 +41,7 @@ function AppRoutes() {
       <Route
         path="/home"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'tesoriere', 'visualizzatore']}>
+          <ProtectedRoute>
             <Home />
           </ProtectedRoute>
         }
@@ -50,7 +49,7 @@ function AppRoutes() {
       <Route
         path="/registrazione-spese-prelievi"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'tesoriere']}>
+          <ProtectedRoute>
             <RegistrazioneSpesePrelievi />
           </ProtectedRoute>
         }
@@ -58,7 +57,7 @@ function AppRoutes() {
       <Route
         path="/controllo-spese"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'tesoriere', 'visualizzatore']}>
+          <ProtectedRoute>
             <ControlloSpese />
           </ProtectedRoute>
         }
@@ -66,7 +65,7 @@ function AppRoutes() {
       <Route
         path="/visualizza-moduli"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'tesoriere', 'visualizzatore']}>
+          <ProtectedRoute>
             <VisualizzaModuli />
           </ProtectedRoute>
         }
@@ -74,7 +73,7 @@ function AppRoutes() {
       <Route
         path="/visualizza-moduli/:id/risposte"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'tesoriere', 'visualizzatore']}>
+          <ProtectedRoute>
             <VisualizzaModuloRisposte />
           </ProtectedRoute>
         }
@@ -82,7 +81,7 @@ function AppRoutes() {
       <Route
         path="/admin/permessi"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute>
             <AdminPermessi />
           </ProtectedRoute>
         }
@@ -90,7 +89,7 @@ function AppRoutes() {
       <Route
         path="/admin/categorie"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute>
             <AdminCategorie />
           </ProtectedRoute>
         }
@@ -98,7 +97,7 @@ function AppRoutes() {
       <Route
         path="/admin/permessi-pagine"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute>
             <AdminPermessiPagine />
           </ProtectedRoute>
         }
@@ -106,7 +105,7 @@ function AppRoutes() {
       <Route
         path="/admin/moduli"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute>
             <AdminModuli />
           </ProtectedRoute>
         }
@@ -114,16 +113,8 @@ function AppRoutes() {
       <Route
         path="/admin/moduli/:id/risposte"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute>
             <AdminModuloRisposte />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/ruoli"
-        element={
-          <ProtectedRoute allowedRoles={['admin']}>
-            <AdminRuoli />
           </ProtectedRoute>
         }
       />
