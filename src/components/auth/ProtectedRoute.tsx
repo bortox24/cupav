@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, loading, userRole } = useAuth();
+  const { user, loading, userRole, signOut } = useAuth();
   const { canAccessPage, isLoading: permissionsLoading } = useMyPagePermissions();
   const location = useLocation();
 
@@ -38,6 +39,11 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
           <p className="text-muted-foreground">
             Il tuo account non ha un ruolo assegnato. Contatta l'amministratore.
           </p>
+          <div className="mt-6 flex justify-center">
+            <Button variant="outline" onClick={() => void signOut()}>
+              Esci
+            </Button>
+          </div>
         </div>
       </div>
     );
