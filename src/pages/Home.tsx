@@ -74,26 +74,8 @@ const allQuickAccessCards: QuickAccessCard[] = [
   },
 ];
 
-const roleInfo = {
-  admin: {
-    label: 'Amministratore',
-    description: 'Accesso completo a tutte le funzionalità',
-    icon: <Shield className="h-5 w-5" />,
-  },
-  tesoriere: {
-    label: 'Tesoriere',
-    description: 'Gestione transazioni e visualizzazione dashboard',
-    icon: <Wallet className="h-5 w-5" />,
-  },
-  visualizzatore: {
-    label: 'Visualizzatore',
-    description: 'Solo visualizzazione dei dati',
-    icon: <TrendingUp className="h-5 w-5" />,
-  },
-};
-
 export default function Home() {
-  const { userRole, profile } = useAuth();
+  const { profile } = useAuth();
   const { canAccessPage, isLoading } = useMyPagePermissions();
 
   // Filter cards based on user's actual page permissions
@@ -102,8 +84,6 @@ export default function Home() {
     if (card.path === '/home') return false;
     return canAccessPage(card.path);
   });
-
-  const currentRoleInfo = userRole ? roleInfo[userRole] : null;
 
   return (
     <MainLayout title="Home">
