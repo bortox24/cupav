@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Loader2, UserPlus, Shield, Wallet, Eye } from 'lucide-react';
+import { Plus, Loader2, UserPlus, Shield, Wallet, Eye, Info } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -241,67 +241,80 @@ export default function AdminPermessi() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Ruolo attuale</TableHead>
-                    <TableHead>Modifica ruolo</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users?.map((u) => {
-                    const isCurrentUser = u.id === user?.id;
-                    const roleInfo = u.role ? roleLabels[u.role] : null;
-                    
-                    return (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium">
-                          {u.full_name}
-                          {isCurrentUser && (
-                            <Badge variant="outline" className="ml-2">Tu</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                        <TableCell>
-                          {roleInfo ? (
-                            <Badge className={roleInfo.color} variant="outline">
-                              <span className="flex items-center gap-1">
-                                {roleInfo.icon}
-                                {roleInfo.label}
-                              </span>
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">Nessun ruolo</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={u.role || ''}
-                            onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
-                            disabled={isCurrentUser || updateUserRole.isPending}
-                          >
-                            <SelectTrigger className="w-40">
-                              <SelectValue placeholder="Seleziona ruolo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(roleLabels).map(([value, { label, icon }]) => (
-                                <SelectItem key={value} value={value}>
-                                  <div className="flex items-center gap-2">
-                                    {icon}
-                                    {label}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead className="hidden sm:table-cell">Email</TableHead>
+                      <TableHead>Ruolo attuale</TableHead>
+                      <TableHead>Modifica ruolo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users?.map((u) => {
+                      const isCurrentUser = u.id === user?.id;
+                      const roleInfo = u.role ? roleLabels[u.role] : null;
+                      
+                      return (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex flex-col">
+                              <span>{u.full_name}</span>
+                              {isCurrentUser && (
+                                <Badge variant="outline" className="w-fit mt-1">Tu</Badge>
+                              )}
+                              <span className="text-xs text-muted-foreground sm:hidden mt-1">{u.email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground hidden sm:table-cell">{u.email}</TableCell>
+                          <TableCell>
+                            {roleInfo ? (
+                              <Badge className={roleInfo.color} variant="outline">
+                                <span className="flex items-center gap-1">
+                                  {roleInfo.icon}
+                                  <span className="hidden sm:inline">{roleInfo.label}</span>
+                                </span>
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">Nessun ruolo</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {isCurrentUser ? (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Info className="h-4 w-4 flex-shrink-0" />
+                                <span className="hidden sm:inline">Non puoi modificare il tuo ruolo</span>
+                                <span className="sm:hidden">Bloccato</span>
+                              </div>
+                            ) : (
+                              <Select
+                                value={u.role || ''}
+                                onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
+                                disabled={updateUserRole.isPending}
+                              >
+                                <SelectTrigger className="w-28 sm:w-40">
+                                  <SelectValue placeholder="Seleziona" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Object.entries(roleLabels).map(([value, { label, icon }]) => (
+                                    <SelectItem key={value} value={value}>
+                                      <div className="flex items-center gap-2">
+                                        {icon}
+                                        {label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

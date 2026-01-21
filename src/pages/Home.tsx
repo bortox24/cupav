@@ -114,18 +114,18 @@ export default function Home() {
         {/* Quick Access Cards */}
         <div>
           <h3 className="text-lg font-semibold text-foreground mb-4">Accesso rapido</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {accessibleCards.map((card) => (
               <Card key={card.path} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
-                  <div className={`w-14 h-14 rounded-lg flex items-center justify-center ${card.color}`}>
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center ${card.color}`}>
                     {card.icon}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <CardTitle className="text-lg">{card.title}</CardTitle>
-                    <CardDescription className="mt-1">{card.description}</CardDescription>
+                    <CardTitle className="text-base sm:text-lg">{card.title}</CardTitle>
+                    <CardDescription className="mt-1 text-sm">{card.description}</CardDescription>
                   </div>
                   <Button asChild variant="outline" className="w-full group">
                     <Link to={card.path}>
