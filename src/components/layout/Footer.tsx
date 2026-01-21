@@ -1,6 +1,7 @@
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 export function Footer() {
   const { profile, signOut } = useAuth();
@@ -16,15 +17,18 @@ export function Footer() {
           <span className="text-sm text-muted-foreground">
             Connesso come: <span className="font-medium text-foreground">{profile?.full_name || 'Utente'}</span>
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSignOut}
-            className="gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Esci
-          </Button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Esci
+            </Button>
+          </div>
         </div>
       </div>
     </footer>

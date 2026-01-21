@@ -9,9 +9,8 @@ import {
   FolderOpen,
   ArrowRight,
   Shield,
-  TrendingUp,
-  Wallet,
-  FileKey
+  FileKey,
+  FileText,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 
@@ -59,6 +58,20 @@ const allQuickAccessCards: QuickAccessCard[] = [
     path: '/admin/permessi-pagine',
     color: 'bg-muted text-muted-foreground',
   },
+  {
+    title: 'Gestione Moduli',
+    description: 'Crea moduli pubblici e visualizza risposte',
+    icon: <FileText className="h-8 w-8" />,
+    path: '/admin/moduli',
+    color: 'bg-primary/10 text-primary',
+  },
+  {
+    title: 'Gestione Ruoli',
+    description: 'Crea e configura ruoli e permessi',
+    icon: <Shield className="h-8 w-8" />,
+    path: '/admin/ruoli',
+    color: 'bg-destructive/10 text-destructive',
+  },
 ];
 
 const roleInfo = {
@@ -97,24 +110,13 @@ export default function Home() {
       <div className="space-y-8">
         {/* Welcome Section */}
         <div className="bg-card rounded-xl p-6 border shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">
-                Ciao, {profile?.full_name || 'Utente'}! 👋
-              </h2>
-              <p className="text-muted-foreground mt-1">
-                Benvenuto nella dashboard CUPAV
-              </p>
-            </div>
-            {currentRoleInfo && (
-              <div className="flex items-center gap-3 bg-primary/10 rounded-lg px-4 py-2">
-                <div className="text-primary">{currentRoleInfo.icon}</div>
-                <div>
-                  <p className="font-medium text-foreground">{currentRoleInfo.label}</p>
-                  <p className="text-sm text-muted-foreground">{currentRoleInfo.description}</p>
-                </div>
-              </div>
-            )}
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              Ciao, {profile?.full_name || 'Utente'}! 👋
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              Benvenuto nella dashboard CUPAV
+            </p>
           </div>
         </div>
 
