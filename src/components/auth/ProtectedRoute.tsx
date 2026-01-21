@@ -1,5 +1,6 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -9,8 +10,10 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { user, loading, userRole } = useAuth();
+  const { canAccessPage, isLoading: permissionsLoading } = useMyPagePermissions();
+  const location = useLocation();
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -40,7 +43,13 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     );
   }
 
-  if (allowedRoles && !allowedRoles.includes(userRole)) {
+  // Check custom page permissions
+  if (!canAccessPage(location.pathname)) {
+    return <Navigate to="/home" replace />;
+  }
+
+  // Also check role-based access if specified (backup check)
+  if (allowedRoles && !allowedRoles.includes(userRole) && userRole !== 'admin') {
     return <Navigate to="/home" replace />;
   }
 
