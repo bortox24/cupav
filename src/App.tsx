@@ -13,6 +13,10 @@ import ControlloSpese from "./pages/ControlloSpese";
 import AdminPermessi from "./pages/AdminPermessi";
 import AdminCategorie from "./pages/AdminCategorie";
 import AdminPermessiPagine from "./pages/AdminPermessiPagine";
+import AdminModuli from "./pages/AdminModuli";
+import AdminModuloRisposte from "./pages/AdminModuloRisposte";
+import AdminRuoli from "./pages/AdminRuoli";
+import ModuloForm from "./pages/public/ModuloForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -81,6 +85,33 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/moduli"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminModuli />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/moduli/:id/risposte"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminModuloRisposte />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/ruoli"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminRuoli />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Public routes */}
+      <Route path="/modulo/:slug" element={<ModuloForm />} />
 
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
