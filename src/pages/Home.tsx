@@ -116,9 +116,9 @@ export default function Home() {
     <MainLayout title="Home">
       <div className="space-y-8">
         {/* Welcome Section - Camping Theme */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500 rounded-2xl p-8 text-white shadow-xl">
-          {/* Decorative background elements */}
-          <div className="absolute inset-0 overflow-hidden">
+        <div className="relative overflow-hidden bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl">
+          {/* Decorative background elements - hidden on mobile */}
+          <div className="absolute inset-0 overflow-hidden hidden sm:block">
             <div className="absolute -top-4 -right-4 opacity-10">
               <Mountain className="h-32 w-32" />
             </div>
@@ -134,22 +134,22 @@ export default function Home() {
           </div>
           
           <div className="relative z-10">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Tent className="h-8 w-8" />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-3">
+              <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl backdrop-blur-sm w-fit">
+                <Tent className="h-6 w-6 sm:h-8 sm:w-8" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold">
+                <h2 className="text-2xl sm:text-3xl font-bold">
                   Ciao, {profile?.full_name || 'Utente'}! 👋
                 </h2>
-                <p className="text-white/90 text-lg mt-1">
+                <p className="text-white/90 text-base sm:text-lg mt-1">
                   Benvenuto nella dashboard CUPAV
                 </p>
               </div>
             </div>
             <div className="mt-4 flex items-center gap-2 text-white/80">
-              <TreePine className="h-5 w-5" />
-              <span className="font-medium">Campeggio Estate 2025 - L'avventura ti aspetta!</span>
+              <TreePine className="h-5 w-5 shrink-0" />
+              <span className="font-medium text-sm sm:text-base">Campeggio Estate 2026 - L'avventura ti aspetta!</span>
             </div>
           </div>
         </div>
