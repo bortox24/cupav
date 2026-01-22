@@ -15,7 +15,7 @@ import logoCupav from '@/assets/logo-cupav.png';
 // Configurazione video per moduli specifici
 const VIDEO_CONFIG: Record<string, { videoId: string; title: string }> = {
   'manifestazione-interesse-campeggio-2026': {
-    videoId: 'VIDEO_ID_DA_INSERIRE', // Sostituire con l'ID del video YouTube
+    videoId: '-Z6eq9YL2FU',
     title: 'Guarda il video del Campeggio!',
   },
 };
