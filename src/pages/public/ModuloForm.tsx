@@ -8,9 +8,44 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Play } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import logoCupav from '@/assets/logo-cupav.png';
+
+// Configurazione video per moduli specifici
+const VIDEO_CONFIG: Record<string, { videoId: string; title: string }> = {
+  'manifestazione-interesse-campeggio-2026': {
+    videoId: 'VIDEO_ID_DA_INSERIRE', // Sostituire con l'ID del video YouTube
+    title: 'Guarda il video del Campeggio!',
+  },
+};
+
+// Componente per la sezione video YouTube
+function YouTubeVideoSection({ videoId, title }: { videoId: string; title: string }) {
+  return (
+    <div className="container mx-auto px-4 py-6 max-w-2xl">
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Play className="h-5 w-5 text-primary" />
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="aspect-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}`}
+              title={title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full border-0"
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function ModuloForm() {
   const { slug } = useParams<{ slug: string }>();
@@ -255,6 +290,14 @@ export default function ModuloForm() {
           <ThemeToggle />
         </div>
       </header>
+
+      {/* Video section - solo per moduli configurati */}
+      {slug && VIDEO_CONFIG[slug] && (
+        <YouTubeVideoSection
+          videoId={VIDEO_CONFIG[slug].videoId}
+          title={VIDEO_CONFIG[slug].title}
+        />
+      )}
 
       <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
         <Card>
