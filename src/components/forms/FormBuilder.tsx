@@ -32,6 +32,7 @@ const fieldTypes = [
   { value: 'textarea', label: 'Testo lungo' },
   { value: 'select', label: 'Menu a tendina' },
   { value: 'radio', label: 'Scelta singola' },
+  { value: 'checkbox', label: 'Checkbox (accettazione)' },
 ] as const;
 
 interface FormBuilderProps {

@@ -56,8 +56,10 @@ export default function AdminModuli() {
     });
   };
 
+  const PUBLISHED_URL = 'https://cupav.lovable.app';
+
   const handleCopyLink = (slug: string) => {
-    const url = `${window.location.origin}/modulo/${slug}`;
+    const url = `${PUBLISHED_URL}/modulo/${slug}`;
     navigator.clipboard.writeText(url);
     setCopiedSlug(slug);
     toast({
