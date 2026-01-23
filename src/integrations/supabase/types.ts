@@ -78,6 +78,7 @@ export type Database = {
           name: string
           slug: string
           updated_at: string
+          webhook_url: string | null
         }
         Insert: {
           created_at?: string
@@ -89,6 +90,7 @@ export type Database = {
           name: string
           slug: string
           updated_at?: string
+          webhook_url?: string | null
         }
         Update: {
           created_at?: string
@@ -100,6 +102,7 @@ export type Database = {
           name?: string
           slug?: string
           updated_at?: string
+          webhook_url?: string | null
         }
         Relationships: [
           {

@@ -47,6 +47,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
   const [formName, setFormName] = useState('');
   const [formSlug, setFormSlug] = useState('');
   const [formDescription, setFormDescription] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [fields, setFields] = useState<FormField[]>([]);
   const [showFieldEditor, setShowFieldEditor] = useState(false);
   const [editingField, setEditingField] = useState<FormField | null>(null);
@@ -67,6 +68,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
       setFormName(editForm.name);
       setFormSlug(editForm.slug);
       setFormDescription(editForm.description || '');
+      setWebhookUrl(editForm.webhook_url || '');
       setFields(editForm.form_schema || []);
     } else {
       resetForm();
@@ -77,6 +79,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
     setFormName('');
     setFormSlug('');
     setFormDescription('');
+    setWebhookUrl('');
     setFields([]);
   };
 
@@ -170,6 +173,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
         name: formName,
         slug: formSlug,
         description: formDescription || undefined,
+        webhook_url: webhookUrl || null,
         form_schema: fields,
       });
     } else {
@@ -177,6 +181,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
         name: formName,
         slug: formSlug,
         description: formDescription || undefined,
+        webhook_url: webhookUrl || undefined,
         form_schema: fields,
       });
     }
@@ -238,6 +243,19 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
                 onChange={(e) => setFormDescription(e.target.value)}
                 rows={2}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="webhook-url">Webhook n8n (opzionale)</Label>
+              <Input
+                id="webhook-url"
+                type="url"
+                placeholder="https://tuo-n8n.app/webhook/xxxxx"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                URL webhook per inviare automaticamente i dati a n8n dopo ogni compilazione
+              </p>
             </div>
           </div>
 
