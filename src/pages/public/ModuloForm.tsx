@@ -104,6 +104,27 @@ export default function ModuloForm() {
       data: formData,
     });
 
+    // Chiamata webhook n8n se configurato
+    if (form.webhook_url) {
+      try {
+        await fetch(form.webhook_url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          mode: 'no-cors',
+          body: JSON.stringify({
+            formName: form.name,
+            formSlug: slug,
+            formId: form.id,
+            submittedAt: new Date().toISOString(),
+            data: formData,
+          }),
+        });
+      } catch (error) {
+        console.error('Errore webhook n8n:', error);
+        // Non blocca il successo del form
+      }
+    }
+
     setSubmitted(true);
   };
 
