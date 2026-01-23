@@ -47,6 +47,22 @@ export function DynamicStats({ schema, responses }: DynamicStatsProps) {
       }
 
       if (field.type === 'number') {
+        // Escludi campi telefono dalle statistiche numeriche (la media non ha senso)
+        const fieldNameLower = field.name.toLowerCase();
+        const fieldLabelLower = field.label.toLowerCase();
+        const isPhoneField = 
+          fieldNameLower.includes('telefono') || 
+          fieldNameLower.includes('phone') || 
+          fieldNameLower.includes('tel') ||
+          fieldNameLower.includes('cellulare') ||
+          fieldLabelLower.includes('telefono') || 
+          fieldLabelLower.includes('phone') || 
+          fieldLabelLower.includes('cellulare');
+
+        if (isPhoneField) {
+          return; // Salta i campi telefono
+        }
+
         const values: number[] = [];
 
         responses.forEach((response) => {
