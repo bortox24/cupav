@@ -14,15 +14,20 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import logoCupav from '@/assets/logo-cupav.png';
 
 // Configurazione video per moduli specifici
-const VIDEO_CONFIG: Record<string, { videoId: string; title: string }> = {
+const VIDEO_CONFIG: Record<string, { videoId: string; title: string; autoplay?: boolean }> = {
   'campeggio-2026': {
-    videoId: '-Z6eq9YL2FU',
+    videoId: 'b8gB4XSxJ1c',
     title: 'Guarda il video del Campeggio!',
+    autoplay: true,
   },
 };
 
 // Componente per la sezione video YouTube
-function YouTubeVideoSection({ videoId, title }: { videoId: string; title: string }) {
+function YouTubeVideoSection({ videoId, title, autoplay = false }: { videoId: string; title: string; autoplay?: boolean }) {
+  const embedUrl = autoplay 
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`
+    : `https://www.youtube.com/embed/${videoId}`;
+  
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
       <Card className="overflow-hidden">
@@ -35,7 +40,7 @@ function YouTubeVideoSection({ videoId, title }: { videoId: string; title: strin
         <CardContent className="p-0">
           <div className="aspect-video">
             <iframe
-              src={`https://www.youtube.com/embed/${videoId}`}
+              src={embedUrl}
               title={title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -328,6 +333,7 @@ export default function ModuloForm() {
         <YouTubeVideoSection
           videoId={VIDEO_CONFIG[slug].videoId}
           title={VIDEO_CONFIG[slug].title}
+          autoplay={VIDEO_CONFIG[slug].autoplay}
         />
       )}
 
