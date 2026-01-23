@@ -41,11 +41,30 @@ export default function AdminPermessiPagine() {
     const key = `${userId}-${pagePath}`;
     setPendingChanges(prev => new Set(prev).add(key));
     
+    // Se si sta abilitando /visualizza-moduli, abilita anche l'accesso alle risposte dei singoli moduli
+    const relatedPages: string[] = [];
+    if (pagePath === '/visualizza-moduli' && canAccess) {
+      relatedPages.push('/visualizza-moduli/:id/risposte');
+    }
+    // Se si sta disabilitando /visualizza-moduli, disabilita anche le risposte
+    if (pagePath === '/visualizza-moduli' && !canAccess) {
+      relatedPages.push('/visualizza-moduli/:id/risposte');
+    }
+    
     try {
+      // Aggiorna il permesso principale
       await setPermission.mutateAsync({ userId, pagePath, canAccess });
+      
+      // Aggiorna automaticamente i permessi correlati
+      for (const relatedPath of relatedPages) {
+        await setPermission.mutateAsync({ userId, pagePath: relatedPath, canAccess });
+      }
+      
       toast({
         title: 'Permesso aggiornato',
-        description: `Accesso ${canAccess ? 'abilitato' : 'disabilitato'}`,
+        description: relatedPages.length > 0 
+          ? `Accesso ${canAccess ? 'abilitato' : 'disabilitato'} (incluse risposte moduli)`
+          : `Accesso ${canAccess ? 'abilitato' : 'disabilitato'}`,
       });
     } finally {
       setPendingChanges(prev => {
