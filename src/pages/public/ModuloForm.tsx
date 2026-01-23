@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle2, AlertCircle, Play } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -84,8 +85,14 @@ export default function ModuloForm() {
     const schema = form.form_schema as FormField[];
 
     schema.forEach((field) => {
-      if (field.required && !formData[field.name]?.trim()) {
-        errors[field.name] = 'Questo campo è obbligatorio';
+      if (field.required) {
+        if (field.type === 'checkbox') {
+          if (formData[field.name] !== 'true') {
+            errors[field.name] = 'Devi accettare per continuare';
+          }
+        } else if (!formData[field.name]?.trim()) {
+          errors[field.name] = 'Questo campo è obbligatorio';
+        }
       }
     });
 
@@ -140,7 +147,7 @@ export default function ModuloForm() {
               type="date"
               value={formData[field.name] || ''}
               onChange={(e) => handleFieldChange(field.name, e.target.value)}
-              className={hasError ? 'border-destructive' : ''}
+              className={`w-full min-h-[40px] ${hasError ? 'border-destructive' : ''}`}
             />
             {hasError && <p className="text-sm text-destructive">{validationErrors[field.name]}</p>}
           </div>
@@ -207,6 +214,31 @@ export default function ModuloForm() {
                 </div>
               ))}
             </RadioGroup>
+            {hasError && <p className="text-sm text-destructive">{validationErrors[field.name]}</p>}
+          </div>
+        );
+
+      case 'checkbox':
+        return (
+          <div key={field.name} className="space-y-2">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id={field.name}
+                checked={formData[field.name] === 'true'}
+                onCheckedChange={(checked) => 
+                  handleFieldChange(field.name, checked ? 'true' : 'false')
+                }
+                className={hasError ? 'border-destructive' : ''}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label 
+                  htmlFor={field.name} 
+                  className={`font-normal cursor-pointer ${hasError ? 'text-destructive' : ''}`}
+                >
+                  {field.label} {field.required && <span className="text-destructive">*</span>}
+                </Label>
+              </div>
+            </div>
             {hasError && <p className="text-sm text-destructive">{validationErrors[field.name]}</p>}
           </div>
         );
