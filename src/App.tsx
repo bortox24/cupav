@@ -19,6 +19,8 @@ import AdminModuloRisposte from "./pages/AdminModuloRisposte";
 import VisualizzaModuli from "./pages/VisualizzaModuli";
 import VisualizzaModuloRisposte from "./pages/VisualizzaModuloRisposte";
 import ModuloForm from "./pages/public/ModuloForm";
+import PreiscrizioneCupav from "./pages/public/PreiscrizioneCupav";
+import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -127,7 +129,18 @@ function AppRoutes() {
         }
       />
 
+      {/* Protected - Anagrafica */}
+      <Route
+        path="/anagrafica-ragazzi"
+        element={
+          <ProtectedRoute>
+            <AnagraficaRagazzi />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Public routes */}
+      <Route path="/preiscrizione-cupav" element={<PreiscrizioneCupav />} />
       <Route path="/modulo/:slug" element={<ModuloForm />} />
 
       {/* Catch-all */}
