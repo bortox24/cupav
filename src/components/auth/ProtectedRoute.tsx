@@ -49,8 +49,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  // Check page permissions
-  if (!canAccessPage(location.pathname)) {
+  // Check page permissions (turno pages handle their own access via useTurnoPermissions)
+  const isTurnoPage = location.pathname.startsWith('/turno/');
+  if (!isTurnoPage && !canAccessPage(location.pathname)) {
     return <Navigate to="/home" replace />;
   }
 
