@@ -87,6 +87,15 @@ export function useUpdateRagazzo() {
       full_name: string;
       data_nascita: string | null;
       residente_altavilla: boolean;
+      ha_allergie: boolean;
+      allergie_dettaglio: string | null;
+      patologie_dettaglio: string | null;
+      farmaco_1_nome: string | null;
+      farmaco_1_posologia: string | null;
+      farmaco_2_nome: string | null;
+      farmaco_2_posologia: string | null;
+      farmaco_3_nome: string | null;
+      farmaco_3_posologia: string | null;
       genitori: { nome_cognome: string; ruolo: string; email: string | null; telefono: string | null }[];
     }) => {
       const { error: rErr } = await supabase
@@ -95,6 +104,15 @@ export function useUpdateRagazzo() {
           full_name: data.full_name,
           data_nascita: data.data_nascita,
           residente_altavilla: data.residente_altavilla,
+          ha_allergie: data.ha_allergie,
+          allergie_dettaglio: data.allergie_dettaglio,
+          patologie_dettaglio: data.patologie_dettaglio,
+          farmaco_1_nome: data.farmaco_1_nome,
+          farmaco_1_posologia: data.farmaco_1_posologia,
+          farmaco_2_nome: data.farmaco_2_nome,
+          farmaco_2_posologia: data.farmaco_2_posologia,
+          farmaco_3_nome: data.farmaco_3_nome,
+          farmaco_3_posologia: data.farmaco_3_posologia,
         })
         .eq('id', data.id);
       if (rErr) throw rErr;
