@@ -117,6 +117,96 @@ export type Database = {
           },
         ]
       }
+      iscrizioni: {
+        Row: {
+          allergie_dettaglio: string | null
+          created_at: string
+          email: string
+          farmaco_1_nome: string | null
+          farmaco_1_posologia: string | null
+          farmaco_2_nome: string | null
+          farmaco_2_posologia: string | null
+          farmaco_3_nome: string | null
+          farmaco_3_posologia: string | null
+          firma_data: string
+          firma_nome: string
+          genitore_cognome: string
+          genitore_nome: string
+          genitore_qualita: string
+          ha_allergie: boolean
+          id: string
+          liberatoria_foto: boolean
+          patologie_dettaglio: string | null
+          ragazzo_cognome: string
+          ragazzo_data_nascita: string
+          ragazzo_indirizzo: string
+          ragazzo_luogo_nascita: string
+          ragazzo_nome: string
+          ragazzo_residente: string
+          recapiti_telefonici: string
+          secondo_figlio: string | null
+          turno: string
+        }
+        Insert: {
+          allergie_dettaglio?: string | null
+          created_at?: string
+          email: string
+          farmaco_1_nome?: string | null
+          farmaco_1_posologia?: string | null
+          farmaco_2_nome?: string | null
+          farmaco_2_posologia?: string | null
+          farmaco_3_nome?: string | null
+          farmaco_3_posologia?: string | null
+          firma_data: string
+          firma_nome: string
+          genitore_cognome: string
+          genitore_nome: string
+          genitore_qualita: string
+          ha_allergie?: boolean
+          id?: string
+          liberatoria_foto?: boolean
+          patologie_dettaglio?: string | null
+          ragazzo_cognome: string
+          ragazzo_data_nascita: string
+          ragazzo_indirizzo: string
+          ragazzo_luogo_nascita: string
+          ragazzo_nome: string
+          ragazzo_residente: string
+          recapiti_telefonici: string
+          secondo_figlio?: string | null
+          turno: string
+        }
+        Update: {
+          allergie_dettaglio?: string | null
+          created_at?: string
+          email?: string
+          farmaco_1_nome?: string | null
+          farmaco_1_posologia?: string | null
+          farmaco_2_nome?: string | null
+          farmaco_2_posologia?: string | null
+          farmaco_3_nome?: string | null
+          farmaco_3_posologia?: string | null
+          firma_data?: string
+          firma_nome?: string
+          genitore_cognome?: string
+          genitore_nome?: string
+          genitore_qualita?: string
+          ha_allergie?: boolean
+          id?: string
+          liberatoria_foto?: boolean
+          patologie_dettaglio?: string | null
+          ragazzo_cognome?: string
+          ragazzo_data_nascita?: string
+          ragazzo_indirizzo?: string
+          ragazzo_luogo_nascita?: string
+          ragazzo_nome?: string
+          ragazzo_residente?: string
+          recapiti_telefonici?: string
+          secondo_figlio?: string | null
+          turno?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -392,6 +482,27 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_config: {
+        Row: {
+          created_at: string
+          descrizione: string | null
+          id: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          webhook_url?: string
+        }
+        Update: {
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          webhook_url?: string
         }
         Relationships: []
       }
