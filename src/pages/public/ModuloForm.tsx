@@ -268,30 +268,18 @@ export default function ModuloForm() {
     }
   };
 
-  const renderFields = (fields: FormField[]) => {
+  const renderSectionFields = (fields: FormField[]) => {
     const elements: React.ReactNode[] = [];
     let i = 0;
 
     while (i < fields.length) {
       const field = fields[i];
 
-      // Divider
-      if (field.type === 'divider') {
-        elements.push(
-          <div key={`divider-${i}`} className="col-span-full py-2">
-            <Separator />
-          </div>
-        );
-        i++;
-        continue;
-      }
-
-      // Half-width: pair two consecutive half fields side by side
       if (field.width === 'half') {
         const nextField = fields[i + 1];
         if (nextField && nextField.width === 'half' && nextField.type !== 'divider') {
           elements.push(
-            <div key={`row-${i}`} className="col-span-full grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div key={`row-${i}`} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {renderField(field)}
               {renderField(nextField)}
             </div>
@@ -299,19 +287,10 @@ export default function ModuloForm() {
           i += 2;
           continue;
         }
-        // Single half field without a pair → render full width
-        elements.push(
-          <div key={field.name} className="col-span-full">
-            {renderField(field)}
-          </div>
-        );
-        i++;
-        continue;
       }
 
-      // Full-width field
       elements.push(
-        <div key={field.name} className="col-span-full">
+        <div key={field.name}>
           {renderField(field)}
         </div>
       );
@@ -319,6 +298,39 @@ export default function ModuloForm() {
     }
 
     return elements;
+  };
+
+  const renderFields = (fields: FormField[]) => {
+    // Split fields into sections using dividers as separators
+    const sections: FormField[][] = [[]];
+    fields.forEach((field) => {
+      if (field.type === 'divider') {
+        sections.push([]);
+      } else {
+        sections[sections.length - 1].push(field);
+      }
+    });
+
+    // Filter out empty sections
+    const nonEmptySections = sections.filter((s) => s.length > 0);
+
+    // If only one section (no dividers), render flat
+    if (nonEmptySections.length <= 1) {
+      return <div className="space-y-6">{renderSectionFields(nonEmptySections[0] || [])}</div>;
+    }
+
+    return (
+      <div className="space-y-5">
+        {nonEmptySections.map((section, idx) => (
+          <div
+            key={`section-${idx}`}
+            className="bg-muted/30 rounded-lg p-4 md:p-6 space-y-6 border border-border/50"
+          >
+            {renderSectionFields(section)}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   if (isLoading) {
