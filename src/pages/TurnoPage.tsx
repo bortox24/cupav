@@ -289,58 +289,56 @@ export default function TurnoPage() {
 
   return (
     <MainLayout title={turnoLabel}>
-      <div className="space-y-4">
-        {/* Header: count + search + filters */}
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <Badge variant="secondary" className="w-fit">{iscrizioni.length} ragazzi iscritti</Badge>
-            <div className="relative flex-1 max-w-sm">
+      <div className="space-y-6">
+        {/* Search & Filters section */}
+        <Card className="border-0 shadow-sm rounded-2xl bg-muted/30">
+          <CardContent className="p-4 space-y-3">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Cerca ragazzo/a..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 rounded-xl"
+                className="pl-9 rounded-xl bg-background"
               />
             </div>
-          </div>
-          {/* Filter chips */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Button
-              variant={filterAllergie === true ? 'default' : 'outline'}
-              size="sm"
-              className="rounded-full text-xs h-7 gap-1"
-              onClick={() => setFilterAllergie(filterAllergie === true ? null : true)}
-            >
-              <AlertTriangle className="h-3 w-3" /> Con allergie
-            </Button>
-            <Button
-              variant={filterAllergie === false ? 'default' : 'outline'}
-              size="sm"
-              className="rounded-full text-xs h-7 gap-1"
-              onClick={() => setFilterAllergie(filterAllergie === false ? null : false)}
-            >
-              <Check className="h-3 w-3" /> Senza allergie
-            </Button>
-            <Button
-              variant={filterFoto === true ? 'default' : 'outline'}
-              size="sm"
-              className="rounded-full text-xs h-7 gap-1"
-              onClick={() => setFilterFoto(filterFoto === true ? null : true)}
-            >
-              <Camera className="h-3 w-3" /> Foto Sì
-            </Button>
-            <Button
-              variant={filterFoto === false ? 'default' : 'outline'}
-              size="sm"
-              className="rounded-full text-xs h-7 gap-1"
-              onClick={() => setFilterFoto(filterFoto === false ? null : false)}
-            >
-              <Camera className="h-3 w-3" /> Foto No
-            </Button>
-          </div>
-        </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Button
+                variant={filterAllergie === true ? 'default' : 'outline'}
+                size="sm"
+                className="rounded-full text-xs h-7 gap-1"
+                onClick={() => setFilterAllergie(filterAllergie === true ? null : true)}
+              >
+                <AlertTriangle className="h-3 w-3" /> Con allergie
+              </Button>
+              <Button
+                variant={filterAllergie === false ? 'default' : 'outline'}
+                size="sm"
+                className="rounded-full text-xs h-7 gap-1"
+                onClick={() => setFilterAllergie(filterAllergie === false ? null : false)}
+              >
+                <Check className="h-3 w-3" /> Senza allergie
+              </Button>
+              <Button
+                variant={filterFoto === true ? 'default' : 'outline'}
+                size="sm"
+                className="rounded-full text-xs h-7 gap-1"
+                onClick={() => setFilterFoto(filterFoto === true ? null : true)}
+              >
+                <Camera className="h-3 w-3" /> Foto Sì
+              </Button>
+              <Button
+                variant={filterFoto === false ? 'default' : 'outline'}
+                size="sm"
+                className="rounded-full text-xs h-7 gap-1"
+                onClick={() => setFilterFoto(filterFoto === false ? null : false)}
+              >
+                <Camera className="h-3 w-3" /> Foto No
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {iscrizioniLoading ? (
           <div className="flex justify-center py-8">
