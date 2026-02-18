@@ -24,6 +24,7 @@ import IscrizioneCampeggio from "./pages/public/IscrizioneCampeggio";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
 import TurnoPage from "./pages/TurnoPage";
 import NotFound from "./pages/NotFound";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -170,6 +171,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <ScrollToTop />
             <AppRoutes />
           </AuthProvider>
         </BrowserRouter>
