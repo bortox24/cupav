@@ -5,9 +5,10 @@ import { toast } from '@/hooks/use-toast';
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'date' | 'select' | 'radio' | 'textarea' | 'number' | 'email' | 'checkbox';
+  type: 'text' | 'date' | 'select' | 'radio' | 'textarea' | 'number' | 'email' | 'checkbox' | 'divider';
   required: boolean;
   options?: string[];
+  width?: 'full' | 'half';
 }
 
 export interface Form {

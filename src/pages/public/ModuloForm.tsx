@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import logoCupav from '@/assets/logo-cupav.png';
 
@@ -129,6 +130,10 @@ export default function ModuloForm() {
   };
 
   const renderField = (field: FormField) => {
+    if (field.type === 'divider') {
+      return null; // handled in renderFields
+    }
+
     const hasError = !!validationErrors[field.name];
 
     switch (field.type) {
@@ -263,6 +268,59 @@ export default function ModuloForm() {
     }
   };
 
+  const renderFields = (fields: FormField[]) => {
+    const elements: React.ReactNode[] = [];
+    let i = 0;
+
+    while (i < fields.length) {
+      const field = fields[i];
+
+      // Divider
+      if (field.type === 'divider') {
+        elements.push(
+          <div key={`divider-${i}`} className="col-span-full py-2">
+            <Separator />
+          </div>
+        );
+        i++;
+        continue;
+      }
+
+      // Half-width: pair two consecutive half fields side by side
+      if (field.width === 'half') {
+        const nextField = fields[i + 1];
+        if (nextField && nextField.width === 'half' && nextField.type !== 'divider') {
+          elements.push(
+            <div key={`row-${i}`} className="col-span-full grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {renderField(field)}
+              {renderField(nextField)}
+            </div>
+          );
+          i += 2;
+          continue;
+        }
+        // Single half field without a pair → render full width
+        elements.push(
+          <div key={field.name} className="col-span-full">
+            {renderField(field)}
+          </div>
+        );
+        i++;
+        continue;
+      }
+
+      // Full-width field
+      elements.push(
+        <div key={field.name} className="col-span-full">
+          {renderField(field)}
+        </div>
+      );
+      i++;
+    }
+
+    return elements;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -356,7 +414,7 @@ export default function ModuloForm() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {schema.map(renderField)}
+              {renderFields(schema)}
 
               <Button
                 type="submit"
