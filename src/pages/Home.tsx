@@ -301,6 +301,36 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Turno Quick Access Cards - right after welcome banner */}
+        {!isLoading && !turnoPermsLoading && accessibleTurnoCards.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-primary" />
+              Iscrizioni per turno
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {accessibleTurnoCards.map((card) => (
+                <Link 
+                  key={card.path} 
+                  to={card.path}
+                  className="group block"
+                >
+                  <Card className={`h-full hover:shadow-xl transition-all duration-300 hover:scale-[1.03] cursor-pointer border-2 ${card.borderColor} ${card.gradient}`}>
+                    <CardContent className="flex flex-col items-center justify-center py-6 px-3">
+                      <div className={`w-14 h-14 ${card.iconBg} rounded-xl shadow-lg flex items-center justify-center mb-3 transition-transform group-hover:scale-110 group-hover:rotate-3 ${card.iconColor}`}>
+                        {card.icon}
+                      </div>
+                      <CardTitle className="text-center text-sm sm:text-base font-semibold text-foreground">
+                        {card.title}
+                      </CardTitle>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Quick Access Cards */}
         <div>
           <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -344,36 +374,6 @@ export default function Home() {
             </div>
           )}
         </div>
-
-        {/* Turno Quick Access Cards */}
-        {!isLoading && !turnoPermsLoading && accessibleTurnoCards.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <GraduationCap className="h-5 w-5 text-primary" />
-              Iscrizioni per turno
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              {accessibleTurnoCards.map((card) => (
-                <Link 
-                  key={card.path} 
-                  to={card.path}
-                  className="group block"
-                >
-                  <Card className={`h-full hover:shadow-xl transition-all duration-300 hover:scale-[1.03] cursor-pointer border-2 ${card.borderColor} ${card.gradient}`}>
-                    <CardContent className="flex flex-col items-center justify-center py-6 px-3">
-                      <div className={`w-14 h-14 ${card.iconBg} rounded-xl shadow-lg flex items-center justify-center mb-3 transition-transform group-hover:scale-110 group-hover:rotate-3 ${card.iconColor}`}>
-                        {card.icon}
-                      </div>
-                      <CardTitle className="text-center text-sm sm:text-base font-semibold text-foreground">
-                        {card.title}
-                      </CardTitle>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </MainLayout>
   );
