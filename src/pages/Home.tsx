@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -242,6 +244,23 @@ export default function Home() {
   const { canAccessPage, isLoading } = useMyPagePermissions();
   const { data: myTurnoPerms = [], isLoading: turnoPermsLoading } = useMyTurnoPermissions();
 
+  // Fetch iscrizioni counts per turno
+  const { data: turnoCountsRaw = [] } = useQuery({
+    queryKey: ['turno-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('iscrizioni')
+        .select('turno');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const turnoCounts: Record<string, number> = {};
+  turnoCountsRaw.forEach((row: { turno: string }) => {
+    turnoCounts[row.turno] = (turnoCounts[row.turno] || 0) + 1;
+  });
+
   // Filter cards based on user's actual page permissions
   const accessibleCards = allQuickAccessCards.filter(card => {
     if (card.path === '/home') return false;
@@ -323,6 +342,15 @@ export default function Home() {
                       <CardTitle className="text-center text-sm sm:text-base font-semibold text-foreground">
                         {card.title}
                       </CardTitle>
+                      {(() => {
+                        const tInfo = TURNI.find(t => `/turno/${t.slug}` === card.path);
+                        const count = tInfo ? (turnoCounts[tInfo.value] || 0) : 0;
+                        return (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {count} iscritt{count === 1 ? 'o' : 'i'}
+                          </p>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 </Link>
