@@ -1,78 +1,95 @@
 
-# Modifiche Anagrafica Ragazzi
+# Nuova Pagina Iscrizione Campeggio CUPAV
 
 ## Panoramica
 
-Trasformeremo le card dei ragazzi in card compatte con solo le informazioni essenziali visibili. Cliccando su una card si aprira' un Dialog (finestra modale) con tutti i dettagli e la possibilita' di modificare la scheda anagrafica e gestire le iscrizioni anno per anno.
+Creazione di una nuova pagina pubblica `/iscrizione` con form multi-step completo per l'iscrizione al campeggio, due nuove tabelle nel database, una edge function per notifiche webhook, e un link dalla Home.
 
 ---
 
-## 1. Card compatte (vista esterna)
+## 1. Database - Nuove tabelle
 
-Ogni card mostrera' solo:
-- **Nome e cognome**
-- **Data di nascita** in formato dd-mm-yyyy
-- **Badge** Residente / Non residente
-- **Turno iscrizione anno corrente** (2026, calcolato dinamicamente con `new Date().getFullYear()`)
+### Tabella `iscrizioni`
+Tutti i dati del form in un'unica riga: email, dati ragazzo (cognome, nome, data nascita, luogo nascita, residenza, indirizzo, recapiti), dati genitore (qualita, cognome, nome), turno, secondo figlio, allergie (flag + dettagli + patologie + 3 farmaci), liberatoria foto, firma.
 
-Cliccando sulla card si apre il dettaglio completo.
+RLS:
+- INSERT: aperto a tutti (anon)
+- SELECT/UPDATE/DELETE: solo utenti autenticati
 
----
+### Tabella `webhook_config`
+Un singolo record con `webhook_url` e `descrizione`. Record di default inserito con URL vuoto.
 
-## 2. Dialog dettaglio completo
-
-Una finestra modale (Dialog) che si apre al click sulla card, contenente:
-
-### Sezione dati ragazzo
-- Nome e cognome, data di nascita, residenza (tutti i dati della card esterna ripetuti)
-
-### Sezione genitori
-- Lista genitori con nome, ruolo, email, telefono
-
-### Sezione iscrizioni (storico annuale)
-- Lista di tutte le iscrizioni ordinate per anno (anno corrente in primo piano, evidenziato)
-- Es: **2026: 5^ Elementare** (in evidenza), 2025: 4^ Elementare, etc.
-
-### Azioni di modifica
-- **Pulsante "Modifica"**: apre una modalita' di editing inline nel Dialog dove si possono modificare tutti i campi (nome, data nascita, residenza, dati genitori)
-- **Pulsante "Aggiungi iscrizione"**: permette di aggiungere una nuova riga anno/turno (per anni precedenti o futuri)
-- **Possibilita' di eliminare** iscrizioni esistenti
+RLS: solo utenti autenticati per tutte le operazioni.
 
 ---
 
-## 3. Hook aggiornato (`useRagazzi.ts`)
+## 2. Edge Function `notify-iscrizione`
 
-Aggiungere funzioni di mutation:
-- `useUpdateRagazzo()`: aggiorna dati anagrafici (full_name, data_nascita, residente_altavilla) e genitori
-- `useAddIscrizione()`: inserisce una nuova iscrizione (anno + turno) per un ragazzo
-- `useDeleteIscrizione()`: rimuove un'iscrizione
+- Riceve il payload dell'iscrizione via POST dal frontend
+- Legge `webhook_url` dalla tabella `webhook_config`
+- Se URL presente, fa POST al webhook con i dati
+- Se URL vuoto o errore, logga e termina senza errori
+- Non blocca mai la conferma all'utente
 
-Tutte le mutation invalideranno la query `['ragazzi']` per aggiornare la lista automaticamente.
+Configurazione in `supabase/config.toml`: `verify_jwt = false` (chiamata pubblica post-iscrizione).
 
 ---
 
-## 4. Anno corrente dinamico
+## 3. Nuova pagina `/iscrizione`
 
-L'anno corrente verra' calcolato con `new Date().getFullYear()` (attualmente 2026). L'anno prossimo il sistema mostrera' automaticamente 2027 in primo piano senza modifiche al codice.
+File: `src/pages/public/IscrizioneCampeggio.tsx`
+
+Form multi-step con 4 step e progress bar dinamica:
+
+### Step 1 - Richiesta Iscrizione
+Tutti i campi specificati: email, dati ragazzo (7 campi), dati genitore (3 campi), turno (radio con date), quota (box info + campo facoltativo secondo figlio), allergie (radio si/no), 4 checkbox obbligatorie, firma (data + nome).
+
+### Step 2 - Allergie, Farmaci e Patologie
+Mostrato SOLO se "presenta allergie" selezionato nello Step 1. Banner arancione di attenzione, campi pre-compilati read-only, textarea allergie (obbligatoria), textarea patologie (facoltativa), 3 gruppi farmaci, 3 checkbox obbligatorie, firma.
+
+### Step 3 - Liberatoria Foto e Video
+Cognome e nome genitore, box informativo, radio consenso/negazione, checkbox privacy, firma.
+
+### Step 4 - Regolamento e Invio
+Box scrollabile con 10 punti del regolamento, checkbox accettazione, riepilogo completo read-only di tutti i dati, bottone "INVIA ISCRIZIONE" grande e verde.
+
+### Post-invio
+Pagina di conferma con messaggio di successo e contatto email.
+
+### Progress bar
+Calcolo dinamico: se Step 2 viene saltato, la barra mostra 3 step totali invece di 4, con etichette e numerazione adattate.
+
+---
+
+## 4. Routing e Link dalla Home
+
+### App.tsx
+Aggiunta route pubblica: `<Route path="/iscrizione" element={<IscrizioneCampeggio />} />`
+
+### Home.tsx (sezione Welcome)
+Aggiunta di un bottone/link "Iscriviti al Campeggio" ben visibile nel banner in cima, che punta a `/iscrizione`. Verra' aggiunto nella sezione welcome esistente, sotto il countdown, senza modificare la struttura attuale.
 
 ---
 
 ## Dettaglio tecnico
 
-### File da modificare
+### File da creare
+1. `src/pages/public/IscrizioneCampeggio.tsx` - Pagina multi-step completa
+2. `supabase/functions/notify-iscrizione/index.ts` - Edge function webhook
 
-1. **`src/pages/AnagraficaRagazzi.tsx`**
-   - Card compatta: mostra solo nome, data nascita (dd-mm-yyyy), badge residenza, turno anno corrente
-   - Click sulla card apre un `Dialog`
-   - Dialog con vista completa + form di modifica inline
-   - Form per aggiungere nuove iscrizioni (select anno + select turno)
-   - Pulsante elimina per iscrizioni
+### File da modificare (solo aggiunte minimali)
+1. `src/App.tsx` - Aggiunta import + route `/iscrizione`
+2. `src/pages/Home.tsx` - Aggiunta bottone "Iscriviti al Campeggio" nel banner welcome
+3. `supabase/config.toml` - Aggiunta sezione `[functions.notify-iscrizione]`
 
-2. **`src/hooks/useRagazzi.ts`**
-   - Aggiungere `useUpdateRagazzo` mutation (update ragazzo + delete/re-insert genitori)
-   - Aggiungere `useAddIscrizione` mutation
-   - Aggiungere `useDeleteIscrizione` mutation
-   - Funzione helper per formattare data in dd-mm-yyyy
+### Migrazione database
+- CREATE TABLE `iscrizioni` con tutte le colonne specificate + RLS policies
+- CREATE TABLE `webhook_config` con colonne + RLS policies + record default
 
-### Nessuna modifica al database
-Le tabelle e le RLS policies esistenti supportano gia' tutte le operazioni necessarie (UPDATE su ragazzi, DELETE/INSERT su genitori e iscrizioni per utenti autenticati con accesso alla pagina).
+### Struttura componente IscrizioneCampeggio
+- State React per tutti i campi del form
+- `currentStep` per navigazione tra step
+- Calcolo dinamico `totalSteps` (3 o 4 in base a `haAllergie`)
+- Validazione per-step prima di procedere
+- Submit finale: INSERT in tabella `iscrizioni`, poi invoke `notify-iscrizione` (fire-and-forget)
+- Pagina conferma post-invio con stato `submitted`
