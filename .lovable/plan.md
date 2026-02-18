@@ -1,102 +1,32 @@
 
-# Fix per 3 problemi riscontrati nel beta test
+# Divisori come sezioni visive nel modulo pubblico
 
-## Problema 1: Moduli inattivi non visibili in "Visualizza Moduli"
+## Cosa cambia
 
-**Causa**: La policy RLS sulla tabella `forms` consente ai non-admin di vedere solo i moduli attivi (`is_active = true`). Gli utenti con permesso sulla pagina non vedono quelli disattivati.
+Attualmente il divisore e' solo una sottile linea orizzontale (`Separator`) che su mobile e' poco visibile. L'idea e' trasformarlo in un vero "stacco di sezione": i campi tra un divisore e l'altro verranno raggruppati in card separate con padding e bordi arrotondati, creando un effetto visivo chiaro di separazione.
 
-**Soluzione**: Aggiungere una policy RLS che permetta agli utenti con permesso sulla pagina `/visualizza-moduli` di vedere TUTTI i moduli (attivi e inattivi).
+## Come funzionera'
 
----
+Il form passera' da un layout piatto (tutti i campi in un unico blocco) a un layout a sezioni:
 
-## Problema 2: Utenti con accesso a "Gestione Moduli" non possono modificare/creare moduli
-
-**Causa**: Le policy RLS su `forms` e `form_responses` concedono operazioni di scrittura solo agli admin (`is_admin()`).
-
-**Soluzione**: Aggiungere policy RLS che permettano agli utenti con permesso sulla pagina `/admin/moduli` di:
-- Vedere tutti i moduli (inclusi inattivi)
-- Creare, modificare ed eliminare moduli
-- Vedere e eliminare risposte dei moduli
-
----
-
-## Problema 3: Errore "no unique or exclusion constraint matching the ON CONFLICT specification"
-
-**Causa**: Nel codice `useToggleAdmin`, l'upsert usa `onConflict: 'user_id'`, ma il vincolo unico sulla tabella `user_roles` e' su `(user_id, role)`, non su `user_id` da solo.
-
-**Soluzione**: Modificare il codice per usare un semplice `insert` invece di `upsert`, dato che prima di inserire si potrebbe gia' verificare se il ruolo esiste, oppure usare `onConflict: 'user_id,role'`.
-
----
+- I campi vengono divisi in gruppi usando i divisori come separatori
+- Ogni gruppo viene renderizzato dentro un contenitore con sfondo, bordo e spacing dedicato
+- Tra un gruppo e l'altro ci sara' uno spazio vuoto evidente
+- Su mobile l'effetto sara' ancora piu' chiaro grazie al contrasto tra sfondo pagina e sfondo sezione
 
 ## Dettagli tecnici
 
-### Migrazione database (SQL)
+### File: `src/pages/public/ModuloForm.tsx`
 
-Creazione di una funzione helper `has_page_access` per controllare i permessi pagina nelle policy RLS:
+Modifica alla funzione `renderFields`:
 
-```text
-CREATE OR REPLACE FUNCTION public.has_page_access(_user_id uuid, _page_path text)
-RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM user_page_permissions
-    WHERE user_id = _user_id
-      AND page_path = _page_path
-      AND can_access = true
-  )
-$$;
-```
+1. Dividere l'array di campi in gruppi (sezioni) usando i campi di tipo `divider` come separatore
+2. Ogni sezione viene wrappata in un `div` con classi tipo `bg-muted/30 rounded-lg p-4 md:p-6 space-y-6 border border-border/50`
+3. Tra le sezioni viene aggiunto un `div` con margin verticale (`my-4`) per lo stacco
+4. La prima sezione (prima del primo divisore) e l'ultima non hanno trattamento speciale, sono tutte uguali
 
-Nuove policy per la tabella `forms`:
+La logica dei campi half-width rimane invariata all'interno di ogni sezione.
 
-```text
--- Utenti con permesso /visualizza-moduli vedono tutti i moduli
-CREATE POLICY "Users with visualizza-moduli access can view all forms"
-ON public.forms FOR SELECT TO authenticated
-USING (has_page_access(auth.uid(), '/visualizza-moduli'));
+### Nessuna modifica al database o al FormBuilder
 
--- Utenti con permesso /admin/moduli possono gestire i moduli
-CREATE POLICY "Users with admin-moduli access can manage forms"
-ON public.forms FOR ALL TO authenticated
-USING (has_page_access(auth.uid(), '/admin/moduli'))
-WITH CHECK (has_page_access(auth.uid(), '/admin/moduli'));
-```
-
-Nuove policy per la tabella `form_responses`:
-
-```text
--- Utenti con permesso /admin/moduli possono vedere le risposte
-CREATE POLICY "Users with admin-moduli access can view responses"
-ON public.form_responses FOR SELECT TO authenticated
-USING (has_page_access(auth.uid(), '/admin/moduli'));
-
--- Utenti con permesso /admin/moduli possono eliminare le risposte
-CREATE POLICY "Users with admin-moduli access can delete responses"
-ON public.form_responses FOR DELETE TO authenticated
-USING (has_page_access(auth.uid(), '/admin/moduli'));
-```
-
-### Modifica codice: `src/hooks/useUsers.ts`
-
-Nella funzione `useToggleAdmin`, sostituire l'upsert con insert semplice:
-
-```text
-// Prima (errore):
-const { error } = await supabase
-  .from('user_roles')
-  .upsert({ user_id: userId, role: 'admin' }, { onConflict: 'user_id' });
-
-// Dopo (corretto):
-const { error } = await supabase
-  .from('user_roles')
-  .insert({ user_id: userId, role: 'admin' as const });
-```
-
-### Riepilogo modifiche
-
-| File / Risorsa | Tipo modifica |
-|---|---|
-| Migrazione DB | Nuova funzione `has_page_access` + 4 nuove policy RLS |
-| `src/hooks/useUsers.ts` | Fix upsert -> insert nel toggle admin |
+La struttura dati del divisore resta identica (tipo `divider`), cambia solo come viene visualizzato nel form pubblico.
