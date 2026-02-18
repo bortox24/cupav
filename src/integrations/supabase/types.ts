@@ -207,6 +207,44 @@ export type Database = {
         }
         Relationships: []
       }
+      pagamenti: {
+        Row: {
+          created_at: string
+          id: string
+          iscrizione_id: string
+          note: string | null
+          stato: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          iscrizione_id: string
+          note?: string | null
+          stato?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          iscrizione_id?: string
+          note?: string | null
+          stato?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamenti_iscrizione_id_fkey"
+            columns: ["iscrizione_id"]
+            isOneToOne: true
+            referencedRelation: "iscrizioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -557,6 +595,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "tesoriere" | "visualizzatore"
+      payment_status: "da_pagare" | "parziale" | "pagato"
       transaction_type: "spesa" | "prelievo" | "entrata"
     }
     CompositeTypes: {
@@ -686,6 +725,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "tesoriere", "visualizzatore"],
+      payment_status: ["da_pagare", "parziale", "pagato"],
       transaction_type: ["spesa", "prelievo", "entrata"],
     },
   },

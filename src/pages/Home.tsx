@@ -18,6 +18,7 @@ import {
   Mountain,
   Calendar,
   GraduationCap,
+  CreditCard,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { useState, useEffect } from 'react';
@@ -171,6 +172,16 @@ const allQuickAccessCards: QuickAccessCard[] = [
     gradient: 'bg-gradient-to-br from-rose-100 via-pink-50 to-fuchsia-50 dark:from-rose-950/50 dark:via-pink-950/30 dark:to-fuchsia-950/30',
     borderColor: 'border-rose-300 dark:border-rose-700',
     iconBg: 'bg-gradient-to-br from-rose-500 to-pink-600',
+    iconColor: 'text-white',
+  },
+  {
+    title: 'Gestione Pagamenti',
+    description: 'Gestisci stato pagamenti iscrizioni',
+    icon: <CreditCard className="h-7 w-7" />,
+    path: '/gestione-pagamenti',
+    gradient: 'bg-gradient-to-br from-lime-100 via-emerald-50 to-green-50 dark:from-lime-950/50 dark:via-emerald-950/30 dark:to-green-950/30',
+    borderColor: 'border-lime-300 dark:border-lime-700',
+    iconBg: 'bg-gradient-to-br from-lime-500 to-emerald-600',
     iconColor: 'text-white',
   },
   {

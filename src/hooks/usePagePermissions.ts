@@ -75,6 +75,11 @@ export const availablePages: PageInfo[] = [
     title: 'Anagrafica Ragazzi',
     description: 'Gestionale anagrafico ragazzi CUPAV',
   },
+  {
+    path: '/gestione-pagamenti',
+    title: 'Gestione Pagamenti',
+    description: 'Gestisci stato pagamenti delle iscrizioni',
+  },
 ];
 
 // Helper to match dynamic routes (e.g., /visualizza-moduli/:id/risposte)
