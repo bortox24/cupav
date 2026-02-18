@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMyTurnoPermissions, TURNI } from '@/hooks/useTurnoPermissions';
@@ -7,7 +7,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2, ShieldAlert, Phone, User, Camera, AlertTriangle, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -20,46 +21,137 @@ function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: st
   );
 }
 
-function RagazzoCard({ r }: { r: any }) {
+function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
   return (
-    <Card className="border">
+    <Card 
+      className="border hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.01]"
+      onClick={onClick}
+    >
       <CardContent className="p-4 space-y-2">
         <h4 className="font-bold text-base">
           {r.ragazzo_nome} {r.ragazzo_cognome}
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-muted-foreground">
-          <p>📅 Nato il: {format(new Date(r.ragazzo_data_nascita), 'dd/MM/yyyy')}</p>
-          <p>🏠 Comune: {r.ragazzo_residente}</p>
-          <p>📞 Tel: {r.recapiti_telefonici}</p>
-          <p>👤 {r.genitore_qualita}: {r.genitore_nome} {r.genitore_cognome}</p>
-          <p>📧 {r.email}</p>
-        </div>
-
-        {r.ha_allergie ? (
-          <div className="space-y-1 mt-2">
-            <Badge variant="destructive" className="text-xs">⚠️ ALLERGIE/PATOLOGIE</Badge>
-            {r.allergie_dettaglio && (
-              <p className="text-sm text-destructive">Allergie/Intolleranze: {r.allergie_dettaglio}</p>
-            )}
-            {r.patologie_dettaglio && (
-              <p className="text-sm text-destructive">Patologie: {r.patologie_dettaglio}</p>
-            )}
-            <FarmacoLine nome={r.farmaco_1_nome} posologia={r.farmaco_1_posologia} />
-            <FarmacoLine nome={r.farmaco_2_nome} posologia={r.farmaco_2_posologia} />
-            <FarmacoLine nome={r.farmaco_3_nome} posologia={r.farmaco_3_posologia} />
+        <div className="space-y-1 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Phone className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{r.recapiti_telefonici}</span>
           </div>
-        ) : (
-          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300 text-xs">
-            ✅ Nessuna allergia
+          <div className="flex items-center gap-1.5">
+            <User className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{r.genitore_nome} {r.genitore_cognome}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {r.ha_allergie ? (
+            <Badge variant="destructive" className="text-[11px] gap-1">
+              <AlertTriangle className="h-3 w-3" /> Allergie
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[11px] gap-1 border-green-300 text-green-700 dark:text-green-400">
+              <Check className="h-3 w-3" /> No allergie
+            </Badge>
+          )}
+          <Badge variant="outline" className={`text-[11px] gap-1 ${r.liberatoria_foto ? 'border-blue-300 text-blue-700 dark:text-blue-400' : 'border-muted text-muted-foreground'}`}>
+            <Camera className="h-3 w-3" /> Foto {r.liberatoria_foto ? 'Sì' : 'No'}
           </Badge>
-        )}
-
-        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
-          <span>{r.liberatoria_foto ? '📸 Sì' : '📸 No'}</span>
-          <span>Iscritto il: {format(new Date(r.created_at), 'dd/MM/yyyy', { locale: it })}</span>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function RagazzoDetailDialog({ r, open, onOpenChange }: { r: any; open: boolean; onOpenChange: (v: boolean) => void }) {
+  if (!r) return null;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-lg">{r.ragazzo_nome} {r.ragazzo_cognome}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <div>
+              <span className="font-medium text-foreground">Data di nascita</span>
+              <p className="text-muted-foreground">{format(new Date(r.ragazzo_data_nascita), 'dd/MM/yyyy')}</p>
+            </div>
+            <div>
+              <span className="font-medium text-foreground">Luogo di nascita</span>
+              <p className="text-muted-foreground">{r.ragazzo_luogo_nascita}</p>
+            </div>
+            <div>
+              <span className="font-medium text-foreground">Residente</span>
+              <p className="text-muted-foreground">{r.ragazzo_residente}</p>
+            </div>
+            <div>
+              <span className="font-medium text-foreground">Indirizzo</span>
+              <p className="text-muted-foreground">{r.ragazzo_indirizzo}</p>
+            </div>
+            <div>
+              <span className="font-medium text-foreground">Telefono</span>
+              <p className="text-muted-foreground">{r.recapiti_telefonici}</p>
+            </div>
+            <div>
+              <span className="font-medium text-foreground">Email</span>
+              <p className="text-muted-foreground">{r.email}</p>
+            </div>
+          </div>
+
+          <div className="border-t pt-3">
+            <h4 className="font-semibold text-sm mb-2">Genitore / Tutore</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <div>
+                <span className="font-medium text-foreground">Qualità</span>
+                <p className="text-muted-foreground capitalize">{r.genitore_qualita}</p>
+              </div>
+              <div>
+                <span className="font-medium text-foreground">Nome e Cognome</span>
+                <p className="text-muted-foreground">{r.genitore_nome} {r.genitore_cognome}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-3">
+            <h4 className="font-semibold text-sm mb-2">Allergie e Patologie</h4>
+            {r.ha_allergie ? (
+              <div className="space-y-2">
+                <Badge variant="destructive" className="text-xs">⚠️ ALLERGIE/PATOLOGIE</Badge>
+                {r.allergie_dettaglio && (
+                  <p className="text-sm text-destructive">Allergie/Intolleranze: {r.allergie_dettaglio}</p>
+                )}
+                {r.patologie_dettaglio && (
+                  <p className="text-sm text-destructive">Patologie: {r.patologie_dettaglio}</p>
+                )}
+                <FarmacoLine nome={r.farmaco_1_nome} posologia={r.farmaco_1_posologia} />
+                <FarmacoLine nome={r.farmaco_2_nome} posologia={r.farmaco_2_posologia} />
+                <FarmacoLine nome={r.farmaco_3_nome} posologia={r.farmaco_3_posologia} />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nessuna allergia o patologia segnalata.</p>
+            )}
+          </div>
+
+          <div className="border-t pt-3">
+            <h4 className="font-semibold text-sm mb-2">Altro</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <div>
+                <span className="font-medium text-foreground">Liberatoria foto</span>
+                <p className="text-muted-foreground">{r.liberatoria_foto ? 'Sì' : 'No'}</p>
+              </div>
+              <div>
+                <span className="font-medium text-foreground">Firma</span>
+                <p className="text-muted-foreground">{r.firma_nome} — {format(new Date(r.firma_data), 'dd/MM/yyyy')}</p>
+              </div>
+              {r.secondo_figlio && (
+                <div className="col-span-2">
+                  <span className="font-medium text-foreground">Secondo figlio</span>
+                  <p className="text-muted-foreground">{r.secondo_figlio}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -68,6 +160,7 @@ export default function TurnoPage() {
   const { user, isAdmin } = useAuth();
   const { data: myPerms = [], isLoading: permsLoading } = useMyTurnoPermissions();
   const queryClient = useQueryClient();
+  const [selectedRagazzo, setSelectedRagazzo] = useState<any>(null);
 
   // Find turno info from slug
   const turnoInfo = TURNI.find(t => t.slug === turnoSlug);
@@ -84,25 +177,11 @@ export default function TurnoPage() {
         .from('iscrizioni')
         .select('*')
         .eq('turno', turnoValue)
-        .order('created_at', { ascending: false });
+        .order('ragazzo_cognome', { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
     enabled: !!user && hasAccess && !!turnoValue,
-  });
-
-  // Count
-  const { data: count = 0 } = useQuery({
-    queryKey: ['turno-count', turnoValue],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('iscrizioni')
-        .select('id', { count: 'exact', head: true })
-        .eq('turno', turnoValue);
-      if (error) throw error;
-      return count ?? 0;
-    },
-    enabled: !!user && !!turnoValue,
   });
 
   // Realtime
@@ -112,7 +191,7 @@ export default function TurnoPage() {
       .channel(`iscrizioni-turno-${turnoSlug}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni' }, () => {
         queryClient.invalidateQueries({ queryKey: ['turno-iscrizioni', turnoValue] });
-        queryClient.invalidateQueries({ queryKey: ['turno-count', turnoValue] });
+        queryClient.invalidateQueries({ queryKey: ['turno-counts'] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -153,7 +232,7 @@ export default function TurnoPage() {
     <MainLayout title={turnoLabel}>
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <Badge variant="secondary">{count} ragazzi iscritti</Badge>
+          <Badge variant="secondary">{iscrizioni.length} ragazzi iscritti</Badge>
         </div>
 
         {iscrizioniLoading ? (
@@ -167,12 +246,18 @@ export default function TurnoPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {iscrizioni.map((r: any) => (
-              <RagazzoCard key={r.id} r={r} />
+              <RagazzoCompactCard key={r.id} r={r} onClick={() => setSelectedRagazzo(r)} />
             ))}
           </div>
         )}
+
+        <RagazzoDetailDialog
+          r={selectedRagazzo}
+          open={!!selectedRagazzo}
+          onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }}
+        />
       </div>
     </MainLayout>
   );
