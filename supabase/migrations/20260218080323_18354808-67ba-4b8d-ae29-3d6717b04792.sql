@@ -1,0 +1,1 @@
+ALTER TABLE public.forms ADD COLUMN submit_button_text TEXT DEFAULT NULL;

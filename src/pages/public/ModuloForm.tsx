@@ -302,21 +302,21 @@ export default function ModuloForm() {
 
   const renderFields = (fields: FormField[]) => {
     // Split fields into sections using dividers as separators
-    const sections: FormField[][] = [[]];
+    const sections: { title?: string; fields: FormField[] }[] = [{ fields: [] }];
     fields.forEach((field) => {
       if (field.type === 'divider') {
-        sections.push([]);
+        sections.push({ title: field.sectionTitle, fields: [] });
       } else {
-        sections[sections.length - 1].push(field);
+        sections[sections.length - 1].fields.push(field);
       }
     });
 
     // Filter out empty sections
-    const nonEmptySections = sections.filter((s) => s.length > 0);
+    const nonEmptySections = sections.filter((s) => s.fields.length > 0);
 
     // If only one section (no dividers), render flat
     if (nonEmptySections.length <= 1) {
-      return <div className="space-y-6">{renderSectionFields(nonEmptySections[0] || [])}</div>;
+      return <div className="space-y-6">{renderSectionFields(nonEmptySections[0]?.fields || [])}</div>;
     }
 
     return (
@@ -326,7 +326,10 @@ export default function ModuloForm() {
             key={`section-${idx}`}
             className="bg-card rounded-xl p-5 md:p-6 space-y-6 border border-border shadow-md"
           >
-            {renderSectionFields(section)}
+            {section.title && (
+              <h3 className="text-lg font-semibold text-foreground">{section.title}</h3>
+            )}
+            {renderSectionFields(section.fields)}
           </div>
         ))}
       </div>
@@ -439,7 +442,7 @@ export default function ModuloForm() {
                     Invio in corso...
                   </>
                 ) : (
-                  'Invia'
+                  form.submit_button_text || 'Invia'
                 )}
               </Button>
             </form>
