@@ -43,9 +43,11 @@ function statusHeaderColor(stato: PaymentStatus) {
 function PagamentoCard({ item }: { item: IscrizioneConPagamento }) {
   const updateMutation = useUpdatePagamento();
   const [localNote, setLocalNote] = useState(item.note_pagamento || '');
+  const [noteSaved, setNoteSaved] = useState(false);
 
   const handleStatusChange = (newStato: string) => {
     const stato = newStato as PaymentStatus;
+    setNoteSaved(false);
     updateMutation.mutate({
       iscrizioneId: item.id,
       stato,
@@ -58,6 +60,8 @@ function PagamentoCard({ item }: { item: IscrizioneConPagamento }) {
       iscrizioneId: item.id,
       stato: 'parziale',
       note: localNote,
+    }, {
+      onSuccess: () => setNoteSaved(true),
     });
   };
 
@@ -109,12 +113,17 @@ function PagamentoCard({ item }: { item: IscrizioneConPagamento }) {
               <Textarea
                 placeholder="Note (es. ha pagato €50 su €100)..."
                 value={localNote}
-                onChange={(e) => setLocalNote(e.target.value)}
+                onChange={(e) => { setLocalNote(e.target.value); setNoteSaved(false); }}
                 className="text-sm min-h-[60px] bg-background"
               />
-              <Button size="sm" variant="outline" onClick={handleNoteSave} disabled={updateMutation.isPending} className="w-full text-xs">
-                Salva note
-              </Button>
+              {noteSaved ? (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium text-center py-1">✓ Note salvate</p>
+              ) : (
+                <Button size="sm" variant="outline" onClick={handleNoteSave} disabled={updateMutation.isPending} className="w-full text-xs">
+                  {updateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                  Salva note
+                </Button>
+              )}
             </div>
           )}
         </div>
