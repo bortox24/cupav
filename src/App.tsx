@@ -20,6 +20,7 @@ import VisualizzaModuli from "./pages/VisualizzaModuli";
 import VisualizzaModuloRisposte from "./pages/VisualizzaModuloRisposte";
 import ModuloForm from "./pages/public/ModuloForm";
 import PreiscrizioneCupav from "./pages/public/PreiscrizioneCupav";
+import IscrizioneCampeggio from "./pages/public/IscrizioneCampeggio";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
 import NotFound from "./pages/NotFound";
 
@@ -141,6 +142,7 @@ function AppRoutes() {
 
       {/* Public routes */}
       <Route path="/preiscrizione-cupav" element={<PreiscrizioneCupav />} />
+      <Route path="/iscrizione" element={<IscrizioneCampeggio />} />
       <Route path="/modulo/:slug" element={<ModuloForm />} />
 
       {/* Catch-all */}
