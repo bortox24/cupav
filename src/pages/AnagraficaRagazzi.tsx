@@ -29,22 +29,34 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
   const iscrizioneCorrente = ragazzo.iscrizioni.find((i) => i.anno === CURRENT_YEAR);
 
   return (
-    <Card className="h-full cursor-pointer hover:shadow-md transition-shadow" onClick={onClick}>
-      <CardContent className="p-4 space-y-2">
-        <p className="font-semibold text-base">{ragazzo.full_name}</p>
+    <Card
+      className="h-full cursor-pointer group relative overflow-hidden border-0 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+      onClick={onClick}
+    >
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary to-primary/60 opacity-80 group-hover:opacity-100 transition-opacity" />
+      <CardContent className="p-5 pt-5 space-y-3">
+        <div className="flex items-start justify-between">
+          <p className="font-bold text-lg tracking-tight leading-tight">{ragazzo.full_name}</p>
+          <div className="rounded-full p-1.5 bg-muted/60 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+            <Users className="h-4 w-4" />
+          </div>
+        </div>
         {ragazzo.data_nascita && (
-          <p className="text-sm text-muted-foreground flex items-center gap-1">
+          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5" />
             {formatDataNascita(ragazzo.data_nascita)}
           </p>
         )}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant={ragazzo.residente_altavilla ? 'default' : 'secondary'} className="text-xs">
+        <div className="flex items-center gap-2 flex-wrap pt-1">
+          <Badge
+            variant={ragazzo.residente_altavilla ? 'default' : 'secondary'}
+            className="text-xs font-medium px-3 py-0.5 shadow-sm"
+          >
             <MapPin className="h-3 w-3 mr-1" />
             {ragazzo.residente_altavilla ? 'Residente' : 'Non residente'}
           </Badge>
           {iscrizioneCorrente && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs font-medium px-3 py-0.5 border-primary/30 text-primary bg-primary/5">
               <GraduationCap className="h-3 w-3 mr-1" />
               {CURRENT_YEAR}: {iscrizioneCorrente.turno}
             </Badge>
