@@ -1,117 +1,78 @@
 
-# Preiscrizione CUPAV - Sistema Anagrafico
+# Modifiche Anagrafica Ragazzi
 
 ## Panoramica
 
-Creeremo un sistema composto da due parti:
-
-1. **Pagina pubblica** (`/preiscrizione-cupav`) - Form di preiscrizione accessibile a chiunque, senza login
-2. **Gestionale anagrafico** (`/anagrafica-ragazzi`) - Pagina protetta con card per ogni ragazzo, ricerca e storico iscrizioni per anno
-
-I dati verranno salvati in tabelle dedicate, separate dal sistema moduli esistente, per costruire un vero gestionale anagrafico scalabile.
+Trasformeremo le card dei ragazzi in card compatte con solo le informazioni essenziali visibili. Cliccando su una card si aprira' un Dialog (finestra modale) con tutti i dettagli e la possibilita' di modificare la scheda anagrafica e gestire le iscrizioni anno per anno.
 
 ---
 
-## Struttura Database
+## 1. Card compatte (vista esterna)
 
-### Tabella `ragazzi` (anagrafica principale)
-Contiene i dati del ragazzo. Il campo `full_name` sara' il record unico per evitare duplicati.
+Ogni card mostrera' solo:
+- **Nome e cognome**
+- **Data di nascita** in formato dd-mm-yyyy
+- **Badge** Residente / Non residente
+- **Turno iscrizione anno corrente** (2026, calcolato dinamicamente con `new Date().getFullYear()`)
 
-| Colonna | Tipo | Note |
-|---------|------|------|
-| id | uuid | PK |
-| full_name | text | UNIQUE, nome e cognome |
-| data_nascita | text | Data di nascita |
-| residente_altavilla | boolean | Si/No |
-| created_at | timestamp | Auto |
-| updated_at | timestamp | Auto |
-
-### Tabella `ragazzi_genitori` (genitori associati)
-Ogni ragazzo puo' avere 1 o 2 genitori.
-
-| Colonna | Tipo | Note |
-|---------|------|------|
-| id | uuid | PK |
-| ragazzo_id | uuid | FK -> ragazzi |
-| nome_cognome | text | |
-| ruolo | text | Mamma/Papa' |
-| email | text | |
-| telefono | text | |
-
-### Tabella `ragazzi_iscrizioni` (storico annuale)
-Ogni anno il ragazzo puo' avere un'iscrizione con il turno corrispondente. Questo rende il sistema scalabile: 2026 -> 5^ Elementare, 2027 -> 1^ Media, ecc.
-
-| Colonna | Tipo | Note |
-|---------|------|------|
-| id | uuid | PK |
-| ragazzo_id | uuid | FK -> ragazzi |
-| anno | integer | Es. 2026 |
-| turno | text | Es. "5^ Elementare" |
-| created_at | timestamp | Auto |
-
-### RLS Policies
-- `ragazzi`, `ragazzi_genitori`, `ragazzi_iscrizioni`: INSERT aperto a tutti (anon) per il form pubblico; SELECT/UPDATE/DELETE solo per admin o utenti con permesso sulla pagina `/anagrafica-ragazzi`
+Cliccando sulla card si apre il dettaglio completo.
 
 ---
 
-## Pagina Pubblica: `/preiscrizione-cupav`
+## 2. Dialog dettaglio completo
 
-File: `src/pages/public/PreiscrizioneCupav.tsx`
+Una finestra modale (Dialog) che si apre al click sulla card, contenente:
 
-- Stesso stile del ModuloForm esistente (header con logo, footer CUPAV)
-- Campi organizzati in sezioni con le card visive (come gia' implementato):
-  - **Dati ragazzo/a**: Nome e Cognome, Data di nascita, Turno (radio: 4^ Elem, 5^ Elem, 1^ Media, 2^ Media, 3^ Media), Residente ad Altavilla (Si/No)
-  - **Dati genitore 1**: Nome e Cognome, Chi (Mamma/Papa'), Email, Telefono
-  - **Dati genitore 2** (opzionale): stessi campi
-- Al submit:
-  - Cerca il ragazzo per `full_name`
-  - Se esiste: aggiunge solo l'iscrizione per l'anno corrente (2026) e aggiorna i dati genitori
-  - Se non esiste: crea il ragazzo, i genitori e l'iscrizione
-- Super responsive per mobile (grid a colonna singola su mobile, 2 colonne su desktop per i campi affiancati)
+### Sezione dati ragazzo
+- Nome e cognome, data di nascita, residenza (tutti i dati della card esterna ripetuti)
 
----
+### Sezione genitori
+- Lista genitori con nome, ruolo, email, telefono
 
-## Gestionale Anagrafico: `/anagrafica-ragazzi`
+### Sezione iscrizioni (storico annuale)
+- Lista di tutte le iscrizioni ordinate per anno (anno corrente in primo piano, evidenziato)
+- Es: **2026: 5^ Elementare** (in evidenza), 2025: 4^ Elementare, etc.
 
-File: `src/pages/AnagraficaRagazzi.tsx`
-
-Pagina protetta (richiede autenticazione + permesso pagina).
-
-### Layout
-- Header standard con titolo "Anagrafica Ragazzi"
-- **Barra di ricerca** sotto l'header per filtrare per nome
-- **Griglia di card** responsive (1 colonna mobile, 2 tablet, 3 desktop)
-
-### Card ragazzo
-Ogni card mostra:
-- Nome e cognome (titolo)
-- Data di nascita
-- Residente ad Altavilla (badge Si/No)
-- **Storico iscrizioni**: lista anno -> turno (es. "2026: 5^ Elementare", "2027: 1^ Media")
-- Dati genitori (nome, ruolo, email, telefono)
-- Possibilita' in futuro di aggiungere manualmente un'iscrizione per un nuovo anno
+### Azioni di modifica
+- **Pulsante "Modifica"**: apre una modalita' di editing inline nel Dialog dove si possono modificare tutti i campi (nome, data nascita, residenza, dati genitori)
+- **Pulsante "Aggiungi iscrizione"**: permette di aggiungere una nuova riga anno/turno (per anni precedenti o futuri)
+- **Possibilita' di eliminare** iscrizioni esistenti
 
 ---
 
-## Routing e Permessi
+## 3. Hook aggiornato (`useRagazzi.ts`)
 
-### Modifiche a `src/App.tsx`
-- Aggiungere route pubblica `/preiscrizione-cupav` -> `PreiscrizioneCupav`
-- Aggiungere route protetta `/anagrafica-ragazzi` -> `AnagraficaRagazzi`
+Aggiungere funzioni di mutation:
+- `useUpdateRagazzo()`: aggiorna dati anagrafici (full_name, data_nascita, residente_altavilla) e genitori
+- `useAddIscrizione()`: inserisce una nuova iscrizione (anno + turno) per un ragazzo
+- `useDeleteIscrizione()`: rimuove un'iscrizione
 
-### Modifiche a `src/hooks/usePagePermissions.ts`
-- Aggiungere `/anagrafica-ragazzi` all'array `availablePages`
+Tutte le mutation invalideranno la query `['ragazzi']` per aggiornare la lista automaticamente.
 
 ---
 
-## File da creare
-1. `src/pages/public/PreiscrizioneCupav.tsx` - Form pubblico
-2. `src/pages/AnagraficaRagazzi.tsx` - Gestionale anagrafico
-3. `src/hooks/useRagazzi.ts` - Hook per CRUD ragazzi, genitori, iscrizioni
+## 4. Anno corrente dinamico
 
-## File da modificare
-1. `src/App.tsx` - Nuove route
-2. `src/hooks/usePagePermissions.ts` - Nuova pagina nei permessi
+L'anno corrente verra' calcolato con `new Date().getFullYear()` (attualmente 2026). L'anno prossimo il sistema mostrera' automaticamente 2027 in primo piano senza modifiche al codice.
 
-## Migrazione database
-1. Creazione tabelle `ragazzi`, `ragazzi_genitori`, `ragazzi_iscrizioni` con RLS
+---
+
+## Dettaglio tecnico
+
+### File da modificare
+
+1. **`src/pages/AnagraficaRagazzi.tsx`**
+   - Card compatta: mostra solo nome, data nascita (dd-mm-yyyy), badge residenza, turno anno corrente
+   - Click sulla card apre un `Dialog`
+   - Dialog con vista completa + form di modifica inline
+   - Form per aggiungere nuove iscrizioni (select anno + select turno)
+   - Pulsante elimina per iscrizioni
+
+2. **`src/hooks/useRagazzi.ts`**
+   - Aggiungere `useUpdateRagazzo` mutation (update ragazzo + delete/re-insert genitori)
+   - Aggiungere `useAddIscrizione` mutation
+   - Aggiungere `useDeleteIscrizione` mutation
+   - Funzione helper per formattare data in dd-mm-yyyy
+
+### Nessuna modifica al database
+Le tabelle e le RLS policies esistenti supportano gia' tutte le operazioni necessarie (UPDATE su ragazzi, DELETE/INSERT su genitori e iscrizioni per utenti autenticati con accesso alla pagina).
