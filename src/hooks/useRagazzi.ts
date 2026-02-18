@@ -7,6 +7,15 @@ export interface Ragazzo {
   data_nascita: string | null;
   residente_altavilla: boolean;
   archiviato: boolean;
+  ha_allergie: boolean;
+  allergie_dettaglio: string | null;
+  patologie_dettaglio: string | null;
+  farmaco_1_nome: string | null;
+  farmaco_1_posologia: string | null;
+  farmaco_2_nome: string | null;
+  farmaco_2_posologia: string | null;
+  farmaco_3_nome: string | null;
+  farmaco_3_posologia: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles } from 'lucide-react';
+import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles, AlertTriangle, Pill } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -195,6 +195,32 @@ function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                   </div>
                 ))}
               </div>
+
+              <Separator />
+
+              {/* Dati medici */}
+              {(ragazzo.ha_allergie || ragazzo.allergie_dettaglio || ragazzo.patologie_dettaglio || ragazzo.farmaco_1_nome) && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-1"><AlertTriangle className="h-4 w-4 text-red-500" /> Allergie / Patologie / Farmaci</p>
+                  <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3 space-y-1.5 text-sm">
+                    {ragazzo.allergie_dettaglio && (
+                      <p><span className="font-medium">Allergie:</span> {ragazzo.allergie_dettaglio}</p>
+                    )}
+                    {ragazzo.patologie_dettaglio && (
+                      <p><span className="font-medium">Patologie:</span> {ragazzo.patologie_dettaglio}</p>
+                    )}
+                    {ragazzo.farmaco_1_nome && (
+                      <p className="flex items-center gap-1"><Pill className="h-3 w-3" /> {ragazzo.farmaco_1_nome}{ragazzo.farmaco_1_posologia ? ` — ${ragazzo.farmaco_1_posologia}` : ''}</p>
+                    )}
+                    {ragazzo.farmaco_2_nome && (
+                      <p className="flex items-center gap-1"><Pill className="h-3 w-3" /> {ragazzo.farmaco_2_nome}{ragazzo.farmaco_2_posologia ? ` — ${ragazzo.farmaco_2_posologia}` : ''}</p>
+                    )}
+                    {ragazzo.farmaco_3_nome && (
+                      <p className="flex items-center gap-1"><Pill className="h-3 w-3" /> {ragazzo.farmaco_3_nome}{ragazzo.farmaco_3_posologia ? ` — ${ragazzo.farmaco_3_posologia}` : ''}</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <Separator />
 

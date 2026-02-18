@@ -36,12 +36,10 @@ serve(async (req) => {
 
     // Fetch iscrizioni matching this ragazzo by name
     const nameParts = ragazzo.full_name.trim().split(/\s+/);
-    let iscrizioniQuery = supabase.from("iscrizioni").select("*");
-    
-    // Try to match by first+last name in either order
+
     const { data: iscrizioni = [] } = await supabase
       .from("iscrizioni")
-      .select("genitore_nome, genitore_cognome, email, recapiti_telefonici, ragazzo_nome, ragazzo_cognome")
+      .select("*")
       .or(
         nameParts.length >= 2
           ? `and(ragazzo_nome.ilike.%${nameParts[0]}%,ragazzo_cognome.ilike.%${nameParts[nameParts.length - 1]}%),and(ragazzo_nome.ilike.%${nameParts[nameParts.length - 1]}%,ragazzo_cognome.ilike.%${nameParts[0]}%)`
@@ -54,7 +52,31 @@ serve(async (req) => {
       });
     }
 
-    // Prepare data for AI
+    // --- Enrich medical data directly (no AI needed) ---
+    // Take the most recent iscrizione with medical data
+    const iscrizioneConDatiMedici = iscrizioni
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .find((i: any) => i.ha_allergie || i.allergie_dettaglio || i.patologie_dettaglio || i.farmaco_1_nome);
+
+    const medicalUpdate: Record<string, any> = {};
+    if (iscrizioneConDatiMedici) {
+      medicalUpdate.ha_allergie = iscrizioneConDatiMedici.ha_allergie || false;
+      if (iscrizioneConDatiMedici.allergie_dettaglio) medicalUpdate.allergie_dettaglio = iscrizioneConDatiMedici.allergie_dettaglio;
+      if (iscrizioneConDatiMedici.patologie_dettaglio) medicalUpdate.patologie_dettaglio = iscrizioneConDatiMedici.patologie_dettaglio;
+      if (iscrizioneConDatiMedici.farmaco_1_nome) medicalUpdate.farmaco_1_nome = iscrizioneConDatiMedici.farmaco_1_nome;
+      if (iscrizioneConDatiMedici.farmaco_1_posologia) medicalUpdate.farmaco_1_posologia = iscrizioneConDatiMedici.farmaco_1_posologia;
+      if (iscrizioneConDatiMedici.farmaco_2_nome) medicalUpdate.farmaco_2_nome = iscrizioneConDatiMedici.farmaco_2_nome;
+      if (iscrizioneConDatiMedici.farmaco_2_posologia) medicalUpdate.farmaco_2_posologia = iscrizioneConDatiMedici.farmaco_2_posologia;
+      if (iscrizioneConDatiMedici.farmaco_3_nome) medicalUpdate.farmaco_3_nome = iscrizioneConDatiMedici.farmaco_3_nome;
+      if (iscrizioneConDatiMedici.farmaco_3_posologia) medicalUpdate.farmaco_3_posologia = iscrizioneConDatiMedici.farmaco_3_posologia;
+    }
+
+    // Update ragazzi medical fields
+    if (Object.keys(medicalUpdate).length > 0) {
+      await supabase.from("ragazzi").update(medicalUpdate).eq("id", ragazzo_id);
+    }
+
+    // --- Enrich parent data with AI ---
     const existingData = genitori.map((g: any) => ({
       nome_cognome: g.nome_cognome,
       ruolo: g.ruolo,
@@ -80,7 +102,6 @@ Unifica questi dati riconoscendo che "Mario Rossi" e "Rossi Mario" sono la stess
 Combina email e telefoni trovati.
 Se un genitore non ha un ruolo assegnato, usa "Genitore".`;
 
-    // Call Lovable AI with tool calling for structured output
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -165,7 +186,12 @@ Se un genitore non ha un ruolo assegnato, usa "Genitore".`;
       if (insertErr) throw insertErr;
     }
 
-    return new Response(JSON.stringify({ message: "Dati arricchiti con successo", enriched: true, genitori: newGenitori }), {
+    return new Response(JSON.stringify({
+      message: "Dati arricchiti con successo",
+      enriched: true,
+      genitori: newGenitori,
+      medical_updated: Object.keys(medicalUpdate).length > 0,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

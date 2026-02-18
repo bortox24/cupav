@@ -274,29 +274,56 @@ export type Database = {
       }
       ragazzi: {
         Row: {
+          allergie_dettaglio: string | null
           archiviato: boolean
           created_at: string
           data_nascita: string | null
+          farmaco_1_nome: string | null
+          farmaco_1_posologia: string | null
+          farmaco_2_nome: string | null
+          farmaco_2_posologia: string | null
+          farmaco_3_nome: string | null
+          farmaco_3_posologia: string | null
           full_name: string
+          ha_allergie: boolean
           id: string
+          patologie_dettaglio: string | null
           residente_altavilla: boolean
           updated_at: string
         }
         Insert: {
+          allergie_dettaglio?: string | null
           archiviato?: boolean
           created_at?: string
           data_nascita?: string | null
+          farmaco_1_nome?: string | null
+          farmaco_1_posologia?: string | null
+          farmaco_2_nome?: string | null
+          farmaco_2_posologia?: string | null
+          farmaco_3_nome?: string | null
+          farmaco_3_posologia?: string | null
           full_name: string
+          ha_allergie?: boolean
           id?: string
+          patologie_dettaglio?: string | null
           residente_altavilla?: boolean
           updated_at?: string
         }
         Update: {
+          allergie_dettaglio?: string | null
           archiviato?: boolean
           created_at?: string
           data_nascita?: string | null
+          farmaco_1_nome?: string | null
+          farmaco_1_posologia?: string | null
+          farmaco_2_nome?: string | null
+          farmaco_2_posologia?: string | null
+          farmaco_3_nome?: string | null
+          farmaco_3_posologia?: string | null
           full_name?: string
+          ha_allergie?: boolean
           id?: string
+          patologie_dettaglio?: string | null
           residente_altavilla?: boolean
           updated_at?: string
         }
