@@ -28,7 +28,7 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
 
   return (
     <Card 
-      className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] overflow-hidden bg-card rounded-2xl"
+      className="border-0 shadow-sm transition-all duration-300 cursor-pointer overflow-hidden bg-card rounded-2xl"
       onClick={onClick}
     >
       <CardContent className="p-0">
