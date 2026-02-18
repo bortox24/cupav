@@ -22,7 +22,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { FormField, Form, useCreateForm, useUpdateForm } from '@/hooks/useForms';
-import { Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Loader2, Minus, Columns2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const fieldTypes = [
   { value: 'text', label: 'Testo' },
@@ -59,6 +60,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
   const [fieldType, setFieldType] = useState<FormField['type']>('text');
   const [fieldRequired, setFieldRequired] = useState(false);
   const [fieldOptions, setFieldOptions] = useState('');
+  const [fieldWidth, setFieldWidth] = useState<'full' | 'half'>('full');
 
   const isEditMode = !!editForm;
 
@@ -89,6 +91,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
     setFieldType('text');
     setFieldRequired(false);
     setFieldOptions('');
+    setFieldWidth('full');
     setEditingField(null);
     setEditingIndex(null);
     setShowFieldEditor(false);
@@ -99,12 +102,24 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
     setShowFieldEditor(true);
   };
 
+  const handleAddDivider = () => {
+    const dividerField: FormField = {
+      name: `divider_${Date.now()}`,
+      label: 'Divisore',
+      type: 'divider',
+      required: false,
+    };
+    setFields([...fields, dividerField]);
+  };
+
   const handleEditField = (field: FormField, index: number) => {
+    if (field.type === 'divider') return; // Dividers are not editable
     setFieldName(field.name);
     setFieldLabel(field.label);
     setFieldType(field.type);
     setFieldRequired(field.required);
     setFieldOptions(field.options?.join('\n') || '');
+    setFieldWidth(field.width || 'full');
     setEditingField(field);
     setEditingIndex(index);
     setShowFieldEditor(true);
@@ -116,6 +131,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
       label: fieldLabel,
       type: fieldType,
       required: fieldRequired,
+      width: fieldWidth,
       ...(fieldType === 'select' || fieldType === 'radio'
         ? { options: fieldOptions.split('\n').filter((o) => o.trim()) }
         : {}),
@@ -158,7 +174,6 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
 
   const handleNameChange = (name: string) => {
     setFormName(name);
-    // Only auto-generate slug for new forms
     if (!isEditMode && (!formSlug || formSlug === generateSlug(formName))) {
       setFormSlug(generateSlug(name));
     }
@@ -186,7 +201,6 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
       });
     }
 
-    // Reset and close
     resetForm();
     onOpenChange(false);
   };
@@ -226,7 +240,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
                   placeholder="es. iscrizione-evento"
                   value={formSlug}
                   onChange={(e) => setFormSlug(e.target.value)}
-                  disabled={isEditMode} // Can't change slug when editing
+                  disabled={isEditMode}
                 />
                 <p className="text-xs text-muted-foreground">
                   URL: /modulo/{formSlug || 'slug'}
@@ -263,17 +277,23 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label>Campi del modulo</Label>
-              <Button variant="outline" size="sm" onClick={handleAddField}>
-                <Plus className="h-4 w-4 mr-1" />
-                Aggiungi campo
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleAddDivider}>
+                  <Minus className="h-4 w-4 mr-1" />
+                  Divisore
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleAddField}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Campo
+                </Button>
+              </div>
             </div>
 
             {fields.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-8">
                   <p className="text-sm text-muted-foreground">
-                    Nessun campo aggiunto. Clicca "Aggiungi campo" per iniziare.
+                    Nessun campo aggiunto. Clicca "Campo" per iniziare.
                   </p>
                 </CardContent>
               </Card>
@@ -302,23 +322,39 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
                           <GripVertical className="h-4 w-4 rotate-90" />
                         </Button>
                       </div>
-                      <div
-                        className="flex-1 cursor-pointer"
-                        onClick={() => handleEditField(field, index)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{field.label}</span>
-                          {field.required && (
-                            <Badge variant="secondary" className="text-xs">
-                              Obbligatorio
-                            </Badge>
-                          )}
+
+                      {field.type === 'divider' ? (
+                        <div className="flex-1 flex items-center gap-3">
+                          <Separator className="flex-1" />
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">Divisore</span>
+                          <Separator className="flex-1" />
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {fieldTypes.find((t) => t.value === field.type)?.label} •{' '}
-                          {field.name}
-                        </p>
-                      </div>
+                      ) : (
+                        <div
+                          className="flex-1 cursor-pointer"
+                          onClick={() => handleEditField(field, index)}
+                        >
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium">{field.label}</span>
+                            {field.required && (
+                              <Badge variant="secondary" className="text-xs">
+                                Obbligatorio
+                              </Badge>
+                            )}
+                            {field.width === 'half' && (
+                              <Badge variant="outline" className="text-xs">
+                                <Columns2 className="h-3 w-3 mr-1" />
+                                Metà
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {fieldTypes.find((t) => t.value === field.type)?.label} •{' '}
+                            {field.name}
+                          </p>
+                        </div>
+                      )}
+
                       <Button
                         variant="ghost"
                         size="icon"
@@ -369,20 +405,37 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
                     Identificativo tecnico del campo (senza spazi)
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="field-type">Tipo campo</Label>
-                  <Select value={fieldType} onValueChange={(v) => setFieldType(v as FormField['type'])}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {fieldTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="field-type">Tipo campo</Label>
+                    <Select value={fieldType} onValueChange={(v) => setFieldType(v as FormField['type'])}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fieldTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="field-width">Larghezza</Label>
+                    <Select value={fieldWidth} onValueChange={(v) => setFieldWidth(v as 'full' | 'half')}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full">Intera riga</SelectItem>
+                        <SelectItem value="half">Metà riga</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      "Metà riga" affianca il campo al successivo (solo desktop)
+                    </p>
+                  </div>
                 </div>
                 {(fieldType === 'select' || fieldType === 'radio') && (
                   <div className="space-y-2">
