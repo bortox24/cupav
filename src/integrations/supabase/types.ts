@@ -304,6 +304,10 @@ export type Database = {
         Args: { _transaction_user_id: string }
         Returns: boolean
       }
+      has_page_access: {
+        Args: { _page_path: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

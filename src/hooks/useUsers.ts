@@ -93,11 +93,9 @@ export function useToggleAdmin() {
         // Add admin role
         const { error } = await supabase
           .from('user_roles')
-          .upsert({ 
+          .insert({ 
             user_id: userId, 
             role: 'admin' as const
-          }, { 
-            onConflict: 'user_id' 
           });
         
         if (error) throw error;
