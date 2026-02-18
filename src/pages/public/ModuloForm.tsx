@@ -324,7 +324,7 @@ export default function ModuloForm() {
         {nonEmptySections.map((section, idx) => (
           <div
             key={`section-${idx}`}
-            className="bg-muted/30 rounded-lg p-4 md:p-6 space-y-6 border border-border/50"
+            className="bg-card rounded-xl p-5 md:p-6 space-y-6 border border-border shadow-md"
           >
             {renderSectionFields(section)}
           </div>
