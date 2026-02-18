@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ragazzo {
@@ -32,6 +32,14 @@ export interface RagazzoCompleto extends Ragazzo {
   iscrizioni: RagazzoIscrizione[];
 }
 
+export function formatDataNascita(dateStr: string | null): string {
+  if (!dateStr) return '';
+  // dateStr is yyyy-mm-dd
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
 export function useRagazzi() {
   return useQuery({
     queryKey: ['ragazzi'],
@@ -62,6 +70,61 @@ export function useRagazzi() {
   });
 }
 
+export function useUpdateRagazzo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      id: string;
+      full_name: string;
+      data_nascita: string | null;
+      residente_altavilla: boolean;
+      genitori: { nome_cognome: string; ruolo: string; email: string | null; telefono: string | null }[];
+    }) => {
+      const { error: rErr } = await supabase
+        .from('ragazzi')
+        .update({
+          full_name: data.full_name,
+          data_nascita: data.data_nascita,
+          residente_altavilla: data.residente_altavilla,
+        })
+        .eq('id', data.id);
+      if (rErr) throw rErr;
+
+      // Delete existing genitori and re-insert
+      await supabase.from('ragazzi_genitori').delete().eq('ragazzo_id', data.id);
+      if (data.genitori.length > 0) {
+        const { error: gErr } = await supabase.from('ragazzi_genitori').insert(
+          data.genitori.map((g) => ({ ...g, ragazzo_id: data.id }))
+        );
+        if (gErr) throw gErr;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['ragazzi'] }),
+  });
+}
+
+export function useAddIscrizione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { ragazzo_id: string; anno: number; turno: string }) => {
+      const { error } = await supabase.from('ragazzi_iscrizioni').insert(data);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['ragazzi'] }),
+  });
+}
+
+export function useDeleteIscrizione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('ragazzi_iscrizioni').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['ragazzi'] }),
+  });
+}
+
 // Submit preiscrizione from public form (works as anon)
 export async function submitPreiscrizione(data: {
   fullName: string;
@@ -82,7 +145,6 @@ export async function submitPreiscrizione(data: {
 
   if (existing) {
     ragazzoId = existing.id;
-    // Update ragazzo data
     await supabase
       .from('ragazzi')
       .update({
@@ -91,7 +153,6 @@ export async function submitPreiscrizione(data: {
       })
       .eq('id', ragazzoId);
   } else {
-    // Create new ragazzo
     const { data: newRagazzo, error } = await supabase
       .from('ragazzi')
       .insert({
@@ -105,7 +166,7 @@ export async function submitPreiscrizione(data: {
     ragazzoId = newRagazzo.id;
   }
 
-  // 2. Upsert genitori - delete existing and re-insert
+  // 2. Upsert genitori
   if (existing) {
     await supabase.from('ragazzi_genitori').delete().eq('ragazzo_id', ragazzoId);
   }
@@ -134,7 +195,7 @@ export async function submitPreiscrizione(data: {
   if (gErr) throw gErr;
 
   // 3. Upsert iscrizione for current year
-  const anno = 2026;
+  const anno = new Date().getFullYear();
   const { data: existingIscrizione } = await supabase
     .from('ragazzi_iscrizioni')
     .select('id')
