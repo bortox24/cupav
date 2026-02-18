@@ -437,6 +437,30 @@ export type Database = {
           },
         ]
       }
+      turno_permessi: {
+        Row: {
+          assegnato_da: string | null
+          created_at: string
+          id: string
+          turno: string
+          user_id: string
+        }
+        Insert: {
+          assegnato_da?: string | null
+          created_at?: string
+          id?: string
+          turno: string
+          user_id: string
+        }
+        Update: {
+          assegnato_da?: string | null
+          created_at?: string
+          id?: string
+          turno?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_page_permissions: {
         Row: {
           can_access: boolean

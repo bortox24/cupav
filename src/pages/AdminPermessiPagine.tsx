@@ -13,16 +13,27 @@ import {
   useResetUserPermissions,
   availablePages,
 } from '@/hooks/usePagePermissions';
+import {
+  useAllTurnoPermissions,
+  useSetTurnoPermission,
+  useRemoveTurnoPermission,
+  useResetUserTurnoPermissions,
+  TURNI,
+} from '@/hooks/useTurnoPermissions';
 import { toast } from '@/hooks/use-toast';
 
 export default function AdminPermessiPagine() {
   const { data: users = [], isLoading: usersLoading } = useUsers();
   const { data: allPermissions = [], isLoading: permissionsLoading } = useAllPagePermissions();
+  const { data: allTurnoPermissions = [], isLoading: turnoPermissionsLoading } = useAllTurnoPermissions();
   const setPermission = useSetPagePermission();
   const resetPermissions = useResetUserPermissions();
+  const setTurnoPermission = useSetTurnoPermission();
+  const removeTurnoPermission = useRemoveTurnoPermission();
+  const resetTurnoPermissions = useResetUserTurnoPermissions();
   const [pendingChanges, setPendingChanges] = useState<Set<string>>(new Set());
 
-  const isLoading = usersLoading || permissionsLoading;
+  const isLoading = usersLoading || permissionsLoading || turnoPermissionsLoading;
 
   // Get effective access for a user/page combo
   const getEffectiveAccess = (userId: string, pagePath: string): boolean => {
@@ -37,29 +48,28 @@ export default function AdminPermessiPagine() {
     return allPermissions.some(p => p.user_id === userId && p.page_path === pagePath);
   };
 
+  // Check if user has turno permission
+  const hasTurnoPermission = (userId: string, turnoValue: string): boolean => {
+    return allTurnoPermissions.some(p => p.user_id === userId && p.turno === turnoValue);
+  };
+
   const handlePermissionChange = async (userId: string, pagePath: string, canAccess: boolean) => {
     const key = `${userId}-${pagePath}`;
     setPendingChanges(prev => new Set(prev).add(key));
     
-    // Se si sta abilitando /visualizza-moduli, abilita anche l'accesso alle risposte dei singoli moduli
     const relatedPages: string[] = [];
     if (pagePath === '/visualizza-moduli' && canAccess) {
       relatedPages.push('/visualizza-moduli/:id/risposte');
     }
-    // Se si sta disabilitando /visualizza-moduli, disabilita anche le risposte
     if (pagePath === '/visualizza-moduli' && !canAccess) {
       relatedPages.push('/visualizza-moduli/:id/risposte');
     }
     
     try {
-      // Aggiorna il permesso principale
       await setPermission.mutateAsync({ userId, pagePath, canAccess });
-      
-      // Aggiorna automaticamente i permessi correlati
       for (const relatedPath of relatedPages) {
         await setPermission.mutateAsync({ userId, pagePath: relatedPath, canAccess });
       }
-      
       toast({
         title: 'Permesso aggiornato',
         description: relatedPages.length > 0 
@@ -75,14 +85,42 @@ export default function AdminPermessiPagine() {
     }
   };
 
-  const handleResetUser = async (userId: string) => {
-    await resetPermissions.mutateAsync(userId);
+  const handleTurnoPermissionChange = async (userId: string, turnoValue: string, turnoLabel: string, userName: string) => {
+    const key = `${userId}-turno-${turnoValue}`;
+    setPendingChanges(prev => new Set(prev).add(key));
+    
+    try {
+      const hasPermission = hasTurnoPermission(userId, turnoValue);
+      if (hasPermission) {
+        await removeTurnoPermission.mutateAsync({ userId, turno: turnoValue });
+        toast({
+          title: 'Permesso turno rimosso',
+          description: `Permesso ${turnoLabel} rimosso da ${userName}`,
+        });
+      } else {
+        await setTurnoPermission.mutateAsync({ userId, turno: turnoValue });
+        toast({
+          title: 'Permesso turno assegnato',
+          description: `Permesso ${turnoLabel} assegnato a ${userName}`,
+        });
+      }
+    } finally {
+      setPendingChanges(prev => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
   };
 
-  // Filter out admin users - they always have full access
-  const nonAdminUsers = users.filter((u: UserWithStatus) => !u.is_admin);
+  const handleResetUser = async (userId: string) => {
+    await Promise.all([
+      resetPermissions.mutateAsync(userId),
+      resetTurnoPermissions.mutateAsync(userId),
+    ]);
+  };
 
-  // Filter out dynamic route patterns for the table header (show base pages only)
+  const nonAdminUsers = users.filter((u: UserWithStatus) => !u.is_admin);
   const displayPages = availablePages.filter(p => !p.path.includes(':id'));
 
   if (isLoading) {
@@ -98,7 +136,6 @@ export default function AdminPermessiPagine() {
   return (
     <MainLayout title="Permessi Pagine">
       <div className="space-y-6">
-        {/* Info Card */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Configurazione Accesso Pagine</CardTitle>
@@ -130,6 +167,13 @@ export default function AdminPermessiPagine() {
                         <TableHead key={page.path} className="text-center min-w-[120px]">
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-xs font-medium">{page.title}</span>
+                          </div>
+                        </TableHead>
+                      ))}
+                      {TURNI.map(turno => (
+                        <TableHead key={turno.value} className="text-center min-w-[120px]">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-xs font-medium">{turno.label}</span>
                           </div>
                         </TableHead>
                       ))}
@@ -176,12 +220,35 @@ export default function AdminPermessiPagine() {
                             </TableCell>
                           );
                         })}
+                        {TURNI.map(turno => {
+                          const hasPermission = hasTurnoPermission(user.id, turno.value);
+                          const isPending = pendingChanges.has(`${user.id}-turno-${turno.value}`);
+                          
+                          return (
+                            <TableCell key={turno.value} className="text-center">
+                              <div className={`flex justify-center p-2 rounded ${hasPermission ? 'bg-primary/10' : ''}`}>
+                                {isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Checkbox
+                                    checked={hasPermission}
+                                    onCheckedChange={() => 
+                                      handleTurnoPermissionChange(user.id, turno.value, turno.label, user.full_name)
+                                    }
+                                    disabled={!user.is_active}
+                                    aria-label={`Permesso ${turno.label} per ${user.full_name}`}
+                                  />
+                                )}
+                              </div>
+                            </TableCell>
+                          );
+                        })}
                         <TableCell className="text-center">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleResetUser(user.id)}
-                            disabled={resetPermissions.isPending}
+                            disabled={resetPermissions.isPending || resetTurnoPermissions.isPending}
                             className="gap-1"
                           >
                             <RotateCcw className="h-3 w-3" />
@@ -197,7 +264,6 @@ export default function AdminPermessiPagine() {
           </Card>
         )}
 
-        {/* Legend */}
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Nota</CardTitle>

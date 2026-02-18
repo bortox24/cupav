@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { useState, useEffect } from 'react';
+import TurnoAccordionSection from '@/components/home/TurnoAccordionSection';
 
 // Countdown Component
 function CountdownBox({ value, label }: { value: number; label: string }) {
@@ -280,6 +281,9 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* Turno Accordion Sections */}
+        <TurnoAccordionSection />
       </div>
     </MainLayout>
   );
