@@ -6,14 +6,15 @@ import { toast } from '@/hooks/use-toast';
 export interface TurnoInfo {
   value: string; // valore in DB (es. "4° Elementare")
   label: string; // label UI (es. "4^ Elementare")
+  slug: string;  // slug per URL (es. "4-elementare")
 }
 
 export const TURNI: TurnoInfo[] = [
-  { value: '4° Elementare', label: '4^ Elementare' },
-  { value: '5° Elementare', label: '5^ Elementare' },
-  { value: '1° Media', label: '1^ Media' },
-  { value: '2° Media', label: '2^ Media' },
-  { value: '3° Media', label: '3^ Media' },
+  { value: '4° Elementare', label: '4^ Elementare', slug: '4-elementare' },
+  { value: '5° Elementare', label: '5^ Elementare', slug: '5-elementare' },
+  { value: '1° Media', label: '1^ Media', slug: '1-media' },
+  { value: '2° Media', label: '2^ Media', slug: '2-media' },
+  { value: '3° Media', label: '3^ Media', slug: '3-media' },
 ];
 
 export interface TurnoPermission {

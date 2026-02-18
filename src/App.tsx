@@ -22,6 +22,7 @@ import ModuloForm from "./pages/public/ModuloForm";
 import PreiscrizioneCupav from "./pages/public/PreiscrizioneCupav";
 import IscrizioneCampeggio from "./pages/public/IscrizioneCampeggio";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
+import TurnoPage from "./pages/TurnoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -136,6 +137,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AnagraficaRagazzi />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Turno pages */}
+      <Route
+        path="/turno/:turnoSlug"
+        element={
+          <ProtectedRoute>
+            <TurnoPage />
           </ProtectedRoute>
         }
       />
