@@ -77,6 +77,7 @@ export type Database = {
           is_active: boolean
           name: string
           slug: string
+          submit_button_text: string | null
           updated_at: string
           webhook_url: string | null
         }
@@ -89,6 +90,7 @@ export type Database = {
           is_active?: boolean
           name: string
           slug: string
+          submit_button_text?: string | null
           updated_at?: string
           webhook_url?: string | null
         }
@@ -101,6 +103,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           slug?: string
+          submit_button_text?: string | null
           updated_at?: string
           webhook_url?: string | null
         }

@@ -9,6 +9,7 @@ export interface FormField {
   required: boolean;
   options?: string[];
   width?: 'full' | 'half';
+  sectionTitle?: string;
 }
 
 export interface Form {
@@ -17,6 +18,7 @@ export interface Form {
   slug: string;
   description: string | null;
   webhook_url: string | null;
+  submit_button_text: string | null;
   is_active: boolean;
   form_schema: FormField[];
   created_by: string | null;
@@ -139,6 +141,7 @@ export function useCreateForm() {
       slug: string;
       description?: string;
       webhook_url?: string;
+      submit_button_text?: string;
       form_schema: FormField[];
     }) => {
       const { data, error } = await supabase
@@ -148,6 +151,7 @@ export function useCreateForm() {
           slug: form.slug,
           description: form.description,
           webhook_url: form.webhook_url || null,
+          submit_button_text: form.submit_button_text || null,
           form_schema: form.form_schema as unknown as Record<string, never>,
         })
         .select()
@@ -189,6 +193,7 @@ export function useUpdateForm() {
       slug?: string;
       description?: string;
       webhook_url?: string | null;
+      submit_button_text?: string | null;
       is_active?: boolean;
       form_schema?: FormField[];
     }) => {

@@ -49,6 +49,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
   const [formSlug, setFormSlug] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
+  const [submitButtonText, setSubmitButtonText] = useState('');
   const [fields, setFields] = useState<FormField[]>([]);
   const [showFieldEditor, setShowFieldEditor] = useState(false);
   const [editingField, setEditingField] = useState<FormField | null>(null);
@@ -71,6 +72,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
       setFormSlug(editForm.slug);
       setFormDescription(editForm.description || '');
       setWebhookUrl(editForm.webhook_url || '');
+      setSubmitButtonText(editForm.submit_button_text || '');
       setFields(editForm.form_schema || []);
     } else {
       resetForm();
@@ -82,6 +84,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
     setFormSlug('');
     setFormDescription('');
     setWebhookUrl('');
+    setSubmitButtonText('');
     setFields([]);
   };
 
@@ -113,7 +116,10 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
   };
 
   const handleEditField = (field: FormField, index: number) => {
-    if (field.type === 'divider') return; // Dividers are not editable
+    if (field.type === 'divider') {
+      // Allow editing divider section title inline
+      return;
+    }
     setFieldName(field.name);
     setFieldLabel(field.label);
     setFieldType(field.type);
@@ -189,6 +195,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
         slug: formSlug,
         description: formDescription || undefined,
         webhook_url: webhookUrl || null,
+        submit_button_text: submitButtonText || null,
         form_schema: fields,
       });
     } else {
@@ -197,6 +204,7 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
         slug: formSlug,
         description: formDescription || undefined,
         webhook_url: webhookUrl || undefined,
+        submit_button_text: submitButtonText || undefined,
         form_schema: fields,
       });
     }
@@ -271,6 +279,18 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
                 URL webhook per inviare automaticamente i dati a n8n dopo ogni compilazione
               </p>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="submit-button-text">Testo pulsante invio (opzionale)</Label>
+              <Input
+                id="submit-button-text"
+                placeholder="es. Iscriviti, Conferma, Invia richiesta"
+                value={submitButtonText}
+                onChange={(e) => setSubmitButtonText(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Testo personalizzato per il pulsante di invio (default: "Invia")
+              </p>
+            </div>
           </div>
 
           {/* Fields section */}
@@ -325,9 +345,18 @@ export function FormBuilder({ open, onOpenChange, editForm }: FormBuilderProps) 
 
                       {field.type === 'divider' ? (
                         <div className="flex-1 flex items-center gap-3">
-                          <Separator className="flex-1" />
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">Divisore</span>
-                          <Separator className="flex-1" />
+                          <Separator className="w-8 shrink-0" />
+                          <Input
+                            placeholder="Titolo sezione (opzionale)"
+                            value={field.sectionTitle || ''}
+                            onChange={(e) => {
+                              const updated = [...fields];
+                              updated[index] = { ...field, sectionTitle: e.target.value };
+                              setFields(updated);
+                            }}
+                            className="h-8 text-sm flex-1"
+                          />
+                          <Separator className="w-8 shrink-0" />
                         </div>
                       ) : (
                         <div
