@@ -70,7 +70,14 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
 
 function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoCompleto; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [editing, setEditing] = useState(false);
-  const [editData, setEditData] = useState({ full_name: '', data_nascita: '', residente_altavilla: false, genitori: [] as { nome_cognome: string; ruolo: string; email: string; telefono: string }[] });
+  const [editData, setEditData] = useState({
+    full_name: '', data_nascita: '', residente_altavilla: false,
+    ha_allergie: false, allergie_dettaglio: '', patologie_dettaglio: '',
+    farmaco_1_nome: '', farmaco_1_posologia: '',
+    farmaco_2_nome: '', farmaco_2_posologia: '',
+    farmaco_3_nome: '', farmaco_3_posologia: '',
+    genitori: [] as { nome_cognome: string; ruolo: string; email: string; telefono: string }[],
+  });
 
   const [addingIscrizione, setAddingIscrizione] = useState(false);
   const [newAnno, setNewAnno] = useState(String(CURRENT_YEAR));
@@ -89,6 +96,15 @@ function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
       full_name: ragazzo.full_name,
       data_nascita: ragazzo.data_nascita || '',
       residente_altavilla: ragazzo.residente_altavilla,
+      ha_allergie: ragazzo.ha_allergie,
+      allergie_dettaglio: ragazzo.allergie_dettaglio || '',
+      patologie_dettaglio: ragazzo.patologie_dettaglio || '',
+      farmaco_1_nome: ragazzo.farmaco_1_nome || '',
+      farmaco_1_posologia: ragazzo.farmaco_1_posologia || '',
+      farmaco_2_nome: ragazzo.farmaco_2_nome || '',
+      farmaco_2_posologia: ragazzo.farmaco_2_posologia || '',
+      farmaco_3_nome: ragazzo.farmaco_3_nome || '',
+      farmaco_3_posologia: ragazzo.farmaco_3_posologia || '',
       genitori: ragazzo.genitori.map((g) => ({
         nome_cognome: g.nome_cognome,
         ruolo: g.ruolo,
@@ -107,6 +123,15 @@ function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
       full_name: editData.full_name,
       data_nascita: editData.data_nascita || null,
       residente_altavilla: editData.residente_altavilla,
+      ha_allergie: editData.ha_allergie,
+      allergie_dettaglio: editData.allergie_dettaglio || null,
+      patologie_dettaglio: editData.patologie_dettaglio || null,
+      farmaco_1_nome: editData.farmaco_1_nome || null,
+      farmaco_1_posologia: editData.farmaco_1_posologia || null,
+      farmaco_2_nome: editData.farmaco_2_nome || null,
+      farmaco_2_posologia: editData.farmaco_2_posologia || null,
+      farmaco_3_nome: editData.farmaco_3_nome || null,
+      farmaco_3_posologia: editData.farmaco_3_posologia || null,
       genitori: editData.genitori.filter((g) => g.nome_cognome.trim()),
     }, {
       onSuccess: () => { toast.success('Dati aggiornati'); setEditing(false); },
@@ -311,6 +336,38 @@ function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                     <Input placeholder="Telefono" value={g.telefono} onChange={(e) => updateGenitore(idx, 'telefono', e.target.value)} />
                   </div>
                 ))}
+              </div>
+
+              <Separator />
+
+              {/* Medical fields */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Switch checked={editData.ha_allergie} onCheckedChange={(v) => setEditData((p) => ({ ...p, ha_allergie: v }))} />
+                  <Label className="flex items-center gap-1"><AlertTriangle className="h-4 w-4 text-red-500" /> Ha allergie/patologie</Label>
+                </div>
+                {editData.ha_allergie && (
+                  <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3 space-y-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Dettaglio allergie</Label>
+                      <Input value={editData.allergie_dettaglio} onChange={(e) => setEditData((p) => ({ ...p, allergie_dettaglio: e.target.value }))} placeholder="Es. polvere, polline..." />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Dettaglio patologie</Label>
+                      <Input value={editData.patologie_dettaglio} onChange={(e) => setEditData((p) => ({ ...p, patologie_dettaglio: e.target.value }))} placeholder="Es. asma, stanchezza..." />
+                    </div>
+                    <Separator />
+                    <Label className="text-xs flex items-center gap-1"><Pill className="h-3 w-3" /> Farmaci</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input placeholder="Farmaco 1" value={editData.farmaco_1_nome} onChange={(e) => setEditData((p) => ({ ...p, farmaco_1_nome: e.target.value }))} />
+                      <Input placeholder="Posologia 1" value={editData.farmaco_1_posologia} onChange={(e) => setEditData((p) => ({ ...p, farmaco_1_posologia: e.target.value }))} />
+                      <Input placeholder="Farmaco 2" value={editData.farmaco_2_nome} onChange={(e) => setEditData((p) => ({ ...p, farmaco_2_nome: e.target.value }))} />
+                      <Input placeholder="Posologia 2" value={editData.farmaco_2_posologia} onChange={(e) => setEditData((p) => ({ ...p, farmaco_2_posologia: e.target.value }))} />
+                      <Input placeholder="Farmaco 3" value={editData.farmaco_3_nome} onChange={(e) => setEditData((p) => ({ ...p, farmaco_3_nome: e.target.value }))} />
+                      <Input placeholder="Posologia 3" value={editData.farmaco_3_posologia} onChange={(e) => setEditData((p) => ({ ...p, farmaco_3_posologia: e.target.value }))} />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Separator />
