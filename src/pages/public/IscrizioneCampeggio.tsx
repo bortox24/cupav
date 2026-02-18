@@ -27,7 +27,9 @@ const TURNI = [
 ];
 
 function DatePickerField({ value, onChange, label }: { value: Date | undefined; onChange: (d: Date | undefined) => void; label: string }) {
-  const defaultMonth = value || new Date(2015, 0);
+  const [month, setMonth] = useState<Date>(value || new Date(2015, 0));
+  const years = Array.from({ length: 2026 - 2005 + 1 }, (_, i) => 2005 + i);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -37,14 +39,31 @@ function DatePickerField({ value, onChange, label }: { value: Date | undefined; 
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
+        <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1">
+          <Select
+            value={String(month.getFullYear())}
+            onValueChange={(y) => setMonth(new Date(Number(y), month.getMonth()))}
+          >
+            <SelectTrigger className="h-8 w-[90px] text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              {years.map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-sm font-medium capitalize">
+            {format(month, "MMMM", { locale: it })}
+          </span>
+        </div>
         <Calendar
           mode="single"
           selected={value}
           onSelect={onChange}
+          month={month}
+          onMonthChange={setMonth}
           locale={it}
-          defaultMonth={defaultMonth}
-          fromYear={2005}
-          toYear={2026}
           className="pointer-events-auto"
         />
       </PopoverContent>
