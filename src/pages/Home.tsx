@@ -159,6 +159,26 @@ const allQuickAccessCards: QuickAccessCard[] = [
     iconBg: 'bg-gradient-to-br from-emerald-500 to-green-600',
     iconColor: 'text-white',
   },
+  {
+    title: 'Anagrafica Ragazzi',
+    description: 'Gestionale anagrafico ragazzi CUPAV',
+    icon: <Users className="h-7 w-7" />,
+    path: '/anagrafica-ragazzi',
+    gradient: 'bg-gradient-to-br from-rose-100 via-pink-50 to-fuchsia-50 dark:from-rose-950/50 dark:via-pink-950/30 dark:to-fuchsia-950/30',
+    borderColor: 'border-rose-300 dark:border-rose-700',
+    iconBg: 'bg-gradient-to-br from-rose-500 to-pink-600',
+    iconColor: 'text-white',
+  },
+  {
+    title: 'Preiscrizione CUPAV',
+    description: 'Form pubblico preiscrizione campeggio',
+    icon: <FileText className="h-7 w-7" />,
+    path: '/preiscrizione-cupav',
+    gradient: 'bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-50 dark:from-cyan-950/50 dark:via-teal-950/30 dark:to-emerald-950/30',
+    borderColor: 'border-cyan-300 dark:border-cyan-700',
+    iconBg: 'bg-gradient-to-br from-cyan-500 to-teal-600',
+    iconColor: 'text-white',
+  },
 ];
 
 export default function Home() {
