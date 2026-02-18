@@ -162,56 +162,43 @@ export default function AdminPermessiPagine() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="min-w-[200px]">Utente</TableHead>
-                      {displayPages.map(page => (
-                        <TableHead key={page.path} className="text-center min-w-[120px]">
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="text-xs font-medium">{page.title}</span>
+                      <TableHead className="min-w-[200px]">Permesso</TableHead>
+                      {nonAdminUsers.map((user: UserWithStatus) => (
+                        <TableHead key={user.id} className={`text-center min-w-[120px] ${!user.is_active ? 'opacity-50' : ''}`}>
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-xs font-medium">{user.full_name}</span>
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[110px]">{user.email}</span>
+                            {!user.is_active && (
+                              <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive">Disattivato</Badge>
+                            )}
                           </div>
                         </TableHead>
                       ))}
-                      {TURNI.map(turno => (
-                        <TableHead key={turno.value} className="text-center min-w-[120px]">
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="text-xs font-medium">{turno.label}</span>
-                          </div>
-                        </TableHead>
-                      ))}
-                      <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {nonAdminUsers.map((user: UserWithStatus) => (
-                      <TableRow key={user.id} className={!user.is_active ? 'opacity-50' : ''}>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span className="font-medium text-sm">{user.full_name}</span>
-                            <span className="text-xs text-muted-foreground truncate max-w-[180px]">
-                              {user.email}
-                            </span>
-                            {!user.is_active && (
-                              <Badge variant="outline" className="w-fit text-xs bg-destructive/10 text-destructive">
-                                Disattivato
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        {displayPages.map(page => {
+                    {/* Sezione PAGINE header */}
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <TableCell colSpan={nonAdminUsers.length + 1} className="py-2">
+                        <span className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Pagine</span>
+                      </TableCell>
+                    </TableRow>
+                    {displayPages.map(page => (
+                      <TableRow key={page.path}>
+                        <TableCell className="font-medium text-sm">{page.title}</TableCell>
+                        {nonAdminUsers.map((user: UserWithStatus) => {
                           const hasAccess = getEffectiveAccess(user.id, page.path);
                           const isCustom = hasCustomPermission(user.id, page.path);
                           const isPending = pendingChanges.has(`${user.id}-${page.path}`);
-                          
                           return (
-                            <TableCell key={page.path} className="text-center">
+                            <TableCell key={user.id} className={`text-center ${!user.is_active ? 'opacity-50' : ''}`}>
                               <div className={`flex justify-center p-2 rounded ${isCustom && hasAccess ? 'bg-primary/10' : ''}`}>
                                 {isPending ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                   <Checkbox
                                     checked={hasAccess}
-                                    onCheckedChange={(checked) => 
-                                      handlePermissionChange(user.id, page.path, !!checked)
-                                    }
+                                    onCheckedChange={(checked) => handlePermissionChange(user.id, page.path, !!checked)}
                                     disabled={!user.is_active}
                                     aria-label={`Accesso a ${page.title} per ${user.full_name}`}
                                   />
@@ -220,21 +207,29 @@ export default function AdminPermessiPagine() {
                             </TableCell>
                           );
                         })}
-                        {TURNI.map(turno => {
+                      </TableRow>
+                    ))}
+                    {/* Sezione TURNI header */}
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <TableCell colSpan={nonAdminUsers.length + 1} className="py-2">
+                        <span className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Turni</span>
+                      </TableCell>
+                    </TableRow>
+                    {TURNI.map(turno => (
+                      <TableRow key={turno.value}>
+                        <TableCell className="font-medium text-sm">{turno.label}</TableCell>
+                        {nonAdminUsers.map((user: UserWithStatus) => {
                           const hasPermission = hasTurnoPermission(user.id, turno.value);
                           const isPending = pendingChanges.has(`${user.id}-turno-${turno.value}`);
-                          
                           return (
-                            <TableCell key={turno.value} className="text-center">
+                            <TableCell key={user.id} className={`text-center ${!user.is_active ? 'opacity-50' : ''}`}>
                               <div className={`flex justify-center p-2 rounded ${hasPermission ? 'bg-primary/10' : ''}`}>
                                 {isPending ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                   <Checkbox
                                     checked={hasPermission}
-                                    onCheckedChange={() => 
-                                      handleTurnoPermissionChange(user.id, turno.value, turno.label, user.full_name)
-                                    }
+                                    onCheckedChange={() => handleTurnoPermissionChange(user.id, turno.value, turno.label, user.full_name)}
                                     disabled={!user.is_active}
                                     aria-label={`Permesso ${turno.label} per ${user.full_name}`}
                                   />
@@ -243,7 +238,13 @@ export default function AdminPermessiPagine() {
                             </TableCell>
                           );
                         })}
-                        <TableCell className="text-center">
+                      </TableRow>
+                    ))}
+                    {/* Riga RESET */}
+                    <TableRow className="bg-muted/20 hover:bg-muted/20">
+                      <TableCell className="font-semibold text-xs uppercase tracking-wide text-muted-foreground py-2">Azioni</TableCell>
+                      {nonAdminUsers.map((user: UserWithStatus) => (
+                        <TableCell key={user.id} className="text-center">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -255,8 +256,8 @@ export default function AdminPermessiPagine() {
                             Reset
                           </Button>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      ))}
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>
