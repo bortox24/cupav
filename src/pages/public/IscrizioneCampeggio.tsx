@@ -36,7 +36,7 @@ function DatePickerField({ value, onChange, label }: { value: Date | undefined; 
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar mode="single" selected={value} onSelect={onChange} locale={it} />
+        <Calendar mode="single" selected={value} onSelect={onChange} locale={it} captionLayout="dropdown-buttons" fromYear={2005} toYear={2026} className="pointer-events-auto" />
       </PopoverContent>
     </Popover>
   );
@@ -225,7 +225,7 @@ export default function IscrizioneCampeggio() {
               Riceverai una email di conferma all'indirizzo indicato.<br />
               Per qualsiasi informazione: <a href="mailto:cupavdirettivo@gmail.com" className="text-primary font-medium underline">cupavdirettivo@gmail.com</a>
             </p>
-            <Button onClick={() => window.location.href = "/"} variant="outline">Torna alla Home</Button>
+            <Button onClick={() => window.location.reload()} variant="outline">Invia altra iscrizione</Button>
           </CardContent>
         </Card>
       </div>
@@ -265,12 +265,6 @@ export default function IscrizioneCampeggio() {
         {/* STEP 1 */}
         {currentStep === 1 && (
           <div className="space-y-6">
-            {/* Email */}
-            <div>
-              <Label htmlFor="email">Email per le comunicazioni *</Label>
-              <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@esempio.it" />
-            </div>
-
             {/* Dati Ragazzo */}
             <Card>
               <CardHeader><CardTitle className="text-base">📋 Dati Ragazzo</CardTitle></CardHeader>
@@ -287,7 +281,6 @@ export default function IscrizioneCampeggio() {
                   <div><Label>Residente a (Comune) *</Label><Input value={ragazzoResidente} onChange={e => setRagazzoResidente(e.target.value)} /></div>
                   <div><Label>Via/Indirizzo *</Label><Input value={ragazzoIndirizzo} onChange={e => setRagazzoIndirizzo(e.target.value)} /></div>
                 </div>
-                <div><Label>Recapiti telefonici *</Label><Input value={recapitiTelefonici} onChange={e => setRecapitiTelefonici(e.target.value)} /></div>
               </CardContent>
             </Card>
 
@@ -309,6 +302,8 @@ export default function IscrizioneCampeggio() {
                   <div><Label>Cognome *</Label><Input value={genitoreCognome} onChange={e => setGenitoreCognome(e.target.value)} /></div>
                   <div><Label>Nome *</Label><Input value={genitoreNome} onChange={e => setGenitoreNome(e.target.value)} /></div>
                 </div>
+                <div><Label>Email per le comunicazioni *</Label><Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@esempio.it" /></div>
+                <div><Label>Recapiti telefonici *</Label><Input value={recapitiTelefonici} onChange={e => setRecapitiTelefonici(e.target.value)} /></div>
               </CardContent>
             </Card>
 
@@ -500,8 +495,8 @@ export default function IscrizioneCampeggio() {
               <CardHeader><CardTitle className="text-base">📸 Liberatoria Foto e Video</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Cognome genitore/tutore *</Label><Input value={libCognome} onChange={e => setLibCognome(e.target.value)} /></div>
                   <div><Label>Nome genitore/tutore *</Label><Input value={libNome} onChange={e => setLibNome(e.target.value)} /></div>
+                  <div><Label>Cognome genitore/tutore *</Label><Input value={libCognome} onChange={e => setLibCognome(e.target.value)} /></div>
                 </div>
 
                 <div className="bg-muted/50 border rounded-lg p-4 text-sm text-muted-foreground">
