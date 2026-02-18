@@ -66,15 +66,15 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
           {/* Badges row */}
           <div className="flex items-center gap-2 flex-wrap">
             {r.ha_allergie ? (
-              <Badge className="text-[11px] gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-2.5 py-1">
+              <Badge className="text-[11px] gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
                 <AlertTriangle className="h-3 w-3" /> Allergie
               </Badge>
             ) : (
-              <Badge className="text-[11px] gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-2.5 py-1">
+              <Badge className="text-[11px] gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
                 <Check className="h-3 w-3" /> OK
               </Badge>
             )}
-            <Badge className={`text-[11px] gap-1 border-0 rounded-full px-2.5 py-1 ${r.liberatoria_foto ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' : 'bg-muted text-muted-foreground'}`}>
+            <Badge className={`text-[11px] gap-1 border-0 rounded-full px-2.5 py-1 pointer-events-none ${r.liberatoria_foto ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' : 'bg-muted text-muted-foreground'}`}>
               <Camera className="h-3 w-3" /> {r.liberatoria_foto ? 'Sì' : 'No'}
             </Badge>
           </div>
@@ -130,15 +130,15 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
           {/* Quick badges */}
           <div className="flex items-center gap-2 flex-wrap mb-5">
             {r.ha_allergie ? (
-              <Badge className="gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-3 py-1.5 text-xs">
+              <Badge className="gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-3 py-1.5 text-xs pointer-events-none">
                 <AlertTriangle className="h-3.5 w-3.5" /> Allergie/Patologie
               </Badge>
             ) : (
-              <Badge className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-3 py-1.5 text-xs">
+              <Badge className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-3 py-1.5 text-xs pointer-events-none">
                 <Check className="h-3.5 w-3.5" /> Nessuna allergia
               </Badge>
             )}
-            <Badge className={`gap-1 border-0 rounded-full px-3 py-1.5 text-xs ${r.liberatoria_foto ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' : 'bg-muted text-muted-foreground'}`}>
+            <Badge className={`gap-1 border-0 rounded-full px-3 py-1.5 text-xs pointer-events-none ${r.liberatoria_foto ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' : 'bg-muted text-muted-foreground'}`}>
               <Camera className="h-3.5 w-3.5" /> Foto {r.liberatoria_foto ? 'Sì' : 'No'}
             </Badge>
           </div>
