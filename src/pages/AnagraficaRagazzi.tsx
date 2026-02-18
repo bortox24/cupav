@@ -336,19 +336,46 @@ function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 export default function AnagraficaRagazzi() {
   const { data: ragazzi, isLoading } = useRagazzi();
   const [search, setSearch] = useState('');
+  const [filterTurno, setFilterTurno] = useState<string>('all');
   const [selectedRagazzo, setSelectedRagazzo] = useState<RagazzoCompleto | null>(null);
   const [archiviatiOpen, setArchiviatiOpen] = useState(false);
 
-  const attivi = ragazzi?.filter((r) => !r.archiviato && r.full_name.toLowerCase().includes(search.toLowerCase())) || [];
-  const archiviati = ragazzi?.filter((r) => r.archiviato && r.full_name.toLowerCase().includes(search.toLowerCase())) || [];
+  const matchesSearch = (r: RagazzoCompleto) => {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    if (r.full_name.toLowerCase().includes(q)) return true;
+    if (r.genitori.some((g) => g.nome_cognome.toLowerCase().includes(q))) return true;
+    return false;
+  };
+
+  const matchesTurno = (r: RagazzoCompleto) => {
+    if (filterTurno === 'all') return true;
+    return r.iscrizioni.some((i) => i.anno === CURRENT_YEAR && i.turno === filterTurno);
+  };
+
+  const attivi = ragazzi?.filter((r) => !r.archiviato && matchesSearch(r) && matchesTurno(r)) || [];
+  const archiviati = ragazzi?.filter((r) => r.archiviato && matchesSearch(r) && matchesTurno(r)) || [];
 
   const dialogRagazzo = selectedRagazzo ? ragazzi?.find((r) => r.id === selectedRagazzo.id) || selectedRagazzo : null;
 
   return (
     <MainLayout title="Anagrafica Ragazzi">
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Cerca per nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Cerca per nome ragazzo o genitore..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        </div>
+        <Select value={filterTurno} onValueChange={setFilterTurno}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Filtra per turno" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti i turni</SelectItem>
+            {TURNI_OPTIONS.map((t) => (
+              <SelectItem key={t} value={t}>{t}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
