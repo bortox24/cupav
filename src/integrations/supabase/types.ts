@@ -146,6 +146,7 @@ export type Database = {
       }
       ragazzi: {
         Row: {
+          archiviato: boolean
           created_at: string
           data_nascita: string | null
           full_name: string
@@ -154,6 +155,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archiviato?: boolean
           created_at?: string
           data_nascita?: string | null
           full_name: string
@@ -162,6 +164,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archiviato?: boolean
           created_at?: string
           data_nascita?: string | null
           full_name?: string
