@@ -22,38 +22,59 @@ function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: st
 }
 
 function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
+  const initials = `${(r.ragazzo_nome?.[0] || '').toUpperCase()}${(r.ragazzo_cognome?.[0] || '').toUpperCase()}`;
+  const phoneNumber = r.recapiti_telefonici?.replace(/[^0-9+]/g, '') || '';
+
   return (
     <Card 
-      className="border hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.01]"
+      className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] overflow-hidden bg-card"
       onClick={onClick}
     >
-      <CardContent className="p-4 space-y-2">
-        <h4 className="font-bold text-base">
-          {r.ragazzo_nome} {r.ragazzo_cognome}
-        </h4>
-        <div className="space-y-1 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Phone className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{r.recapiti_telefonici}</span>
+      <CardContent className="p-0">
+        {/* Colored header strip with initials */}
+        <div className={`px-4 py-3 flex items-center gap-3 ${r.ha_allergie ? 'bg-gradient-to-r from-red-500/10 to-orange-500/10' : 'bg-gradient-to-r from-primary/10 to-blue-500/10'}`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 ${r.ha_allergie ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-gradient-to-br from-primary to-blue-500'}`}>
+            {initials}
           </div>
-          <div className="flex items-center gap-1.5">
-            <User className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{r.genitore_nome} {r.genitore_cognome}</span>
+          <div className="min-w-0">
+            <h4 className="font-bold text-sm leading-tight truncate text-foreground">
+              {r.ragazzo_nome} {r.ragazzo_cognome}
+            </h4>
+            <p className="text-xs text-muted-foreground truncate">
+              {r.genitore_nome} {r.genitore_cognome}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {r.ha_allergie ? (
-            <Badge variant="destructive" className="text-[11px] gap-1">
-              <AlertTriangle className="h-3 w-3" /> Allergie
+
+        {/* Body */}
+        <div className="px-4 py-3 space-y-2.5">
+          {/* Phone - clickable */}
+          <a
+            href={`tel:${phoneNumber}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-2 text-sm font-medium text-primary hover:underline active:opacity-70 transition-opacity"
+          >
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Phone className="h-3.5 w-3.5 text-primary" />
+            </div>
+            {r.recapiti_telefonici}
+          </a>
+
+          {/* Badges row */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {r.ha_allergie ? (
+              <Badge className="text-[11px] gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-2.5">
+                <AlertTriangle className="h-3 w-3" /> Allergie
+              </Badge>
+            ) : (
+              <Badge className="text-[11px] gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-2.5">
+                <Check className="h-3 w-3" /> OK
+              </Badge>
+            )}
+            <Badge className={`text-[11px] gap-1 border-0 rounded-full px-2.5 ${r.liberatoria_foto ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' : 'bg-muted text-muted-foreground'}`}>
+              <Camera className="h-3 w-3" /> {r.liberatoria_foto ? 'Sì' : 'No'}
             </Badge>
-          ) : (
-            <Badge variant="outline" className="text-[11px] gap-1 border-green-300 text-green-700 dark:text-green-400">
-              <Check className="h-3 w-3" /> No allergie
-            </Badge>
-          )}
-          <Badge variant="outline" className={`text-[11px] gap-1 ${r.liberatoria_foto ? 'border-blue-300 text-blue-700 dark:text-blue-400' : 'border-muted text-muted-foreground'}`}>
-            <Camera className="h-3 w-3" /> Foto {r.liberatoria_foto ? 'Sì' : 'No'}
-          </Badge>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -246,7 +267,7 @@ export default function TurnoPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {iscrizioni.map((r: any) => (
               <RagazzoCompactCard key={r.id} r={r} onClick={() => setSelectedRagazzo(r)} />
             ))}
