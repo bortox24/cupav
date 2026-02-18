@@ -9,7 +9,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen } from 'lucide-react';
+import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 
 function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: string | null }) {
@@ -199,6 +200,8 @@ export default function TurnoPage() {
   const queryClient = useQueryClient();
   const [selectedRagazzo, setSelectedRagazzo] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterAllergie, setFilterAllergie] = useState<boolean | null>(null);
+  const [filterFoto, setFilterFoto] = useState<boolean | null>(null);
 
   // Find turno info from slug
   const turnoInfo = TURNI.find(t => t.slug === turnoSlug);
@@ -224,12 +227,21 @@ export default function TurnoPage() {
 
   // Filter + sort
   const filteredIscrizioni = useMemo(() => {
-    if (!searchQuery.trim()) return iscrizioni;
-    const q = searchQuery.toLowerCase();
-    return iscrizioni.filter((r: any) =>
-      `${r.ragazzo_nome} ${r.ragazzo_cognome}`.toLowerCase().includes(q)
-    );
-  }, [iscrizioni, searchQuery]);
+    let result = iscrizioni;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((r: any) =>
+        `${r.ragazzo_nome} ${r.ragazzo_cognome}`.toLowerCase().includes(q)
+      );
+    }
+    if (filterAllergie !== null) {
+      result = result.filter((r: any) => r.ha_allergie === filterAllergie);
+    }
+    if (filterFoto !== null) {
+      result = result.filter((r: any) => r.liberatoria_foto === filterFoto);
+    }
+    return result;
+  }, [iscrizioni, searchQuery, filterAllergie, filterFoto]);
 
   // Realtime
   useEffect(() => {
@@ -278,17 +290,55 @@ export default function TurnoPage() {
   return (
     <MainLayout title={turnoLabel}>
       <div className="space-y-4">
-        {/* Header: count + search */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <Badge variant="secondary" className="w-fit">{iscrizioni.length} ragazzi iscritti</Badge>
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Cerca ragazzo/a..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 rounded-xl"
-            />
+        {/* Header: count + search + filters */}
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Badge variant="secondary" className="w-fit">{iscrizioni.length} ragazzi iscritti</Badge>
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca ragazzo/a..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 rounded-xl"
+              />
+            </div>
+          </div>
+          {/* Filter chips */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Button
+              variant={filterAllergie === true ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full text-xs h-7 gap-1"
+              onClick={() => setFilterAllergie(filterAllergie === true ? null : true)}
+            >
+              <AlertTriangle className="h-3 w-3" /> Con allergie
+            </Button>
+            <Button
+              variant={filterAllergie === false ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full text-xs h-7 gap-1"
+              onClick={() => setFilterAllergie(filterAllergie === false ? null : false)}
+            >
+              <Check className="h-3 w-3" /> Senza allergie
+            </Button>
+            <Button
+              variant={filterFoto === true ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full text-xs h-7 gap-1"
+              onClick={() => setFilterFoto(filterFoto === true ? null : true)}
+            >
+              <Camera className="h-3 w-3" /> Foto Sì
+            </Button>
+            <Button
+              variant={filterFoto === false ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full text-xs h-7 gap-1"
+              onClick={() => setFilterFoto(filterFoto === false ? null : false)}
+            >
+              <Camera className="h-3 w-3" /> Foto No
+            </Button>
           </div>
         </div>
 

@@ -19,11 +19,11 @@ import { useToast } from "@/hooks/use-toast";
 import logoCupav from "@/assets/logo-cupav.png";
 
 const TURNI = [
-  { value: "4_elementare", label: "4° Elementare — dal 27/06 al 04/07/2026" },
-  { value: "5_elementare", label: "5° Elementare — dal 04/07 al 11/07/2026" },
-  { value: "1_media", label: "1° Media — dal 11/07 al 18/07/2026" },
-  { value: "2_media", label: "2° Media — dal 18/07 al 25/07/2026" },
-  { value: "3_media", label: "3° Media — dal 25/07 al 01/08/2026" },
+  { value: "4° Elementare", label: "4° Elementare — dal 27/06 al 04/07/2026" },
+  { value: "5° Elementare", label: "5° Elementare — dal 04/07 al 11/07/2026" },
+  { value: "1° Media", label: "1° Media — dal 11/07 al 18/07/2026" },
+  { value: "2° Media", label: "2° Media — dal 18/07 al 25/07/2026" },
+  { value: "3° Media", label: "3° Media — dal 25/07 al 01/08/2026" },
 ];
 
 function DatePickerField({ value, onChange, label }: { value: Date | undefined; onChange: (d: Date | undefined) => void; label: string }) {
