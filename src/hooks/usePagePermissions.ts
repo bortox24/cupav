@@ -70,6 +70,11 @@ export const availablePages: PageInfo[] = [
     title: 'Risposte Modulo (Admin)',
     description: 'Gestisci risposte modulo',
   },
+  {
+    path: '/anagrafica-ragazzi',
+    title: 'Anagrafica Ragazzi',
+    description: 'Gestionale anagrafico ragazzi CUPAV',
+  },
 ];
 
 // Helper to match dynamic routes (e.g., /visualizza-moduli/:id/risposte)

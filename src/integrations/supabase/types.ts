@@ -144,6 +144,100 @@ export type Database = {
         }
         Relationships: []
       }
+      ragazzi: {
+        Row: {
+          created_at: string
+          data_nascita: string | null
+          full_name: string
+          id: string
+          residente_altavilla: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_nascita?: string | null
+          full_name: string
+          id?: string
+          residente_altavilla?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_nascita?: string | null
+          full_name?: string
+          id?: string
+          residente_altavilla?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ragazzi_genitori: {
+        Row: {
+          email: string | null
+          id: string
+          nome_cognome: string
+          ragazzo_id: string
+          ruolo: string
+          telefono: string | null
+        }
+        Insert: {
+          email?: string | null
+          id?: string
+          nome_cognome: string
+          ragazzo_id: string
+          ruolo: string
+          telefono?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          nome_cognome?: string
+          ragazzo_id?: string
+          ruolo?: string
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ragazzi_genitori_ragazzo_id_fkey"
+            columns: ["ragazzo_id"]
+            isOneToOne: false
+            referencedRelation: "ragazzi"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ragazzi_iscrizioni: {
+        Row: {
+          anno: number
+          created_at: string
+          id: string
+          ragazzo_id: string
+          turno: string
+        }
+        Insert: {
+          anno: number
+          created_at?: string
+          id?: string
+          ragazzo_id: string
+          turno: string
+        }
+        Update: {
+          anno?: number
+          created_at?: string
+          id?: string
+          ragazzo_id?: string
+          turno?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ragazzi_iscrizioni_ragazzo_id_fkey"
+            columns: ["ragazzo_id"]
+            isOneToOne: false
+            referencedRelation: "ragazzi"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_page_permissions: {
         Row: {
           can_access: boolean
