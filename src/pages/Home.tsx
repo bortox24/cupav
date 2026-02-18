@@ -322,10 +322,14 @@ export default function Home() {
               </div>
             </div>
             <CampingCountdown />
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap gap-3">
               <Link to="/iscrizione" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
                 <Tent className="h-5 w-5" />
-                Iscriviti al Campeggio
+                Iscrizioni
+              </Link>
+              <Link to="/preiscrizione-cupav" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                <FileText className="h-5 w-5" />
+                Preiscrizioni
               </Link>
             </div>
           </div>

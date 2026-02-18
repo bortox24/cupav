@@ -399,6 +399,7 @@ export default function AnagraficaRagazzi() {
   const [filterTurno, setFilterTurno] = useState<string>('all');
   const [selectedRagazzo, setSelectedRagazzo] = useState<RagazzoCompleto | null>(null);
   const [archiviatiOpen, setArchiviatiOpen] = useState(false);
+  const [enrichingAll, setEnrichingAll] = useState(false);
 
   const matchesSearch = (r: RagazzoCompleto) => {
     const q = search.toLowerCase();
@@ -436,6 +437,30 @@ export default function AnagraficaRagazzi() {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          className="gap-2"
+          disabled={enrichingAll}
+          onClick={async () => {
+            if (!ragazzi || ragazzi.length === 0) return;
+            setEnrichingAll(true);
+            let enriched = 0;
+            let errors = 0;
+            for (const r of ragazzi.filter(r => !r.archiviato)) {
+              try {
+                const { data, error } = await supabase.functions.invoke('enrich-anagrafica', {
+                  body: { ragazzo_id: r.id },
+                });
+                if (error) { errors++; } else if (data?.enriched) { enriched++; }
+              } catch { errors++; }
+            }
+            setEnrichingAll(false);
+            toast.success(`Arricchimento completato: ${enriched} aggiornati, ${errors} errori`);
+          }}
+        >
+          {enrichingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          Arricchisci tutti
+        </Button>
       </div>
 
       {isLoading ? (
