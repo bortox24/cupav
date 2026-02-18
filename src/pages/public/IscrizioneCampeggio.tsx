@@ -27,6 +27,7 @@ const TURNI = [
 ];
 
 function DatePickerField({ value, onChange, label }: { value: Date | undefined; onChange: (d: Date | undefined) => void; label: string }) {
+  const defaultMonth = value || new Date(2015, 0);
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -36,7 +37,16 @@ function DatePickerField({ value, onChange, label }: { value: Date | undefined; 
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar mode="single" selected={value} onSelect={onChange} locale={it} captionLayout="dropdown-buttons" fromYear={2005} toYear={2026} className="pointer-events-auto" />
+        <Calendar
+          mode="single"
+          selected={value}
+          onSelect={onChange}
+          locale={it}
+          defaultMonth={defaultMonth}
+          fromYear={2005}
+          toYear={2026}
+          className="pointer-events-auto"
+        />
       </PopoverContent>
     </Popover>
   );
