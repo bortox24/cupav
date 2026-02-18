@@ -15,10 +15,11 @@ import {
   Sun,
   Mountain,
   Calendar,
+  GraduationCap,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { useState, useEffect } from 'react';
-import TurnoAccordionSection from '@/components/home/TurnoAccordionSection';
+import { useMyTurnoPermissions, TURNI } from '@/hooks/useTurnoPermissions';
 
 // Countdown Component
 function CountdownBox({ value, label }: { value: number; label: string }) {
@@ -182,15 +183,77 @@ const allQuickAccessCards: QuickAccessCard[] = [
   },
 ];
 
+// Turno quick access cards with distinct gradients
+const turnoQuickAccessCards: QuickAccessCard[] = [
+  {
+    title: '4^ Elementare',
+    description: 'Ragazzi iscritti al turno 4^ Elementare',
+    icon: <GraduationCap className="h-7 w-7" />,
+    path: '/turno/4-elementare',
+    gradient: 'bg-gradient-to-br from-red-100 via-rose-50 to-pink-50 dark:from-red-950/50 dark:via-rose-950/30 dark:to-pink-950/30',
+    borderColor: 'border-red-300 dark:border-red-700',
+    iconBg: 'bg-gradient-to-br from-red-500 to-rose-600',
+    iconColor: 'text-white',
+  },
+  {
+    title: '5^ Elementare',
+    description: 'Ragazzi iscritti al turno 5^ Elementare',
+    icon: <GraduationCap className="h-7 w-7" />,
+    path: '/turno/5-elementare',
+    gradient: 'bg-gradient-to-br from-indigo-100 via-violet-50 to-purple-50 dark:from-indigo-950/50 dark:via-violet-950/30 dark:to-purple-950/30',
+    borderColor: 'border-indigo-300 dark:border-indigo-700',
+    iconBg: 'bg-gradient-to-br from-indigo-500 to-violet-600',
+    iconColor: 'text-white',
+  },
+  {
+    title: '1^ Media',
+    description: 'Ragazzi iscritti al turno 1^ Media',
+    icon: <GraduationCap className="h-7 w-7" />,
+    path: '/turno/1-media',
+    gradient: 'bg-gradient-to-br from-blue-100 via-sky-50 to-cyan-50 dark:from-blue-950/50 dark:via-sky-950/30 dark:to-cyan-950/30',
+    borderColor: 'border-blue-300 dark:border-blue-700',
+    iconBg: 'bg-gradient-to-br from-blue-500 to-sky-600',
+    iconColor: 'text-white',
+  },
+  {
+    title: '2^ Media',
+    description: 'Ragazzi iscritti al turno 2^ Media',
+    icon: <GraduationCap className="h-7 w-7" />,
+    path: '/turno/2-media',
+    gradient: 'bg-gradient-to-br from-lime-100 via-green-50 to-emerald-50 dark:from-lime-950/50 dark:via-green-950/30 dark:to-emerald-950/30',
+    borderColor: 'border-lime-300 dark:border-lime-700',
+    iconBg: 'bg-gradient-to-br from-lime-500 to-green-600',
+    iconColor: 'text-white',
+  },
+  {
+    title: '3^ Media',
+    description: 'Ragazzi iscritti al turno 3^ Media',
+    icon: <GraduationCap className="h-7 w-7" />,
+    path: '/turno/3-media',
+    gradient: 'bg-gradient-to-br from-yellow-100 via-amber-50 to-orange-50 dark:from-yellow-950/50 dark:via-amber-950/30 dark:to-orange-950/30',
+    borderColor: 'border-yellow-300 dark:border-yellow-700',
+    iconBg: 'bg-gradient-to-br from-yellow-500 to-amber-600',
+    iconColor: 'text-white',
+  },
+];
+
 export default function Home() {
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const { canAccessPage, isLoading } = useMyPagePermissions();
+  const { data: myTurnoPerms = [], isLoading: turnoPermsLoading } = useMyTurnoPermissions();
 
   // Filter cards based on user's actual page permissions
   const accessibleCards = allQuickAccessCards.filter(card => {
-    // Don't show Home card in quick access (we're already on Home)
     if (card.path === '/home') return false;
     return canAccessPage(card.path);
+  });
+
+  // Filter turno cards based on turno permissions (admin sees all)
+  const accessibleTurnoCards = turnoQuickAccessCards.filter(card => {
+    if (isAdmin) return true;
+    const turnoInfo = TURNI.find(t => `/turno/${t.slug}` === card.path);
+    if (!turnoInfo) return false;
+    return myTurnoPerms.some(p => p.turno === turnoInfo.value);
   });
 
   return (
@@ -282,8 +345,35 @@ export default function Home() {
           )}
         </div>
 
-        {/* Turno Accordion Sections */}
-        <TurnoAccordionSection />
+        {/* Turno Quick Access Cards */}
+        {!isLoading && !turnoPermsLoading && accessibleTurnoCards.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-primary" />
+              Iscrizioni per turno
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {accessibleTurnoCards.map((card) => (
+                <Link 
+                  key={card.path} 
+                  to={card.path}
+                  className="group block"
+                >
+                  <Card className={`h-full hover:shadow-xl transition-all duration-300 hover:scale-[1.03] cursor-pointer border-2 ${card.borderColor} ${card.gradient}`}>
+                    <CardContent className="flex flex-col items-center justify-center py-6 px-3">
+                      <div className={`w-14 h-14 ${card.iconBg} rounded-xl shadow-lg flex items-center justify-center mb-3 transition-transform group-hover:scale-110 group-hover:rotate-3 ${card.iconColor}`}>
+                        {card.icon}
+                      </div>
+                      <CardTitle className="text-center text-sm sm:text-base font-semibold text-foreground">
+                        {card.title}
+                      </CardTitle>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );
