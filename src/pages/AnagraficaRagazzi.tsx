@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore } from 'lucide-react';
+import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -212,6 +213,26 @@ function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 
               <div className="flex flex-col gap-2">
                 <Button onClick={startEdit} className="w-full"><Pencil className="h-4 w-4 mr-2" /> Modifica dati</Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => {
+                    toast.info('Arricchimento dati in corso...');
+                    const { data, error } = await supabase.functions.invoke('enrich-anagrafica', {
+                      body: { ragazzo_id: ragazzo.id },
+                    });
+                    if (error) {
+                      toast.error('Errore: ' + error.message);
+                    } else if (data?.enriched) {
+                      toast.success('Dati arricchiti con successo!');
+                      onOpenChange(false);
+                    } else {
+                      toast.info(data?.message || 'Nessun dato da arricchire');
+                    }
+                  }}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" /> Arricchisci dati
+                </Button>
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1" onClick={handleArchive} disabled={archiveMutation.isPending}>
                     {ragazzo.archiviato ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}

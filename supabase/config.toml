@@ -1,1 +1,13 @@
 project_id = "lymuvosryafhpeaiqcba"
+
+[functions.analyze-form-responses]
+verify_jwt = false
+
+[functions.create-user]
+verify_jwt = false
+
+[functions.notify-iscrizione]
+verify_jwt = false
+
+[functions.enrich-anagrafica]
+verify_jwt = false
