@@ -114,6 +114,7 @@ export default function IscrizioneCampeggio() {
   const [checkAllergieVeritiere, setCheckAllergieVeritiere] = useState(false);
   const [checkAllergieResponsabilita, setCheckAllergieResponsabilita] = useState(false);
   const [checkAllergieVariazioni, setCheckAllergieVariazioni] = useState(false);
+  const [checkAllergieCompleto, setCheckAllergieCompleto] = useState(false);
   const [firmaAllergieData, setFirmaAllergieData] = useState<Date>(new Date());
   const [firmaAllergieNome, setFirmaAllergieNome] = useState("");
 
@@ -159,7 +160,7 @@ export default function IscrizioneCampeggio() {
   };
 
   const validateStep2 = () => {
-    if (!checkAllergieVeritiere || !checkAllergieResponsabilita || !checkAllergieVariazioni) {
+    if (!checkAllergieVeritiere || !checkAllergieResponsabilita || !checkAllergieVariazioni || !checkAllergieCompleto) {
       toast({ title: "Accetta tutte le dichiarazioni obbligatorie", variant: "destructive" }); return false;
     }
     if (!firmaAllergieData) { toast({ title: "Completa la firma", variant: "destructive" }); return false; }
@@ -468,19 +469,23 @@ export default function IscrizioneCampeggio() {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle className="text-base">✅ Dichiarazioni</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">✅ Dichiarazioni Obbligatorie *</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <Checkbox checked={checkAllergieVeritiere} onCheckedChange={v => setCheckAllergieVeritiere(!!v)} className="mt-1" />
-                  <span className="text-sm">Dichiaro che le informazioni su allergie, intolleranze, patologie e farmaci sono veritiere, aggiornate e complete.</span>
+                  <span className="text-sm">Dichiaro che le informazioni su allergie, intolleranze, patologie e farmaci sono veritiere, aggiornate e complete. *</span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <Checkbox checked={checkAllergieResponsabilita} onCheckedChange={v => setCheckAllergieResponsabilita(!!v)} className="mt-1" />
-                  <span className="text-sm">Sono consapevole che il CUPAV seguirà esclusivamente quanto dichiarato. In caso di omissioni o informazioni errate, il CUPAV declina ogni responsabilità.</span>
+                  <span className="text-sm">Sono consapevole che il CUPAV seguirà esclusivamente quanto dichiarato. In caso di omissioni o informazioni errate, il CUPAV declina ogni responsabilità. *</span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <Checkbox checked={checkAllergieVariazioni} onCheckedChange={v => setCheckAllergieVariazioni(!!v)} className="mt-1" />
-                  <span className="text-sm">Mi impegno a comunicare personalmente al direttivo CUPAV qualsiasi variazione delle condizioni di salute di mio/a figlio/a prima dell'inizio del campeggio.</span>
+                  <span className="text-sm">Mi impegno a comunicare personalmente al direttivo CUPAV qualsiasi variazione delle condizioni di salute di mio/a figlio/a prima dell'inizio del campeggio. *</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox checked={checkAllergieCompleto} onCheckedChange={v => setCheckAllergieCompleto(!!v)} className="mt-1" />
+                  <span className="text-sm">Dichiaro di aver indicato tutte le allergie, patologie e farmaci necessari senza omissioni. *</span>
                 </label>
               </CardContent>
             </Card>
