@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -176,7 +177,6 @@ export default function IscrizioneCampeggio() {
     if (!checkRegolamento || !checkRimborso || !checkMedico || !checkConsenso) {
       toast({ title: "Accetta tutte le dichiarazioni obbligatorie", variant: "destructive" }); return false;
     }
-    if (!checkAccettaRegolamento) { toast({ title: "Accetta il regolamento", variant: "destructive" }); return false; }
     return true;
   };
 
@@ -549,29 +549,6 @@ export default function IscrizioneCampeggio() {
         {/* STEP 4 - Regolamento e Invio */}
         {currentStep === (showStep2 ? 4 : 3) && (
           <div className="space-y-6">
-            {/* Dichiarazioni Obbligatorie */}
-            <Card>
-              <CardHeader><CardTitle className="text-base">✅ Dichiarazioni Obbligatorie</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox checked={checkRegolamento} onCheckedChange={(v) => setCheckRegolamento(!!v)} className="mt-1" />
-                  <span className="text-sm">Ho preso visione del regolamento e mi impegno a farlo rispettare al mio/a figlio/a.</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox checked={checkRimborso} onCheckedChange={(v) => setCheckRimborso(!!v)} className="mt-1" />
-                  <span className="text-sm">Sono consapevole che in caso di ritiro verrà rimborsato solo €125,00.</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox checked={checkMedico} onCheckedChange={(v) => setCheckMedico(!!v)} className="mt-1" />
-                  <span className="text-sm">Autorizzo il personale medico ad adottare i percorsi terapeutici necessari.</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox checked={checkConsenso} onCheckedChange={(v) => setCheckConsenso(!!v)} className="mt-1" />
-                  <span className="text-sm">Dichiaro di agire con il consenso di entrambi i genitori (artt. 316, 337 ter e 337 quater c.c.).</span>
-                </label>
-              </CardContent>
-            </Card>
-
             <Card>
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-5 w-5" /> Regolamento CUPAV</CardTitle></CardHeader>
               <CardContent className="space-y-4">
@@ -591,10 +568,28 @@ export default function IscrizioneCampeggio() {
                     <p key={i}><strong>{i + 1}.</strong> {r}</p>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
 
+            {/* Dichiarazioni Obbligatorie */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">✅ Dichiarazioni Obbligatorie *</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
                 <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox checked={checkAccettaRegolamento} onCheckedChange={v => setCheckAccettaRegolamento(!!v)} className="mt-1" />
-                  <span className="text-sm font-medium">Confermo di aver letto e accettato il regolamento CUPAV in ogni sua parte e mi impegno a farlo rispettare al mio/a figlio/a per tutta la durata del campeggio.</span>
+                  <Checkbox checked={checkRegolamento} onCheckedChange={(v) => setCheckRegolamento(!!v)} className="mt-1" />
+                  <span className="text-sm">Confermo di aver letto e accettato il regolamento CUPAV in ogni sua parte. Ho preso visione del regolamento e mi impegno a farlo rispettare al mio/a figlio/a per tutta la durata del campeggio. *</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox checked={checkRimborso} onCheckedChange={(v) => setCheckRimborso(!!v)} className="mt-1" />
+                  <span className="text-sm">Sono consapevole che in caso di ritiro verrà rimborsato solo €125,00. *</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox checked={checkMedico} onCheckedChange={(v) => setCheckMedico(!!v)} className="mt-1" />
+                  <span className="text-sm">Autorizzo il personale medico ad adottare i percorsi terapeutici necessari. *</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox checked={checkConsenso} onCheckedChange={(v) => setCheckConsenso(!!v)} className="mt-1" />
+                  <span className="text-sm">Dichiaro di agire con il consenso di entrambi i genitori (artt. 316, 337 ter e 337 quater c.c.). *</span>
                 </label>
               </CardContent>
             </Card>
@@ -644,10 +639,29 @@ export default function IscrizioneCampeggio() {
           ) : <div />}
 
           {currentStep === lastStep ? (
-            <Button onClick={handleSubmit} disabled={submitting} className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base h-auto shadow-lg">
-              <Send className="h-5 w-5 mr-2" />
-              {submitting ? "Invio in corso..." : "INVIA ISCRIZIONE"}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button onClick={(e) => { if (!validateStep4()) e.preventDefault(); }} className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base h-auto shadow-lg">
+                  <Send className="h-5 w-5 mr-2" />
+                  INVIA ISCRIZIONE
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Conferma invio iscrizione</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-3">
+                    <span className="block">Stai per inviare l'iscrizione di <strong>{ragazzoCognome} {ragazzoNome}</strong> al turno <strong>{turno}</strong>.</span>
+                    <span className="block font-medium text-foreground">Confermo che tutti i dati da me inseriti sono corretti, completi e veritieri.</span>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annulla</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSubmit} disabled={submitting} className="bg-green-600 hover:bg-green-700">
+                    {submitting ? "Invio in corso..." : "Confermo e invio"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           ) : (
             <Button onClick={nextStep}>Avanti <ChevronRight className="h-4 w-4 ml-1" /></Button>
           )}
