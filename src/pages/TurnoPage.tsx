@@ -361,8 +361,8 @@ export default function TurnoPage() {
 
   // Download PDF
   const handleDownloadPDF = async () => {
-    const { default: jsPDF } = await import('jspdf');
-    await import('jspdf-autotable');
+    const { jsPDF } = await import('jspdf');
+    const { autoTable } = await import('jspdf-autotable');
 
     const doc = new jsPDF();
     doc.setFontSize(16);
@@ -374,7 +374,7 @@ export default function TurnoPage() {
       r.recapiti_telefonici || '',
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 30,
       head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono']],
       body: rows,
