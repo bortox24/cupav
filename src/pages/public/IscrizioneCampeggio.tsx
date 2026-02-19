@@ -159,7 +159,6 @@ export default function IscrizioneCampeggio() {
   };
 
   const validateStep2 = () => {
-    if (!allergieDettaglio.trim()) { toast({ title: "Descrivi le allergie/intolleranze", variant: "destructive" }); return false; }
     if (!checkAllergieVeritiere || !checkAllergieResponsabilita || !checkAllergieVariazioni) {
       toast({ title: "Accetta tutte le dichiarazioni obbligatorie", variant: "destructive" }); return false;
     }
@@ -434,7 +433,7 @@ export default function IscrizioneCampeggio() {
             <Card>
               <CardHeader><CardTitle className="text-base">🍽️ Allergie e Intolleranze Alimentari</CardTitle></CardHeader>
               <CardContent>
-                <Label>Descrivi le allergie e/o intolleranze alimentari. Per ogni alimento intollerato specifica cosa può mangiare in alternativa. *</Label>
+                <Label>Descrivi le allergie e/o intolleranze alimentari. Per ogni alimento intollerato specifica cosa può mangiare in alternativa.</Label>
                 <Textarea value={allergieDettaglio} onChange={e => setAllergieDettaglio(e.target.value)} className="mt-2" rows={4} />
               </CardContent>
             </Card>
