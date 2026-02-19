@@ -218,7 +218,8 @@ export default function TurnoPage() {
         .from('iscrizioni')
         .select('*')
         .eq('turno', turnoValue)
-        .order('ragazzo_cognome', { ascending: true });
+        .order('ragazzo_cognome', { ascending: true })
+        .order('ragazzo_nome', { ascending: true });
       if (error) throw error;
       return data ?? [];
     },

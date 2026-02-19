@@ -37,7 +37,8 @@ export function useIscrizioniConPagamenti() {
       const { data: iscrizioni, error: iscErr } = await supabase
         .from('iscrizioni')
         .select('id, ragazzo_nome, ragazzo_cognome, genitore_nome, genitore_cognome, turno, email, recapiti_telefonici')
-        .order('ragazzo_cognome', { ascending: true });
+        .order('ragazzo_cognome', { ascending: true })
+        .order('ragazzo_nome', { ascending: true });
 
       if (iscErr) throw iscErr;
 
