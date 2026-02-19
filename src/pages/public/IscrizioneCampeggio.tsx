@@ -167,10 +167,8 @@ export default function IscrizioneCampeggio() {
   };
 
   const validateStep3 = () => {
-    if (!libCognome || !libNome) { toast({ title: "Compila cognome e nome", variant: "destructive" }); return false; }
     if (!liberatoriaFoto) { toast({ title: "Seleziona il consenso foto/video", variant: "destructive" }); return false; }
     if (!checkPrivacy) { toast({ title: "Accetta l'informativa privacy", variant: "destructive" }); return false; }
-    if (!firmaLibData || !firmaLibNome) { toast({ title: "Completa la firma", variant: "destructive" }); return false; }
     return true;
   };
 
@@ -182,6 +180,8 @@ export default function IscrizioneCampeggio() {
     return true;
   };
 
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
   const nextStep = () => {
     if (currentStep === 1 && !validateStep1()) return;
     if (currentStep === 2 && showStep2 && !validateStep2()) return;
@@ -189,11 +189,13 @@ export default function IscrizioneCampeggio() {
 
     if (currentStep === 1 && !showStep2) setCurrentStep(3);
     else setCurrentStep(currentStep + 1);
+    scrollToTop();
   };
 
   const prevStep = () => {
     if (currentStep === 3 && !showStep2) setCurrentStep(1);
     else setCurrentStep(currentStep - 1);
+    scrollToTop();
   };
 
   const handleSubmit = async () => {
@@ -423,8 +425,8 @@ export default function IscrizioneCampeggio() {
             <Card>
               <CardContent className="pt-6 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label className="text-muted-foreground text-xs">Ragazzo/a</Label><Input value={`${ragazzoNome} ${ragazzoCognome}`} readOnly className="bg-muted" /></div>
-                  <div><Label className="text-muted-foreground text-xs">Genitore/Tutore</Label><Input value={`${genitoreNome} ${genitoreCognome}`} readOnly className="bg-muted" /></div>
+                  <div><Label className="text-muted-foreground text-xs">Ragazzo/a</Label><Input value={`${ragazzoCognome} ${ragazzoNome}`} readOnly className="bg-muted" /></div>
+                  <div><Label className="text-muted-foreground text-xs">Genitore/Tutore</Label><Input value={`${genitoreCognome} ${genitoreNome}`} readOnly className="bg-muted" /></div>
                 </div>
               </CardContent>
             </Card>
@@ -488,7 +490,7 @@ export default function IscrizioneCampeggio() {
               <CardHeader><CardTitle className="text-base">✍️ Firma</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Data *</Label><Input value={format(new Date(), "dd/MM/yyyy")} readOnly className="bg-muted" /></div>
+                  <div><Label>Data *</Label><Input value={format(new Date(), "dd-MM-yyyy")} readOnly className="bg-muted" /></div>
                   <div><Label>Cognome e Nome del firmatario *</Label><Input value={`${genitoreCognome} ${genitoreNome}`.trim()} readOnly className="bg-muted" /></div>
                 </div>
               </CardContent>
@@ -503,8 +505,8 @@ export default function IscrizioneCampeggio() {
               <CardHeader><CardTitle className="text-base">📸 Liberatoria Foto e Video</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Nome genitore/tutore *</Label><Input value={libNome} onChange={e => setLibNome(capitalize(e.target.value))} /></div>
-                  <div><Label>Cognome genitore/tutore *</Label><Input value={libCognome} onChange={e => setLibCognome(capitalize(e.target.value))} /></div>
+                  <div><Label>Cognome genitore/tutore *</Label><Input value={genitoreCognome} readOnly className="bg-muted" /></div>
+                  <div><Label>Nome genitore/tutore *</Label><Input value={genitoreNome} readOnly className="bg-muted" /></div>
                 </div>
 
                 <div className="bg-muted/50 border rounded-lg p-4 text-sm text-muted-foreground">
@@ -536,7 +538,7 @@ export default function IscrizioneCampeggio() {
               <CardHeader><CardTitle className="text-base">✍️ Firma</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Data *</Label><DatePickerField value={firmaLibData} onChange={setFirmaLibData} label="Seleziona data" /></div>
+                  <div><Label>Data *</Label><Input value={format(new Date(), "dd-MM-yyyy")} readOnly className="bg-muted" /></div>
                   <div><Label>Cognome e Nome del firmatario *</Label><Input value={`${genitoreCognome} ${genitoreNome}`.trim()} readOnly className="bg-muted" /></div>
                 </div>
               </CardContent>
