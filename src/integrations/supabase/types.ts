@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      appello_logs: {
+        Row: {
+          created_at: string
+          effettuato_da: string
+          effettuato_da_nome: string
+          id: string
+          presenti: number
+          totale: number
+          turno: string
+        }
+        Insert: {
+          created_at?: string
+          effettuato_da: string
+          effettuato_da_nome: string
+          id?: string
+          presenti: number
+          totale: number
+          turno: string
+        }
+        Update: {
+          created_at?: string
+          effettuato_da?: string
+          effettuato_da_nome?: string
+          id?: string
+          presenti?: number
+          totale?: number
+          turno?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
