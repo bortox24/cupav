@@ -143,6 +143,14 @@ export function useMyPagePermissions() {
       }
     }
 
+    // Check if a parent page grants access (e.g. /admin/moduli grants /admin/moduli/:id/risposte)
+    const parentPermission = permissions.find(p => 
+      p.can_access && pagePath.startsWith(p.page_path + '/')
+    );
+    if (parentPermission) {
+      return true;
+    }
+
     // No permission found = no access (for non-admin users)
     return false;
   };
