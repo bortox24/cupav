@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMyTurnoPermissions, TURNI } from '@/hooks/useTurnoPermissions';
@@ -9,9 +9,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen, Filter } from 'lucide-react';
+import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen, Filter, Users, ClipboardCheck, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { it as itLocale } from 'date-fns/locale';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from '@/hooks/use-toast';
+
+// ─── Helpers ───────────────────────────────────────────
 
 function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: string | null }) {
   if (!nome) return null;
@@ -22,17 +30,18 @@ function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: st
   );
 }
 
+// ─── Detail card (existing) ────────────────────────────
+
 function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
   const initials = `${(r.ragazzo_nome?.[0] || '').toUpperCase()}${(r.ragazzo_cognome?.[0] || '').toUpperCase()}`;
   const phoneNumber = r.recapiti_telefonici?.replace(/[^0-9+]/g, '') || '';
 
   return (
-    <Card 
+    <Card
       className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] overflow-hidden bg-card rounded-2xl [-webkit-tap-highlight-color:transparent]"
       onClick={onClick}
     >
       <CardContent className="p-0">
-        {/* Colored header with initials */}
         <div className={`px-4 py-3.5 flex items-center gap-3 ${r.ha_allergie ? 'bg-gradient-to-r from-red-500/10 to-orange-500/10' : 'bg-gradient-to-r from-primary/10 to-blue-500/10'}`}>
           <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md ${r.ha_allergie ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-gradient-to-br from-primary to-blue-500'}`}>
             {initials}
@@ -46,10 +55,7 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
             </p>
           </div>
         </div>
-
-        {/* Body */}
         <div className="px-4 py-3.5 space-y-3">
-          {/* Phone - only number is clickable */}
           <div className="flex items-center gap-2 text-sm">
             <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Phone className="h-3.5 w-3.5 text-primary" />
@@ -62,8 +68,6 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
               {r.recapiti_telefonici}
             </a>
           </div>
-
-          {/* Badges row */}
           <div className="flex items-center gap-2 flex-wrap">
             {r.ha_allergie ? (
               <Badge className="text-[11px] gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
@@ -84,7 +88,8 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
   );
 }
 
-// Detail info row component
+// ─── Detail drawer (existing) ──────────────────────────
+
 function InfoRow({ icon, label, value, isLink }: { icon: React.ReactNode; label: string; value: string; isLink?: boolean }) {
   return (
     <div className="flex items-start gap-3 py-2.5">
@@ -107,7 +112,6 @@ function InfoRow({ icon, label, value, isLink }: { icon: React.ReactNode; label:
 
 function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean; onOpenChange: (v: boolean) => void }) {
   if (!r) return null;
-
   const initials = `${(r.ragazzo_nome?.[0] || '').toUpperCase()}${(r.ragazzo_cognome?.[0] || '').toUpperCase()}`;
 
   return (
@@ -115,7 +119,6 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
       <DrawerContent className="max-h-[92vh]">
         <div className="overflow-y-auto px-5 pb-8">
           <DrawerHeader className="px-0 pb-4">
-            {/* Avatar + Name header */}
             <div className="flex items-center gap-4">
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-lg shrink-0 ${r.ha_allergie ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-gradient-to-br from-primary to-blue-500'}`}>
                 {initials}
@@ -126,8 +129,6 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
               </div>
             </div>
           </DrawerHeader>
-
-          {/* Quick badges */}
           <div className="flex items-center gap-2 flex-wrap mb-5">
             {r.ha_allergie ? (
               <Badge className="gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-3 py-1.5 text-xs pointer-events-none">
@@ -142,8 +143,6 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
               <Camera className="h-3.5 w-3.5" /> Foto {r.liberatoria_foto ? 'Sì' : 'No'}
             </Badge>
           </div>
-
-          {/* Info sections */}
           <div className="space-y-1">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Dati Ragazzo/a</h4>
             <div className="bg-muted/30 rounded-2xl px-3 divide-y divide-border">
@@ -152,7 +151,6 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
               <InfoRow icon={<Home className="h-4 w-4 text-muted-foreground" />} label="Residente" value={`${r.ragazzo_residente} — ${r.ragazzo_indirizzo}`} />
             </div>
           </div>
-
           <div className="space-y-1 mt-5">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Contatti</h4>
             <div className="bg-muted/30 rounded-2xl px-3 divide-y divide-border">
@@ -160,24 +158,18 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
               <InfoRow icon={<Mail className="h-4 w-4 text-muted-foreground" />} label="Email" value={r.email} />
             </div>
           </div>
-
           {r.ha_allergie && (
             <div className="space-y-1 mt-5">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Allergie e Patologie</h4>
               <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl px-4 py-3 space-y-2">
-                {r.allergie_dettaglio && (
-                  <p className="text-sm"><span className="font-medium">Allergie:</span> {r.allergie_dettaglio}</p>
-                )}
-                {r.patologie_dettaglio && (
-                  <p className="text-sm"><span className="font-medium">Patologie:</span> {r.patologie_dettaglio}</p>
-                )}
+                {r.allergie_dettaglio && <p className="text-sm"><span className="font-medium">Allergie:</span> {r.allergie_dettaglio}</p>}
+                {r.patologie_dettaglio && <p className="text-sm"><span className="font-medium">Patologie:</span> {r.patologie_dettaglio}</p>}
                 <FarmacoLine nome={r.farmaco_1_nome} posologia={r.farmaco_1_posologia} />
                 <FarmacoLine nome={r.farmaco_2_nome} posologia={r.farmaco_2_posologia} />
                 <FarmacoLine nome={r.farmaco_3_nome} posologia={r.farmaco_3_posologia} />
               </div>
             </div>
           )}
-
           <div className="space-y-1 mt-5">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Altro</h4>
             <div className="bg-muted/30 rounded-2xl px-3 divide-y divide-border">
@@ -193,6 +185,31 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
   );
 }
 
+// ─── Appello Card ──────────────────────────────────────
+
+function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; onToggle: () => void }) {
+  return (
+    <Card
+      className={`cursor-pointer transition-all duration-200 active:scale-95 rounded-2xl border-2 [-webkit-tap-highlight-color:transparent] ${
+        isPresent
+          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 shadow-emerald-200/50 dark:shadow-emerald-900/30 shadow-md'
+          : 'border-red-400 bg-red-50 dark:bg-red-950/30 shadow-red-200/50 dark:shadow-red-900/30 shadow-md'
+      }`}
+      onClick={onToggle}
+    >
+      <CardContent className="p-5 flex items-center justify-center min-h-[80px]">
+        <p className={`text-lg font-bold text-center ${isPresent ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
+          {r.ragazzo_nome} {r.ragazzo_cognome}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────
+
+type TabType = 'dettagli' | 'appello' | 'download-lista';
+
 export default function TurnoPage() {
   const { turnoSlug } = useParams<{ turnoSlug: string }>();
   const { user, isAdmin } = useAuth();
@@ -202,15 +219,17 @@ export default function TurnoPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterAllergie, setFilterAllergie] = useState<boolean | null>(null);
   const [filterFoto, setFilterFoto] = useState<boolean | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('dettagli');
+  const [presentSet, setPresentSet] = useState<Set<string>>(new Set());
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Find turno info from slug
   const turnoInfo = TURNI.find(t => t.slug === turnoSlug);
   const turnoValue = turnoInfo?.value ?? '';
   const turnoLabel = turnoInfo?.label ?? '';
-
   const hasAccess = isAdmin || myPerms.some(p => p.turno === turnoValue);
 
-  // Load iscrizioni for this turno
+  // Load iscrizioni
   const { data: iscrizioni = [], isLoading: iscrizioniLoading } = useQuery({
     queryKey: ['turno-iscrizioni', turnoValue],
     queryFn: async () => {
@@ -226,7 +245,32 @@ export default function TurnoPage() {
     enabled: !!user && hasAccess && !!turnoValue,
   });
 
-  // Filter + sort
+  // Load current user profile name
+  const { data: profile } = useQuery({
+    queryKey: ['my-profile', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles').select('full_name').eq('id', user!.id).single();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Load appello logs
+  const { data: appelloLogs = [], isLoading: logsLoading } = useQuery({
+    queryKey: ['appello-logs', turnoValue],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('appello_logs' as any)
+        .select('*')
+        .eq('turno', turnoValue)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user && hasAccess && !!turnoValue,
+  });
+
+  // Filtered iscrizioni (for dettagli tab)
   const filteredIscrizioni = useMemo(() => {
     let result = [...iscrizioni];
     if (searchQuery.trim()) {
@@ -248,7 +292,15 @@ export default function TurnoPage() {
     return result;
   }, [iscrizioni, searchQuery, filterAllergie, filterFoto]);
 
-  // Realtime
+  // Sorted iscrizioni for appello (by name)
+  const sortedIscrizioni = useMemo(() => {
+    return [...iscrizioni].sort((a: any, b: any) => {
+      const cmp = (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
+      return cmp !== 0 ? cmp : (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
+    });
+  }, [iscrizioni]);
+
+  // Realtime iscrizioni
   useEffect(() => {
     if (!user || !turnoValue) return;
     const channel = supabase
@@ -260,6 +312,89 @@ export default function TurnoPage() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, turnoValue, turnoSlug, queryClient]);
+
+  // Realtime appello logs
+  useEffect(() => {
+    if (!user || !turnoValue) return;
+    const channel = supabase
+      .channel(`appello-logs-${turnoSlug}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'appello_logs' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['appello-logs', turnoValue] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, turnoValue, turnoSlug, queryClient]);
+
+  // Toggle presence
+  const togglePresence = useCallback((id: string) => {
+    setPresentSet(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Conclude appello
+  const handleConcludiAppello = async () => {
+    if (!user || !profile) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('appello_logs' as any).insert({
+        turno: turnoValue,
+        effettuato_da: user.id,
+        effettuato_da_nome: profile.full_name,
+        presenti: presentSet.size,
+        totale: iscrizioni.length,
+      });
+      if (error) throw error;
+      setPresentSet(new Set());
+      setShowConfirm(false);
+      toast({ title: 'Appello registrato', description: `Presenti ${presentSet.size}/${iscrizioni.length}` });
+      queryClient.invalidateQueries({ queryKey: ['appello-logs', turnoValue] });
+    } catch (e: any) {
+      toast({ title: 'Errore', description: e.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Download PDF
+  const handleDownloadPDF = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
+
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`Lista ${turnoLabel}`, 14, 20);
+
+    const rows = sortedIscrizioni.map((r: any) => [
+      `${r.ragazzo_nome} ${r.ragazzo_cognome}`,
+      `${r.genitore_nome} ${r.genitore_cognome}`,
+      r.recapiti_telefonici || '',
+    ]);
+
+    (doc as any).autoTable({
+      startY: 30,
+      head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono']],
+      body: rows,
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    doc.save(`lista-${turnoSlug}.pdf`);
+  };
+
+  // Tab click handler for download
+  const handleTabClick = (tab: TabType) => {
+    if (tab === 'download-lista') {
+      handleDownloadPDF();
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  // ─── Render guards ─────────
 
   if (!turnoInfo) {
     return (
@@ -295,81 +430,186 @@ export default function TurnoPage() {
   return (
     <MainLayout title={turnoLabel}>
       <div className="space-y-6">
-        {/* Search & Filters section */}
-        <Card className="border-0 shadow-sm rounded-2xl bg-muted/30">
-          <CardContent className="p-4 space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cerca ragazzo/a..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 rounded-xl bg-background"
-              />
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Button
-                variant={filterAllergie === true ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-full text-xs h-7 gap-1"
-                onClick={() => setFilterAllergie(filterAllergie === true ? null : true)}
-              >
-                <AlertTriangle className="h-3 w-3" /> Con allergie
-              </Button>
-              <Button
-                variant={filterAllergie === false ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-full text-xs h-7 gap-1"
-                onClick={() => setFilterAllergie(filterAllergie === false ? null : false)}
-              >
-                <Check className="h-3 w-3" /> Senza allergie
-              </Button>
-              <Button
-                variant={filterFoto === true ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-full text-xs h-7 gap-1"
-                onClick={() => setFilterFoto(filterFoto === true ? null : true)}
-              >
-                <Camera className="h-3 w-3" /> Foto Sì
-              </Button>
-              <Button
-                variant={filterFoto === false ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-full text-xs h-7 gap-1"
-                onClick={() => setFilterFoto(filterFoto === false ? null : false)}
-              >
-                <Camera className="h-3 w-3" /> Foto No
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tab pills */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant={activeTab === 'dettagli' ? 'default' : 'outline'}
+            size="sm"
+            className="rounded-full gap-1.5"
+            onClick={() => handleTabClick('dettagli')}
+          >
+            <Users className="h-4 w-4" /> Dettagli ragazzi
+          </Button>
+          <Button
+            variant={activeTab === 'appello' ? 'default' : 'outline'}
+            size="sm"
+            className="rounded-full gap-1.5"
+            onClick={() => handleTabClick('appello')}
+          >
+            <ClipboardCheck className="h-4 w-4" /> Appello
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full gap-1.5"
+            onClick={() => handleTabClick('download-lista')}
+          >
+            <Download className="h-4 w-4" /> Download lista
+          </Button>
+        </div>
 
-        {iscrizioniLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredIscrizioni.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground">
-                {searchQuery ? 'Nessun risultato trovato.' : 'Nessun ragazzo iscritto per questo turno.'}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filteredIscrizioni.map((r: any) => (
-              <RagazzoCompactCard key={r.id} r={r} onClick={() => setSelectedRagazzo(r)} />
-            ))}
-          </div>
+        {/* ─── Tab: Dettagli ragazzi ─── */}
+        {activeTab === 'dettagli' && (
+          <>
+            <Card className="border-0 shadow-sm rounded-2xl bg-muted/30">
+              <CardContent className="p-4 space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Cerca ragazzo/a..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 rounded-xl bg-background"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Button variant={filterAllergie === true ? 'default' : 'outline'} size="sm" className="rounded-full text-xs h-7 gap-1" onClick={() => setFilterAllergie(filterAllergie === true ? null : true)}>
+                    <AlertTriangle className="h-3 w-3" /> Con allergie
+                  </Button>
+                  <Button variant={filterAllergie === false ? 'default' : 'outline'} size="sm" className="rounded-full text-xs h-7 gap-1" onClick={() => setFilterAllergie(filterAllergie === false ? null : false)}>
+                    <Check className="h-3 w-3" /> Senza allergie
+                  </Button>
+                  <Button variant={filterFoto === true ? 'default' : 'outline'} size="sm" className="rounded-full text-xs h-7 gap-1" onClick={() => setFilterFoto(filterFoto === true ? null : true)}>
+                    <Camera className="h-3 w-3" /> Foto Sì
+                  </Button>
+                  <Button variant={filterFoto === false ? 'default' : 'outline'} size="sm" className="rounded-full text-xs h-7 gap-1" onClick={() => setFilterFoto(filterFoto === false ? null : false)}>
+                    <Camera className="h-3 w-3" /> Foto No
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {iscrizioniLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredIscrizioni.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-muted-foreground">
+                    {searchQuery ? 'Nessun risultato trovato.' : 'Nessun ragazzo iscritto per questo turno.'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {filteredIscrizioni.map((r: any) => (
+                  <RagazzoCompactCard key={r.id} r={r} onClick={() => setSelectedRagazzo(r)} />
+                ))}
+              </div>
+            )}
+
+            <RagazzoDetailDrawer
+              r={selectedRagazzo}
+              open={!!selectedRagazzo}
+              onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }}
+            />
+          </>
         )}
 
-        <RagazzoDetailDrawer
-          r={selectedRagazzo}
-          open={!!selectedRagazzo}
-          onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }}
-        />
+        {/* ─── Tab: Appello ─── */}
+        {activeTab === 'appello' && (
+          <>
+            {iscrizioniLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : sortedIscrizioni.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-muted-foreground">Nessun ragazzo iscritto per questo turno.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Count indicator */}
+                <div className="text-center">
+                  <Badge variant="secondary" className="text-sm px-4 py-1.5 rounded-full">
+                    Presenti {presentSet.size}/{sortedIscrizioni.length}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {sortedIscrizioni.map((r: any) => (
+                    <AppelloCard
+                      key={r.id}
+                      r={r}
+                      isPresent={presentSet.has(r.id)}
+                      onToggle={() => togglePresence(r.id)}
+                    />
+                  ))}
+                </div>
+
+                <div className="flex justify-center pt-2">
+                  <Button
+                    size="lg"
+                    className="rounded-full gap-2 px-8"
+                    onClick={() => setShowConfirm(true)}
+                  >
+                    <ClipboardCheck className="h-5 w-5" /> Concludi appello
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {/* Appello logs */}
+            <div className="space-y-3 pt-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Storico appelli</h3>
+              {logsLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : (appelloLogs as any[]).length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nessun appello registrato.</p>
+              ) : (
+                <div className="space-y-2">
+                  {(appelloLogs as any[]).map((log: any) => (
+                    <Card key={log.id} className="border-0 shadow-sm rounded-xl bg-muted/30">
+                      <CardContent className="p-3 flex items-center justify-between gap-2 flex-wrap">
+                        <div className="text-sm">
+                          <span className="font-medium">{log.effettuato_da_nome}</span>
+                          <span className="text-muted-foreground ml-2">
+                            {format(new Date(log.created_at), 'dd-MM-yyyy, HH.mm', { locale: itLocale })}
+                          </span>
+                        </div>
+                        <Badge variant="secondary" className="rounded-full text-xs">
+                          Presenti {log.presenti}/{log.totale}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Confirm dialog */}
+            <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Conferma appello</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Stai per registrare l'appello con <strong>Presenti {presentSet.size}/{sortedIscrizioni.length}</strong>. Vuoi procedere?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={saving}>Annulla</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleConcludiAppello} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Conferma'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        )}
       </div>
     </MainLayout>
   );
