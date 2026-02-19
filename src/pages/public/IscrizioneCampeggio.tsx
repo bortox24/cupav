@@ -96,7 +96,7 @@ export default function IscrizioneCampeggio() {
   const [checkRimborso, setCheckRimborso] = useState(false);
   const [checkMedico, setCheckMedico] = useState(false);
   const [checkConsenso, setCheckConsenso] = useState(false);
-  const [firmaData, setFirmaData] = useState<Date>();
+  const [firmaData, setFirmaData] = useState<Date>(new Date());
   const [firmaNome, setFirmaNome] = useState("");
 
   // Step 2 fields
@@ -421,7 +421,7 @@ export default function IscrizioneCampeggio() {
               <CardHeader><CardTitle className="text-base">✍️ Firma</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Data *</Label><DatePickerField value={firmaData} onChange={setFirmaData} label="Seleziona data" /></div>
+                  <div><Label>Data *</Label><Input value={format(new Date(), "dd-MM-yyyy")} readOnly className="bg-muted" /></div>
                   <div><Label>Nome e Cognome del firmatario *</Label><Input value={firmaNome} onChange={e => setFirmaNome(e.target.value)} /></div>
                 </div>
               </CardContent>
