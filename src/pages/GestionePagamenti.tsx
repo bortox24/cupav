@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 const TURNI_FILTER = [
-  '4^ Elementare', '5^ Elementare',
-  '1^ Media', '2^ Media', '3^ Media',
+  '4° Elementare', '5° Elementare',
+  '1° Media', '2° Media', '3° Media',
   'Turno famiglie',
 ];
 
