@@ -242,8 +242,8 @@ export default function TurnoPage() {
       result = result.filter((r: any) => r.liberatoria_foto === filterFoto);
     }
     result.sort((a: any, b: any) => {
-      const cmp = (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
-      return cmp !== 0 ? cmp : (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
+      const cmp = (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
+      return cmp !== 0 ? cmp : (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
     });
     return result;
   }, [iscrizioni, searchQuery, filterAllergie, filterFoto]);

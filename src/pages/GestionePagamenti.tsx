@@ -154,8 +154,8 @@ export default function GestionePagamenti() {
       result = result.filter(i => i.stato_pagamento === filterStato);
     }
     result.sort((a, b) => {
-      const cmp = (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
-      return cmp !== 0 ? cmp : (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
+      const cmp = (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
+      return cmp !== 0 ? cmp : (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
     });
     return result;
   }, [items, search, filterTurno, filterStato]);
