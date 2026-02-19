@@ -113,7 +113,7 @@ export default function IscrizioneCampeggio() {
   const [checkAllergieVeritiere, setCheckAllergieVeritiere] = useState(false);
   const [checkAllergieResponsabilita, setCheckAllergieResponsabilita] = useState(false);
   const [checkAllergieVariazioni, setCheckAllergieVariazioni] = useState(false);
-  const [firmaAllergieData, setFirmaAllergieData] = useState<Date>();
+  const [firmaAllergieData, setFirmaAllergieData] = useState<Date>(new Date());
   const [firmaAllergieNome, setFirmaAllergieNome] = useState("");
 
   // Step 3 fields
@@ -162,7 +162,7 @@ export default function IscrizioneCampeggio() {
     if (!checkAllergieVeritiere || !checkAllergieResponsabilita || !checkAllergieVariazioni) {
       toast({ title: "Accetta tutte le dichiarazioni obbligatorie", variant: "destructive" }); return false;
     }
-    if (!firmaAllergieData || !firmaAllergieNome) { toast({ title: "Completa la firma", variant: "destructive" }); return false; }
+    if (!firmaAllergieData) { toast({ title: "Completa la firma", variant: "destructive" }); return false; }
     return true;
   };
 
@@ -488,7 +488,7 @@ export default function IscrizioneCampeggio() {
               <CardHeader><CardTitle className="text-base">✍️ Firma</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Data *</Label><DatePickerField value={firmaAllergieData} onChange={setFirmaAllergieData} label="Seleziona data" /></div>
+                  <div><Label>Data *</Label><Input value={format(new Date(), "dd/MM/yyyy")} readOnly className="bg-muted" /></div>
                   <div><Label>Cognome e Nome del firmatario *</Label><Input value={`${genitoreCognome} ${genitoreNome}`.trim()} readOnly className="bg-muted" /></div>
                 </div>
               </CardContent>
