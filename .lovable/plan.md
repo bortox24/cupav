@@ -1,92 +1,102 @@
 
 
-## Gestione Pagamenti - Piano di implementazione
+## Nuove funzionalita per le pagine Turno
 
 ### Panoramica
-Creare una nuova pagina "Gestione Pagamenti" che mostra card compatte per ogni iscrizione (dalla tabella `iscrizioni`), con stato pagamento (Pagato / Parziale / Da pagare) e arricchimento dati nell'Anagrafica Ragazzi incrociando i dati delle iscrizioni e pre-iscrizioni.
+Aggiungere 3 pulsanti di navigazione (tab) nelle pagine `/turno/...` tra l'header e la sezione filtri: **Dettagli ragazzi**, **Appello**, **Download lista**. Ogni pulsante cambia il contenuto visualizzato.
 
 ---
 
-### 1. Database: nuova tabella `pagamenti`
+### 1. Database - Nuova tabella `appello_logs`
 
-Creare una tabella per tracciare lo stato di pagamento per ogni iscrizione:
+Creare una tabella per salvare i log degli appelli:
 
+| Colonna | Tipo | Note |
+|---------|------|------|
+| id | uuid | PK |
+| turno | text | Valore del turno (es. "4deg Elementare") |
+| effettuato_da | uuid | ID utente che ha fatto l'appello |
+| effettuato_da_nome | text | Nome completo del profilo |
+| presenti | integer | Numero presenti |
+| totale | integer | Numero totale ragazzi |
+| created_at | timestamptz | Data/ora dell'appello |
+
+RLS: tutti gli utenti autenticati possono leggere e inserire (coerente con i permessi esistenti sulle iscrizioni). Nessuno puo eliminare o aggiornare i log.
+
+Abilitare realtime sulla tabella per sincronizzare i log tra utenti.
+
+---
+
+### 2. Pulsanti Tab (UI)
+
+Aggiungere uno stato `activeTab` con 3 valori: `dettagli` (default), `appello`, `download-lista`.
+
+3 pulsanti stilizzati come tab pills subito dopo il titolo, prima dei filtri. Il pulsante attivo avra variante `default`, gli altri `outline`.
+
+---
+
+### 3. Tab "Dettagli ragazzi"
+
+Nessuna modifica: mostra la pagina attuale con filtri, ricerca e card dettagliate.
+
+---
+
+### 4. Tab "Appello"
+
+- Card semplificate: solo nome e cognome del ragazzo centrato, testo grande.
+- Stato locale `presentSet` (Set di ID): di default tutte le card sono rosse.
+- Click su una card: diventa verde (aggiunta al Set), click di nuovo: torna rossa.
+- Nessun filtro/ricerca visibile in questa tab.
+- In fondo: pulsante "Concludi appello" che mostra un banner/dialog di conferma con "Presenti X/Y".
+- Alla conferma: inserisce un record nella tabella `appello_logs` e resetta tutte le card a rosse.
+- Sotto il pulsante: lista dei log precedenti per quel turno, con formato: nome profilo, data `dd-MM-yyyy, HH.mm`, e "Presenti X/Y".
+
+---
+
+### 5. Tab "Download lista"
+
+- Click sul pulsante scarica direttamente un PDF.
+- Generazione PDF client-side con `jspdf` e `jspdf-autotable`.
+- 3 colonne: Nome e Cognome ragazzo | Nome e Cognome genitore | Telefono.
+- Il download parte immediatamente al click del tab (oppure si mostra un'anteprima con pulsante download).
+
+---
+
+### Dettagli tecnici
+
+**Dipendenze da aggiungere:**
+- `jspdf` e `jspdf-autotable` per generazione PDF client-side
+
+**File modificati:**
+- `src/pages/TurnoPage.tsx` - Aggiunta tabs, vista Appello, logica download PDF, sezione log
+- Migrazione SQL per creare la tabella `appello_logs` con RLS
+
+**Migrazione SQL:**
 ```text
-pagamenti
-- id (uuid, PK)
-- iscrizione_id (uuid, FK -> iscrizioni.id, UNIQUE)
-- stato: 'da_pagare' | 'parziale' | 'pagato'  (default: 'da_pagare')
-- note (text, nullable) -- per importo parziale
-- updated_by (uuid, nullable)
-- created_at, updated_at (timestamps)
+CREATE TABLE public.appello_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  turno text NOT NULL,
+  effettuato_da uuid NOT NULL,
+  effettuato_da_nome text NOT NULL,
+  presenti integer NOT NULL,
+  totale integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.appello_logs ENABLE ROW LEVEL SECURITY;
+
+-- Chiunque autenticato puo leggere
+CREATE POLICY "Authenticated can select appello_logs"
+  ON public.appello_logs FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- Chiunque autenticato puo inserire
+CREATE POLICY "Authenticated can insert appello_logs"
+  ON public.appello_logs FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Nessuna policy per UPDATE/DELETE (log immutabili)
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.appello_logs;
 ```
-
-RLS: solo utenti autenticati con permesso alla pagina `/gestione-pagamenti` o admin possono leggere/scrivere.
-
----
-
-### 2. Arricchimento Anagrafica Ragazzi
-
-Creare una funzione backend (edge function) che, dato un ragazzo, cerca nelle tabelle `iscrizioni` e `ragazzi_genitori` tutti i dati disponibili e li unifica con logica AI (Lovable AI - Gemini Flash) per:
-- Normalizzare i nomi genitori (es. "Marco Bortolamai" vs "Bortolamai Marco" vengono riconosciuti come stessa persona)
-- Unire email e telefoni trovati sia nelle iscrizioni che nelle pre-iscrizioni
-- Aggiornare la tabella `ragazzi_genitori` con i dati arricchiti
-
-Nella pagina Anagrafica Ragazzi, aggiungere un bottone "Arricchisci dati" che lancia questo processo per il ragazzo selezionato (o in batch per tutti).
-
----
-
-### 3. Nuova pagina: `/gestione-pagamenti`
-
-**UI e funzionalita:**
-
-- Griglia di card compatte (stile simile a TurnoPage) con:
-  - Nome e cognome ragazzo
-  - Nome genitori (dal cross-reference iscrizioni + ragazzi_genitori)  
-  - Turno di iscrizione
-  - Stato pagamento con radio button: Pagato / Parziale / Da pagare
-  - Campo note visibile solo se "Parziale" selezionato
-
-- Colore card in base allo stato:
-  - Verde (sfondo leggero) = Pagato
-  - Giallo/Ambra = Parziale
-  - Rosso = Da pagare (default)
-
-- Filtri: ricerca per nome, filtro per turno, filtro per stato pagamento
-
-- I dati vengono dalla tabella `iscrizioni` (solo iscrizioni formali, non pre-iscrizioni). Al primo caricamento, se non esiste un record in `pagamenti` per una iscrizione, viene creato automaticamente con stato "da_pagare".
-
----
-
-### 4. Routing e permessi
-
-- Aggiungere rotta `/gestione-pagamenti` in App.tsx (protetta)
-- Aggiungere pagina nell'elenco `availablePages` in usePagePermissions
-- Aggiungere card in Home.tsx per accesso rapido
-- Permesso pagina configurabile dall'admin tramite Permessi Pagine
-
----
-
-### 5. Dettagli tecnici
-
-**File da creare:**
-- `src/pages/GestionePagamenti.tsx` - pagina principale
-- `src/hooks/usePagamenti.ts` - hook per CRUD pagamenti
-- `supabase/functions/enrich-anagrafica/index.ts` - edge function per arricchimento dati AI
-
-**File da modificare:**
-- `src/App.tsx` - aggiungere rotta
-- `src/pages/Home.tsx` - aggiungere card accesso rapido
-- `src/hooks/usePagePermissions.ts` - aggiungere pagina nell'elenco
-- `src/pages/AnagraficaRagazzi.tsx` - aggiungere bottone arricchimento dati
-
-**Migrazione DB:**
-- Creare tabella `pagamenti` con RLS
-- Creare enum o check per stato pagamento
-
-**Flusso dati della card:**
-1. Query `iscrizioni` per tutti i record
-2. LEFT JOIN con `pagamenti` per stato
-3. Cross-reference con `ragazzi` + `ragazzi_genitori` per nomi genitori arricchiti
-4. Cambio stato pagamento -> upsert in `pagamenti`
 
