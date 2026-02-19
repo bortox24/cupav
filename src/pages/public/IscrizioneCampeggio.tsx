@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import logoCupav from "@/assets/logo-cupav.png";
 
+const capitalize = (s: string) => s.replace(/\b\w/g, c => c.toUpperCase());
+
 const TURNI = [
   { value: "4° Elementare", label: "4° Elementare — dal 27/06 al 04/07/2026" },
   { value: "5° Elementare", label: "5° Elementare — dal 04/07 al 11/07/2026" },
@@ -150,10 +152,6 @@ export default function IscrizioneCampeggio() {
     }
     if (!turno) { toast({ title: "Seleziona un turno", variant: "destructive" }); return false; }
     if (!haAllergie) { toast({ title: "Indica se il ragazzo presenta allergie", variant: "destructive" }); return false; }
-    if (!checkRegolamento || !checkRimborso || !checkMedico || !checkConsenso) {
-      toast({ title: "Accetta tutte le dichiarazioni obbligatorie", variant: "destructive" }); return false;
-    }
-    if (!firmaData || !firmaNome) { toast({ title: "Completa la firma", variant: "destructive" }); return false; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) { toast({ title: "Email non valida", variant: "destructive" }); return false; }
     return true;
@@ -177,6 +175,9 @@ export default function IscrizioneCampeggio() {
   };
 
   const validateStep4 = () => {
+    if (!checkRegolamento || !checkRimborso || !checkMedico || !checkConsenso) {
+      toast({ title: "Accetta tutte le dichiarazioni obbligatorie", variant: "destructive" }); return false;
+    }
     if (!checkAccettaRegolamento) { toast({ title: "Accetta il regolamento", variant: "destructive" }); return false; }
     return true;
   };
@@ -299,15 +300,15 @@ export default function IscrizioneCampeggio() {
               <CardHeader><CardTitle className="text-base">📋 Dati Ragazzo</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Cognome *</Label><Input value={ragazzoCognome} onChange={e => setRagazzoCognome(e.target.value)} /></div>
-                  <div><Label>Nome *</Label><Input value={ragazzoNome} onChange={e => setRagazzoNome(e.target.value)} /></div>
+                  <div><Label>Cognome *</Label><Input value={ragazzoCognome} onChange={e => setRagazzoCognome(capitalize(e.target.value))} /></div>
+                  <div><Label>Nome *</Label><Input value={ragazzoNome} onChange={e => setRagazzoNome(capitalize(e.target.value))} /></div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div><Label>Data di nascita *</Label><DatePickerField value={ragazzoDataNascita} onChange={setRagazzoDataNascita} label="Seleziona data" /></div>
-                  <div><Label>Luogo di nascita *</Label><Input value={ragazzoLuogoNascita} onChange={e => setRagazzoLuogoNascita(e.target.value)} /></div>
+                  <div><Label>Luogo di nascita *</Label><Input value={ragazzoLuogoNascita} onChange={e => setRagazzoLuogoNascita(capitalize(e.target.value))} /></div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Residente a (Comune) *</Label><Input value={ragazzoResidente} onChange={e => setRagazzoResidente(e.target.value)} /></div>
+                  <div><Label>Residente a (Comune) *</Label><Input value={ragazzoResidente} onChange={e => setRagazzoResidente(capitalize(e.target.value))} /></div>
                   <div><Label>Via/Indirizzo *</Label><Input value={ragazzoIndirizzo} onChange={e => setRagazzoIndirizzo(e.target.value)} /></div>
                 </div>
               </CardContent>
@@ -328,8 +329,8 @@ export default function IscrizioneCampeggio() {
                   </Select>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Cognome *</Label><Input value={genitoreCognome} onChange={e => setGenitoreCognome(e.target.value)} /></div>
-                  <div><Label>Nome *</Label><Input value={genitoreNome} onChange={e => setGenitoreNome(e.target.value)} /></div>
+                  <div><Label>Cognome *</Label><Input value={genitoreCognome} onChange={e => setGenitoreCognome(capitalize(e.target.value))} /></div>
+                  <div><Label>Nome *</Label><Input value={genitoreNome} onChange={e => setGenitoreNome(capitalize(e.target.value))} /></div>
                 </div>
                 <div><Label>Email per le comunicazioni *</Label><Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@esempio.it" /></div>
                 <div><Label>Recapiti telefonici *</Label><Input value={recapitiTelefonici} onChange={e => setRecapitiTelefonici(e.target.value)} /></div>
@@ -338,7 +339,7 @@ export default function IscrizioneCampeggio() {
 
             {/* Turno */}
             <Card>
-              <CardHeader><CardTitle className="text-base">🏕️ Turno Richiesto</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">🏕️ Turno Richiesto *</CardTitle></CardHeader>
               <CardContent>
                 <RadioGroup value={turno} onValueChange={setTurno} className="space-y-3">
                   {TURNI.map(t => (
@@ -372,7 +373,7 @@ export default function IscrizioneCampeggio() {
 
             {/* Allergie */}
             <Card>
-              <CardHeader><CardTitle className="text-base">🏥 Allergie e Patologie</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">🏥 Allergie e Patologie *</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <RadioGroup value={haAllergie} onValueChange={setHaAllergie} className="space-y-3">
                   <div className="flex items-start space-x-3">
@@ -502,8 +503,8 @@ export default function IscrizioneCampeggio() {
               <CardHeader><CardTitle className="text-base">📸 Liberatoria Foto e Video</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Nome genitore/tutore *</Label><Input value={libNome} onChange={e => setLibNome(e.target.value)} /></div>
-                  <div><Label>Cognome genitore/tutore *</Label><Input value={libCognome} onChange={e => setLibCognome(e.target.value)} /></div>
+                  <div><Label>Nome genitore/tutore *</Label><Input value={libNome} onChange={e => setLibNome(capitalize(e.target.value))} /></div>
+                  <div><Label>Cognome genitore/tutore *</Label><Input value={libCognome} onChange={e => setLibCognome(capitalize(e.target.value))} /></div>
                 </div>
 
                 <div className="bg-muted/50 border rounded-lg p-4 text-sm text-muted-foreground">
@@ -512,6 +513,7 @@ export default function IscrizioneCampeggio() {
                   Questa autorizzazione può essere revocata in qualsiasi momento con comunicazione scritta inviata via email a <a href="mailto:cupavdirettivo@gmail.com" className="text-primary underline">cupavdirettivo@gmail.com</a>.
                 </div>
 
+                <Label className="font-medium">Consenso foto e video *</Label>
                 <RadioGroup value={liberatoriaFoto} onValueChange={setLiberatoriaFoto} className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <RadioGroupItem value="si" id="foto-si" />
