@@ -393,28 +393,6 @@ export default function IscrizioneCampeggio() {
               </CardContent>
             </Card>
 
-            {/* Dichiarazioni */}
-            <Card>
-              <CardHeader><CardTitle className="text-base">✅ Dichiarazioni Obbligatorie</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox checked={checkRegolamento} onCheckedChange={(v) => setCheckRegolamento(!!v)} className="mt-1" />
-                  <span className="text-sm">Ho preso visione del regolamento e mi impegno a farlo rispettare al mio/a figlio/a.</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox checked={checkRimborso} onCheckedChange={(v) => setCheckRimborso(!!v)} className="mt-1" />
-                  <span className="text-sm">Sono consapevole che in caso di ritiro verrà rimborsato solo €125,00.</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox checked={checkMedico} onCheckedChange={(v) => setCheckMedico(!!v)} className="mt-1" />
-                  <span className="text-sm">Autorizzo il personale medico ad adottare i percorsi terapeutici necessari.</span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <Checkbox checked={checkConsenso} onCheckedChange={(v) => setCheckConsenso(!!v)} className="mt-1" />
-                  <span className="text-sm">Dichiaro di agire con il consenso di entrambi i genitori (artt. 316, 337 ter e 337 quater c.c.).</span>
-                </label>
-              </CardContent>
-            </Card>
 
             {/* Firma Step 1 */}
             <Card>
@@ -567,6 +545,29 @@ export default function IscrizioneCampeggio() {
         {/* STEP 4 - Regolamento e Invio */}
         {currentStep === (showStep2 ? 4 : 3) && (
           <div className="space-y-6">
+            {/* Dichiarazioni Obbligatorie */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">✅ Dichiarazioni Obbligatorie</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox checked={checkRegolamento} onCheckedChange={(v) => setCheckRegolamento(!!v)} className="mt-1" />
+                  <span className="text-sm">Ho preso visione del regolamento e mi impegno a farlo rispettare al mio/a figlio/a.</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox checked={checkRimborso} onCheckedChange={(v) => setCheckRimborso(!!v)} className="mt-1" />
+                  <span className="text-sm">Sono consapevole che in caso di ritiro verrà rimborsato solo €125,00.</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox checked={checkMedico} onCheckedChange={(v) => setCheckMedico(!!v)} className="mt-1" />
+                  <span className="text-sm">Autorizzo il personale medico ad adottare i percorsi terapeutici necessari.</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox checked={checkConsenso} onCheckedChange={(v) => setCheckConsenso(!!v)} className="mt-1" />
+                  <span className="text-sm">Dichiaro di agire con il consenso di entrambi i genitori (artt. 316, 337 ter e 337 quater c.c.).</span>
+                </label>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-5 w-5" /> Regolamento CUPAV</CardTitle></CardHeader>
               <CardContent className="space-y-4">
