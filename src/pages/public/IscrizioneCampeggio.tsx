@@ -224,7 +224,7 @@ export default function IscrizioneCampeggio() {
         farmaco_3_posologia: farmaco3Posologia || null,
         liberatoria_foto: liberatoriaFoto === "si",
         firma_data: firmaData ? format(firmaData, "yyyy-MM-dd") : "",
-        firma_nome: firmaNome,
+        firma_nome: `${genitoreCognome} ${genitoreNome}`.trim(),
       };
 
       const { error } = await supabase.from("iscrizioni" as any).insert(payload as any);
@@ -400,7 +400,7 @@ export default function IscrizioneCampeggio() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div><Label>Data *</Label><Input value={format(new Date(), "dd-MM-yyyy")} readOnly className="bg-muted" /></div>
-                  <div><Label>Nome e Cognome del firmatario *</Label><Input value={firmaNome} onChange={e => setFirmaNome(e.target.value)} /></div>
+                  <div><Label>Cognome e Nome del firmatario *</Label><Input value={`${genitoreCognome} ${genitoreNome}`.trim()} readOnly className="bg-muted" /></div>
                 </div>
               </CardContent>
             </Card>
@@ -488,7 +488,7 @@ export default function IscrizioneCampeggio() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div><Label>Data *</Label><DatePickerField value={firmaAllergieData} onChange={setFirmaAllergieData} label="Seleziona data" /></div>
-                  <div><Label>Nome e Cognome *</Label><Input value={firmaAllergieNome} onChange={e => setFirmaAllergieNome(e.target.value)} /></div>
+                  <div><Label>Cognome e Nome del firmatario *</Label><Input value={`${genitoreCognome} ${genitoreNome}`.trim()} readOnly className="bg-muted" /></div>
                 </div>
               </CardContent>
             </Card>
@@ -535,7 +535,7 @@ export default function IscrizioneCampeggio() {
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div><Label>Data *</Label><DatePickerField value={firmaLibData} onChange={setFirmaLibData} label="Seleziona data" /></div>
-                  <div><Label>Nome e Cognome *</Label><Input value={firmaLibNome} onChange={e => setFirmaLibNome(e.target.value)} /></div>
+                  <div><Label>Cognome e Nome del firmatario *</Label><Input value={`${genitoreCognome} ${genitoreNome}`.trim()} readOnly className="bg-muted" /></div>
                 </div>
               </CardContent>
             </Card>
