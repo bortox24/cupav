@@ -139,7 +139,7 @@ export default function GestionePagamenti() {
   const [filterStato, setFilterStato] = useState('all');
 
   const filtered = useMemo(() => {
-    let result = items;
+    let result = [...items];
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(i =>
@@ -153,6 +153,10 @@ export default function GestionePagamenti() {
     if (filterStato !== 'all') {
       result = result.filter(i => i.stato_pagamento === filterStato);
     }
+    result.sort((a, b) => {
+      const cmp = (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
+      return cmp !== 0 ? cmp : (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
+    });
     return result;
   }, [items, search, filterTurno, filterStato]);
 
