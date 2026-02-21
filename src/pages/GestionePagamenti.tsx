@@ -195,10 +195,10 @@ function PagamentoCard({ item, onClick }: { item: IscrizioneConPagamento; onClic
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="font-bold text-[15px] leading-tight truncate text-foreground">
+            <h4 className="font-bold text-[15px] leading-tight text-foreground break-words">
               {item.ragazzo_nome} {item.ragazzo_cognome}
             </h4>
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5 break-words">
               {item.genitore_nome} {item.genitore_cognome}
             </p>
           </div>
