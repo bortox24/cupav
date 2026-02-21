@@ -194,11 +194,11 @@ function PagamentoCard({ item, onClick }: { item: IscrizioneConPagamento; onClic
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md bg-gradient-to-br from-primary to-blue-500">
             {initials}
           </div>
-          <div className="min-w-0 flex-1">
-            <h4 className="font-bold text-[15px] leading-tight text-foreground break-words">
+          <div className="flex-1">
+            <h4 className="font-bold text-[15px] leading-tight text-foreground whitespace-nowrap">
               {item.ragazzo_nome} {item.ragazzo_cognome}
             </h4>
-            <p className="text-xs text-muted-foreground mt-0.5 break-words">
+            <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap">
               {item.genitore_nome} {item.genitore_cognome}
             </p>
           </div>
