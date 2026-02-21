@@ -1,102 +1,132 @@
 
 
-## Nuove funzionalita per le pagine Turno
+## Nuove funzionalita Gestione Pagamenti
 
 ### Panoramica
-Aggiungere 3 pulsanti di navigazione (tab) nelle pagine `/turno/...` tra l'header e la sezione filtri: **Dettagli ragazzi**, **Appello**, **Download lista**. Ogni pulsante cambia il contenuto visualizzato.
+Aggiungere alla pagina Gestione Pagamenti:
+1. Card cliccabili che aprono un Drawer (stile iOS come in /turni) con dettagli pagamento, pulsante webhook reminder, e log invii
+2. Menu a tendina importo dovuto (250/230 EUR) su ogni card
+3. Note strutturate per stato "Parziale" (importo gia pagato + importo dovuto automatico)
+4. Nuova riga in `webhook_config` per URL webhook dedicato ai reminder
+5. Nuova tabella `pagamento_reminder_logs` per tracciare gli invii webhook
+6. Edge function per chiamare il webhook
 
 ---
 
-### 1. Database - Nuova tabella `appello_logs`
+### 1. Database - Modifiche
 
-Creare una tabella per salvare i log degli appelli:
+**Colonna `importo_dovuto` nella tabella `pagamenti`**
+- Tipo: `integer`, default `250`, NOT NULL
+- Rappresenta l'importo che il ragazzo deve pagare (250 o 230)
+
+**Colonna `importo_pagato` nella tabella `pagamenti`**
+- Tipo: `integer`, default `0`, NOT NULL  
+- Usato quando lo stato e "parziale" per indicare quanto gia pagato
+
+**Nuova tabella `pagamento_reminder_logs`**
 
 | Colonna | Tipo | Note |
 |---------|------|------|
 | id | uuid | PK |
-| turno | text | Valore del turno (es. "4deg Elementare") |
-| effettuato_da | uuid | ID utente che ha fatto l'appello |
-| effettuato_da_nome | text | Nome completo del profilo |
-| presenti | integer | Numero presenti |
-| totale | integer | Numero totale ragazzi |
-| created_at | timestamptz | Data/ora dell'appello |
+| iscrizione_id | uuid | FK verso iscrizioni |
+| inviato_da | uuid | ID utente |
+| inviato_da_nome | text | Nome profilo |
+| stato_al_momento | text | Stato pagamento al momento dell'invio |
+| note_al_momento | text | Note allegate (se parziale) |
+| created_at | timestamptz | Data/ora invio |
 
-RLS: tutti gli utenti autenticati possono leggere e inserire (coerente con i permessi esistenti sulle iscrizioni). Nessuno puo eliminare o aggiornare i log.
+RLS: utenti autenticati possono SELECT e INSERT. Nessun UPDATE/DELETE (log immutabili).
 
-Abilitare realtime sulla tabella per sincronizzare i log tra utenti.
-
----
-
-### 2. Pulsanti Tab (UI)
-
-Aggiungere uno stato `activeTab` con 3 valori: `dettagli` (default), `appello`, `download-lista`.
-
-3 pulsanti stilizzati come tab pills subito dopo il titolo, prima dei filtri. Il pulsante attivo avra variante `default`, gli altri `outline`.
+**Nuova riga nella tabella `webhook_config`**: inserire un record con descrizione "Webhook reminder pagamento" e URL vuoto (da configurare dall'utente).
 
 ---
 
-### 3. Tab "Dettagli ragazzi"
+### 2. Edge Function - `notify-pagamento-reminder`
 
-Nessuna modifica: mostra la pagina attuale con filtri, ricerca e card dettagliate.
-
----
-
-### 4. Tab "Appello"
-
-- Card semplificate: solo nome e cognome del ragazzo centrato, testo grande.
-- Stato locale `presentSet` (Set di ID): di default tutte le card sono rosse.
-- Click su una card: diventa verde (aggiunta al Set), click di nuovo: torna rossa.
-- Nessun filtro/ricerca visibile in questa tab.
-- In fondo: pulsante "Concludi appello" che mostra un banner/dialog di conferma con "Presenti X/Y".
-- Alla conferma: inserisce un record nella tabella `appello_logs` e resetta tutte le card a rosse.
-- Sotto il pulsante: lista dei log precedenti per quel turno, con formato: nome profilo, data `dd-MM-yyyy, HH.mm`, e "Presenti X/Y".
+Una nuova edge function che:
+- Riceve i dati del pagamento (nome ragazzo, genitore, qualita genitore, turno, stato, note)
+- Legge l'URL webhook dalla tabella `webhook_config` filtrando per descrizione "Webhook reminder pagamento"
+- Chiama il webhook con i dati via POST
+- Restituisce successo/errore
 
 ---
 
-### 5. Tab "Download lista"
+### 3. UI - Card nella pagina principale
 
-- Click sul pulsante scarica direttamente un PDF.
-- Generazione PDF client-side con `jspdf` e `jspdf-autotable`.
-- 3 colonne: Nome e Cognome ragazzo | Nome e Cognome genitore | Telefono.
-- Il download parte immediatamente al click del tab (oppure si mostra un'anteprima con pulsante download).
+**Importo dovuto**: aggiungere nella header di ogni card, a destra del nome, un piccolo Select con "250 EUR" e "230 EUR" (default 250). Al cambio, salva il valore nel record `pagamenti`.
+
+**Note strutturate per "Parziale"**: sostituire il campo testo libero con:
+- "Gia pagato: [input numerico] EUR"
+- "a fronte di: [importo dovuto dal dropdown] EUR" (calcolato automaticamente, solo lettura)
+- Pulsante "Salva" che salva `importo_pagato` nel record pagamenti
 
 ---
 
-### Dettagli tecnici
+### 4. UI - Drawer dettaglio (click sulla card)
 
-**Dipendenze da aggiungere:**
-- `jspdf` e `jspdf-autotable` per generazione PDF client-side
+Aprire un Drawer (componente `Drawer` gia usato in TurnoPage) con:
 
-**File modificati:**
-- `src/pages/TurnoPage.tsx` - Aggiunta tabs, vista Appello, logica download PDF, sezione log
-- Migrazione SQL per creare la tabella `appello_logs` con RLS
+**Sezione superiore**:
+- Avatar con iniziali + nome ragazzo + genitore (qualita)
+- Turno
+- Stato pagamento con colore (badge)
+- Importo dovuto e importo gia pagato (se parziale)
+
+**Pulsante "Invia reminder pagamento"**:
+- Visibile solo se stato = "da_pagare" o "parziale"
+- Se stato = "pagato": pulsante disattivato con testo "Pagamento completato"
+- Al click: chiama la edge function, registra il log, mostra toast di conferma
+
+**Sezione Log**:
+- Lista cronologica (piu recente in alto) di tutti gli invii webhook per quella iscrizione
+- Formato: nome profilo, stato al momento, data `dd-MM-yyyy, HH.mm`
+- Log non eliminabili, solo visibili
+
+---
+
+### 5. Dettagli tecnici
+
+**File da creare:**
+- `supabase/functions/notify-pagamento-reminder/index.ts` - Edge function per webhook
+
+**File da modificare:**
+- `src/hooks/usePagamenti.ts` - Aggiungere `genitore_qualita`, `importo_dovuto`, `importo_pagato` all'interfaccia e alle query; aggiungere hook per reminder logs e invio webhook
+- `src/pages/GestionePagamenti.tsx` - Card cliccabili, Drawer dettaglio, dropdown importo, note strutturate, pulsante webhook, sezione log
 
 **Migrazione SQL:**
 ```text
-CREATE TABLE public.appello_logs (
+-- Aggiungere colonne a pagamenti
+ALTER TABLE public.pagamenti
+  ADD COLUMN importo_dovuto integer NOT NULL DEFAULT 250,
+  ADD COLUMN importo_pagato integer NOT NULL DEFAULT 0;
+
+-- Tabella log reminder
+CREATE TABLE public.pagamento_reminder_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  turno text NOT NULL,
-  effettuato_da uuid NOT NULL,
-  effettuato_da_nome text NOT NULL,
-  presenti integer NOT NULL,
-  totale integer NOT NULL,
+  iscrizione_id uuid NOT NULL,
+  inviato_da uuid NOT NULL,
+  inviato_da_nome text NOT NULL,
+  stato_al_momento text NOT NULL,
+  note_al_momento text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.appello_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pagamento_reminder_logs ENABLE ROW LEVEL SECURITY;
 
--- Chiunque autenticato puo leggere
-CREATE POLICY "Authenticated can select appello_logs"
-  ON public.appello_logs FOR SELECT
+CREATE POLICY "Authenticated can select pagamento_reminder_logs"
+  ON public.pagamento_reminder_logs FOR SELECT
   USING (auth.uid() IS NOT NULL);
 
--- Chiunque autenticato puo inserire
-CREATE POLICY "Authenticated can insert appello_logs"
-  ON public.appello_logs FOR INSERT
+CREATE POLICY "Authenticated can insert pagamento_reminder_logs"
+  ON public.pagamento_reminder_logs FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL);
 
--- Nessuna policy per UPDATE/DELETE (log immutabili)
+ALTER PUBLICATION supabase_realtime ADD TABLE public.pagamento_reminder_logs;
+```
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.appello_logs;
+**Inserimento webhook_config** (via insert tool):
+```text
+INSERT INTO webhook_config (webhook_url, descrizione)
+VALUES ('', 'Webhook reminder pagamento');
 ```
 
