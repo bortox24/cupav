@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.enrich-anagrafica]
 verify_jwt = false
+
+[functions.notify-pagamento-reminder]
+verify_jwt = false

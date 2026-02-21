@@ -241,6 +241,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          importo_dovuto: number
+          importo_pagato: number
           iscrizione_id: string
           note: string | null
           stato: Database["public"]["Enums"]["payment_status"]
@@ -250,6 +252,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          importo_dovuto?: number
+          importo_pagato?: number
           iscrizione_id: string
           note?: string | null
           stato?: Database["public"]["Enums"]["payment_status"]
@@ -259,6 +263,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          importo_dovuto?: number
+          importo_pagato?: number
           iscrizione_id?: string
           note?: string | null
           stato?: Database["public"]["Enums"]["payment_status"]
@@ -270,6 +276,44 @@ export type Database = {
             foreignKeyName: "pagamenti_iscrizione_id_fkey"
             columns: ["iscrizione_id"]
             isOneToOne: true
+            referencedRelation: "iscrizioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagamento_reminder_logs: {
+        Row: {
+          created_at: string
+          id: string
+          inviato_da: string
+          inviato_da_nome: string
+          iscrizione_id: string
+          note_al_momento: string | null
+          stato_al_momento: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inviato_da: string
+          inviato_da_nome: string
+          iscrizione_id: string
+          note_al_momento?: string | null
+          stato_al_momento: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inviato_da?: string
+          inviato_da_nome?: string
+          iscrizione_id?: string
+          note_al_momento?: string | null
+          stato_al_momento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamento_reminder_logs_iscrizione_id_fkey"
+            columns: ["iscrizione_id"]
+            isOneToOne: false
             referencedRelation: "iscrizioni"
             referencedColumns: ["id"]
           },
