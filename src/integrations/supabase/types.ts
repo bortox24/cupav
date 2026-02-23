@@ -361,6 +361,7 @@ export type Database = {
           full_name: string
           ha_allergie: boolean
           id: string
+          numero: number | null
           patologie_dettaglio: string | null
           residente_altavilla: boolean
           updated_at: string
@@ -379,6 +380,7 @@ export type Database = {
           full_name: string
           ha_allergie?: boolean
           id?: string
+          numero?: number | null
           patologie_dettaglio?: string | null
           residente_altavilla?: boolean
           updated_at?: string
@@ -397,6 +399,7 @@ export type Database = {
           full_name?: string
           ha_allergie?: boolean
           id?: string
+          numero?: number | null
           patologie_dettaglio?: string | null
           residente_altavilla?: boolean
           updated_at?: string
