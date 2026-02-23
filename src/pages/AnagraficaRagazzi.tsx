@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useRagazzi, useUpdateRagazzo, useAddIscrizione, useDeleteIscrizione, useArchiveRagazzo, useDeleteRagazzo, RagazzoCompleto, formatDataNascita } from '@/hooks/useRagazzi';
+import { useAuth } from '@/lib/auth';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles, AlertTriangle, Pill } from 'lucide-react';
+import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles, AlertTriangle, Pill, Send, Check, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -87,7 +90,9 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
   );
 }
 
-function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoCompleto; open: boolean; onOpenChange: (v: boolean) => void }) {
+function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoCompleto; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { user, profile } = useAuth();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState({
     full_name: '', data_nascita: '', residente_altavilla: false,
@@ -101,14 +106,29 @@ function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
   const [addingIscrizione, setAddingIscrizione] = useState(false);
   const [newAnno, setNewAnno] = useState(String(CURRENT_YEAR));
   const [newTurno, setNewTurno] = useState('');
-
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [sendingWebhook, setSendingWebhook] = useState(false);
 
   const updateMutation = useUpdateRagazzo();
   const addIscrizioneMutation = useAddIscrizione();
   const deleteIscrizioneMutation = useDeleteIscrizione();
   const archiveMutation = useArchiveRagazzo();
   const deleteMutation = useDeleteRagazzo();
+
+  // Fetch invio logs for this ragazzo
+  const { data: invioLogs = [] } = useQuery({
+    queryKey: ['anagrafica-invio-logs', ragazzo.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('anagrafica_invio_logs' as any)
+        .select('*')
+        .eq('ragazzo_id', ragazzo.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open,
+  });
 
   const startEdit = () => {
     setEditData({
@@ -187,6 +207,68 @@ function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
     });
   };
 
+  const handleInviaIscrizione = async () => {
+    if (!user || !profile) { toast.error('Utente non autenticato'); return; }
+    setSendingWebhook(true);
+    let successo = false;
+    try {
+      // Get webhook URL from webhook_config with description "Invio iscrizione anagrafica"
+      const { data: webhookRows } = await supabase
+        .from('webhook_config')
+        .select('webhook_url')
+        .ilike('descrizione', '%invio iscrizione%')
+        .limit(1);
+      
+      const webhookUrl = webhookRows?.[0]?.webhook_url;
+      if (!webhookUrl) {
+        toast.error('Nessun webhook configurato con descrizione "Invio iscrizione"');
+        setSendingWebhook(false);
+        return;
+      }
+
+      // Call the webhook POST
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ragazzo_id: ragazzo.id,
+          full_name: ragazzo.full_name,
+          data_nascita: ragazzo.data_nascita,
+          residente_altavilla: ragazzo.residente_altavilla,
+          ha_allergie: ragazzo.ha_allergie,
+          allergie_dettaglio: ragazzo.allergie_dettaglio,
+          patologie_dettaglio: ragazzo.patologie_dettaglio,
+          genitori: ragazzo.genitori,
+          iscrizioni: ragazzo.iscrizioni,
+          farmaco_1_nome: ragazzo.farmaco_1_nome,
+          farmaco_1_posologia: ragazzo.farmaco_1_posologia,
+          farmaco_2_nome: ragazzo.farmaco_2_nome,
+          farmaco_2_posologia: ragazzo.farmaco_2_posologia,
+          farmaco_3_nome: ragazzo.farmaco_3_nome,
+          farmaco_3_posologia: ragazzo.farmaco_3_posologia,
+        }),
+      });
+      successo = res.ok;
+      if (successo) {
+        toast.success('Iscrizione inviata con successo!');
+      } else {
+        toast.error('Errore nell\'invio dell\'iscrizione');
+      }
+    } catch {
+      toast.error('Errore di rete nell\'invio');
+    }
+
+    // Log the attempt
+    await supabase.from('anagrafica_invio_logs' as any).insert({
+      ragazzo_id: ragazzo.id,
+      inviato_da: user.id,
+      inviato_da_nome: profile.full_name || profile.email,
+      successo,
+    });
+    queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs', ragazzo.id] });
+    setSendingWebhook(false);
+  };
+
   const updateGenitore = (idx: number, field: string, value: string) => {
     setEditData((prev) => {
       const genitori = [...prev.genitori];
@@ -205,249 +287,283 @@ function RagazzoDialog({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{ragazzo.full_name}</DialogTitle>
-            <DialogDescription>Dettaglio anagrafica</DialogDescription>
-          </DialogHeader>
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[92vh]">
+          <div className="overflow-y-auto px-5 pb-8">
+            <DrawerHeader className="px-0 pb-4">
+              <DrawerTitle className="text-xl text-left">{ragazzo.full_name}</DrawerTitle>
+              <p className="text-sm text-muted-foreground text-left">Dettaglio anagrafica</p>
+            </DrawerHeader>
 
-          {!editing ? (
-            <div className="space-y-4">
-              {/* Dati ragazzo */}
-              <div className="space-y-1">
-                <p className="text-sm"><span className="font-medium">Data di nascita:</span> {formatDataNascita(ragazzo.data_nascita)}</p>
-                <div className="flex items-center gap-1">
-                  <Badge variant={ragazzo.residente_altavilla ? 'default' : 'secondary'} className="text-xs">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    {ragazzo.residente_altavilla ? 'Residente' : 'Non residente'}
-                  </Badge>
+            {!editing ? (
+              <div className="space-y-4">
+                {/* Dati ragazzo */}
+                <div className="space-y-1">
+                  <p className="text-sm"><span className="font-medium">Data di nascita:</span> {formatDataNascita(ragazzo.data_nascita)}</p>
+                  <div className="flex items-center gap-1">
+                    <Badge variant={ragazzo.residente_altavilla ? 'default' : 'secondary'} className="text-xs">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {ragazzo.residente_altavilla ? 'Residente' : 'Non residente'}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
 
-              <Separator />
+                <Separator />
 
-              {/* Genitori */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium flex items-center gap-1"><Users className="h-4 w-4" /> Genitori</p>
-                {ragazzo.genitori.length === 0 && <p className="text-sm text-muted-foreground">Nessun genitore registrato</p>}
-                {ragazzo.genitori.map((g) => (
-                  <div key={g.id} className="text-sm bg-muted/50 rounded-lg p-2.5 space-y-1">
-                    <p className="font-medium">{g.nome_cognome} <span className="text-muted-foreground font-normal">({g.ruolo})</span></p>
-                    {g.email && <p className="text-muted-foreground flex items-center gap-1 text-xs"><Mail className="h-3 w-3" /> {g.email}</p>}
-                    {g.telefono && <p className="text-muted-foreground flex items-center gap-1 text-xs"><Phone className="h-3 w-3" /> {g.telefono}</p>}
-                  </div>
-                ))}
-              </div>
-
-              <Separator />
-
-              {/* Iscrizioni - read only */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium flex items-center gap-1"><GraduationCap className="h-4 w-4" /> Iscrizioni</p>
-                {ragazzo.iscrizioni.length === 0 && <p className="text-sm text-muted-foreground">Nessuna iscrizione</p>}
-                {ragazzo.iscrizioni.map((i) => (
-                  <div key={i.id} className={`text-sm rounded-lg p-2 ${i.anno === CURRENT_YEAR ? 'bg-primary/10 font-semibold' : 'bg-muted/30'}`}>
-                    <span>{i.anno}: {i.turno}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Dati medici */}
-              {(ragazzo.ha_allergie || ragazzo.allergie_dettaglio || ragazzo.patologie_dettaglio || ragazzo.farmaco_1_nome) && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium flex items-center gap-1"><AlertTriangle className="h-4 w-4 text-red-500" /> Allergie / Patologie / Farmaci</p>
-                    <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3 space-y-1.5 text-sm">
-                      {ragazzo.allergie_dettaglio && (
-                        <p><span className="font-medium">Allergie:</span> {ragazzo.allergie_dettaglio}</p>
-                      )}
-                      {ragazzo.patologie_dettaglio && (
-                        <p><span className="font-medium">Patologie:</span> {ragazzo.patologie_dettaglio}</p>
-                      )}
-                      {ragazzo.farmaco_1_nome && (
-                        <p className="flex items-center gap-1"><Pill className="h-3 w-3" /> {ragazzo.farmaco_1_nome}{ragazzo.farmaco_1_posologia ? ` — ${ragazzo.farmaco_1_posologia}` : ''}</p>
-                      )}
-                      {ragazzo.farmaco_2_nome && (
-                        <p className="flex items-center gap-1"><Pill className="h-3 w-3" /> {ragazzo.farmaco_2_nome}{ragazzo.farmaco_2_posologia ? ` — ${ragazzo.farmaco_2_posologia}` : ''}</p>
-                      )}
-                      {ragazzo.farmaco_3_nome && (
-                        <p className="flex items-center gap-1"><Pill className="h-3 w-3" /> {ragazzo.farmaco_3_nome}{ragazzo.farmaco_3_posologia ? ` — ${ragazzo.farmaco_3_posologia}` : ''}</p>
-                      )}
+                {/* Genitori */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-1"><Users className="h-4 w-4" /> Genitori</p>
+                  {ragazzo.genitori.length === 0 && <p className="text-sm text-muted-foreground">Nessun genitore registrato</p>}
+                  {ragazzo.genitori.map((g) => (
+                    <div key={g.id} className="text-sm bg-muted/50 rounded-lg p-2.5 space-y-1">
+                      <p className="font-medium">{g.nome_cognome} <span className="text-muted-foreground font-normal">({g.ruolo})</span></p>
+                      {g.email && <p className="text-muted-foreground flex items-center gap-1 text-xs"><Mail className="h-3 w-3" /> {g.email}</p>}
+                      {g.telefono && <p className="text-muted-foreground flex items-center gap-1 text-xs"><Phone className="h-3 w-3" /> {g.telefono}</p>}
                     </div>
-                  </div>
-                </>
-              )}
-
-              <Separator />
-
-              <div className="flex flex-col gap-2">
-                <Button onClick={startEdit} className="w-full"><Pencil className="h-4 w-4 mr-2" /> Modifica dati</Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={async () => {
-                    toast.info('Arricchimento dati in corso...');
-                    const { data, error } = await supabase.functions.invoke('enrich-anagrafica', {
-                      body: { ragazzo_id: ragazzo.id },
-                    });
-                    if (error) {
-                      toast.error('Errore: ' + error.message);
-                    } else if (data?.enriched) {
-                      toast.success('Dati arricchiti con successo!');
-                      onOpenChange(false);
-                    } else {
-                      toast.info(data?.message || 'Nessun dato da arricchire');
-                    }
-                  }}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" /> Arricchisci dati
-                </Button>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={handleArchive} disabled={archiveMutation.isPending}>
-                    {ragazzo.archiviato ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}
-                    {ragazzo.archiviato ? 'Ripristina' : 'Archivia'}
-                  </Button>
-                  <Button variant="destructive" className="flex-1" onClick={() => setShowDeleteConfirm(true)}>
-                    <Trash2 className="h-4 w-4 mr-2" /> Elimina
-                  </Button>
+                  ))}
                 </div>
-              </div>
-            </div>
-          ) : (
-            /* Edit mode */
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nome e cognome</Label>
-                <Input value={editData.full_name} onChange={(e) => setEditData((p) => ({ ...p, full_name: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Data di nascita</Label>
-                <Input type="date" value={editData.data_nascita} onChange={(e) => setEditData((p) => ({ ...p, data_nascita: e.target.value }))} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={editData.residente_altavilla} onCheckedChange={(v) => setEditData((p) => ({ ...p, residente_altavilla: v }))} />
-                <Label>Residente ad Altavilla</Label>
-              </div>
 
-              <Separator />
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Genitori</Label>
-                  <Button variant="outline" size="sm" onClick={addGenitore}><Plus className="h-3 w-3 mr-1" /> Aggiungi</Button>
-                </div>
-                {editData.genitori.map((g, idx) => (
-                  <div key={idx} className="bg-muted/50 rounded-lg p-3 space-y-2 relative">
-                    <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => removeGenitore(idx)}>
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
-                    <Input placeholder="Nome e cognome" value={g.nome_cognome} onChange={(e) => updateGenitore(idx, 'nome_cognome', e.target.value)} />
-                    <Select value={g.ruolo} onValueChange={(v) => updateGenitore(idx, 'ruolo', v)}>
-                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Madre">Madre</SelectItem>
-                        <SelectItem value="Padre">Padre</SelectItem>
-                        <SelectItem value="Tutore">Tutore</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input placeholder="Email" value={g.email} onChange={(e) => updateGenitore(idx, 'email', e.target.value)} />
-                    <Input placeholder="Telefono" value={g.telefono} onChange={(e) => updateGenitore(idx, 'telefono', e.target.value)} />
-                  </div>
-                ))}
-              </div>
+                <Separator />
 
-              <Separator />
-
-              {/* Medical fields */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Switch checked={editData.ha_allergie} onCheckedChange={(v) => setEditData((p) => ({ ...p, ha_allergie: v }))} />
-                  <Label className="flex items-center gap-1"><AlertTriangle className="h-4 w-4 text-red-500" /> Ha allergie/patologie</Label>
-                </div>
-                {editData.ha_allergie && (
-                  <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3 space-y-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Dettaglio allergie</Label>
-                      <Input value={editData.allergie_dettaglio} onChange={(e) => setEditData((p) => ({ ...p, allergie_dettaglio: e.target.value }))} placeholder="Es. polvere, polline..." />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Dettaglio patologie</Label>
-                      <Input value={editData.patologie_dettaglio} onChange={(e) => setEditData((p) => ({ ...p, patologie_dettaglio: e.target.value }))} placeholder="Es. asma, stanchezza..." />
-                    </div>
-                    <Separator />
-                    <Label className="text-xs flex items-center gap-1"><Pill className="h-3 w-3" /> Farmaci</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input placeholder="Farmaco 1" value={editData.farmaco_1_nome} onChange={(e) => setEditData((p) => ({ ...p, farmaco_1_nome: e.target.value }))} />
-                      <Input placeholder="Posologia 1" value={editData.farmaco_1_posologia} onChange={(e) => setEditData((p) => ({ ...p, farmaco_1_posologia: e.target.value }))} />
-                      <Input placeholder="Farmaco 2" value={editData.farmaco_2_nome} onChange={(e) => setEditData((p) => ({ ...p, farmaco_2_nome: e.target.value }))} />
-                      <Input placeholder="Posologia 2" value={editData.farmaco_2_posologia} onChange={(e) => setEditData((p) => ({ ...p, farmaco_2_posologia: e.target.value }))} />
-                      <Input placeholder="Farmaco 3" value={editData.farmaco_3_nome} onChange={(e) => setEditData((p) => ({ ...p, farmaco_3_nome: e.target.value }))} />
-                      <Input placeholder="Posologia 3" value={editData.farmaco_3_posologia} onChange={(e) => setEditData((p) => ({ ...p, farmaco_3_posologia: e.target.value }))} />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Iscrizioni - editable in edit mode */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                {/* Iscrizioni - read only */}
+                <div className="space-y-2">
                   <p className="text-sm font-medium flex items-center gap-1"><GraduationCap className="h-4 w-4" /> Iscrizioni</p>
-                  <Button variant="outline" size="sm" onClick={() => setAddingIscrizione(true)}>
-                    <Plus className="h-3 w-3 mr-1" /> Aggiungi
-                  </Button>
+                  {ragazzo.iscrizioni.length === 0 && <p className="text-sm text-muted-foreground">Nessuna iscrizione</p>}
+                  {ragazzo.iscrizioni.map((i) => (
+                    <div key={i.id} className={`text-sm rounded-lg p-2 ${i.anno === CURRENT_YEAR ? 'bg-primary/10 font-semibold' : 'bg-muted/30'}`}>
+                      <span>{i.anno}: {i.turno}</span>
+                    </div>
+                  ))}
                 </div>
 
-                {addingIscrizione && (
-                  <div className="flex items-end gap-2 bg-muted/50 rounded-lg p-2.5">
-                    <div className="flex-1">
-                      <Label className="text-xs">Anno</Label>
-                      <Select value={newAnno} onValueChange={setNewAnno}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>{YEAR_OPTIONS.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-                      </Select>
+                {/* Dati medici */}
+                {(ragazzo.ha_allergie || ragazzo.allergie_dettaglio || ragazzo.patologie_dettaglio || ragazzo.farmaco_1_nome) && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium flex items-center gap-1"><AlertTriangle className="h-4 w-4 text-red-500" /> Allergie / Patologie / Farmaci</p>
+                      <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3 space-y-1.5 text-sm">
+                        {ragazzo.allergie_dettaglio && (
+                          <p><span className="font-medium">Allergie:</span> {ragazzo.allergie_dettaglio}</p>
+                        )}
+                        {ragazzo.patologie_dettaglio && (
+                          <p><span className="font-medium">Patologie:</span> {ragazzo.patologie_dettaglio}</p>
+                        )}
+                        {ragazzo.farmaco_1_nome && (
+                          <p className="flex items-center gap-1"><Pill className="h-3 w-3" /> {ragazzo.farmaco_1_nome}{ragazzo.farmaco_1_posologia ? ` — ${ragazzo.farmaco_1_posologia}` : ''}</p>
+                        )}
+                        {ragazzo.farmaco_2_nome && (
+                          <p className="flex items-center gap-1"><Pill className="h-3 w-3" /> {ragazzo.farmaco_2_nome}{ragazzo.farmaco_2_posologia ? ` — ${ragazzo.farmaco_2_posologia}` : ''}</p>
+                        )}
+                        {ragazzo.farmaco_3_nome && (
+                          <p className="flex items-center gap-1"><Pill className="h-3 w-3" /> {ragazzo.farmaco_3_nome}{ragazzo.farmaco_3_posologia ? ` — ${ragazzo.farmaco_3_posologia}` : ''}</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <Label className="text-xs">Turno</Label>
-                      <Select value={newTurno} onValueChange={setNewTurno}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                        <SelectContent>{TURNI_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <Button size="sm" className="h-8" onClick={handleAddIscrizione} disabled={addIscrizioneMutation.isPending}>
-                      <Save className="h-3 w-3" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-8" onClick={() => setAddingIscrizione(false)}>
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  </>
                 )}
 
-                {ragazzo.iscrizioni.length === 0 && <p className="text-sm text-muted-foreground">Nessuna iscrizione</p>}
-                {ragazzo.iscrizioni.map((i) => (
-                  <div key={i.id} className={`flex items-center justify-between text-sm rounded-lg p-2 ${i.anno === CURRENT_YEAR ? 'bg-primary/10 font-semibold' : 'bg-muted/30'}`}>
-                    <span>{i.anno}: {i.turno}</span>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteIscrizione(i.id)} disabled={deleteIscrizioneMutation.isPending}>
-                      <Trash2 className="h-3 w-3 text-destructive" />
+                <Separator />
+
+                {/* Buttons */}
+                <div className="flex flex-col gap-2">
+                  <Button onClick={handleInviaIscrizione} disabled={sendingWebhook} variant="default" className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">
+                    {sendingWebhook ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                    Invia iscrizione
+                  </Button>
+                  <Button onClick={startEdit} className="w-full"><Pencil className="h-4 w-4 mr-2" /> Modifica dati</Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={async () => {
+                      toast.info('Arricchimento dati in corso...');
+                      const { data, error } = await supabase.functions.invoke('enrich-anagrafica', {
+                        body: { ragazzo_id: ragazzo.id },
+                      });
+                      if (error) {
+                        toast.error('Errore: ' + error.message);
+                      } else if (data?.enriched) {
+                        toast.success('Dati arricchiti con successo!');
+                        onOpenChange(false);
+                      } else {
+                        toast.info(data?.message || 'Nessun dato da arricchire');
+                      }
+                    }}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" /> Arricchisci dati
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={handleArchive} disabled={archiveMutation.isPending}>
+                      {ragazzo.archiviato ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}
+                      {ragazzo.archiviato ? 'Ripristina' : 'Archivia'}
+                    </Button>
+                    <Button variant="destructive" className="flex-1" onClick={() => setShowDeleteConfirm(true)}>
+                      <Trash2 className="h-4 w-4 mr-2" /> Elimina
                     </Button>
                   </div>
-                ))}
-              </div>
+                </div>
 
-              <div className="flex gap-2">
-                <Button onClick={saveEdit} className="flex-1" disabled={updateMutation.isPending}>
-                  <Save className="h-4 w-4 mr-2" /> Salva
-                </Button>
-                <Button variant="outline" onClick={cancelEdit} className="flex-1">
-                  <X className="h-4 w-4 mr-2" /> Annulla
-                </Button>
+                {/* Log section */}
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-1">📋 Log invii</p>
+                  {invioLogs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nessun invio effettuato</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {(invioLogs as any[]).map((log: any) => (
+                        <div key={log.id} className="flex items-center gap-2 text-sm bg-muted/40 rounded-lg px-3 py-2">
+                          {log.successo ? (
+                            <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <span className="font-medium">{log.inviato_da_nome}</span>
+                            <span className="text-muted-foreground ml-2 text-xs">
+                              {format(new Date(log.created_at), 'dd-MM-yyyy, HH:mm')}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            ) : (
+              /* Edit mode */
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nome e cognome</Label>
+                  <Input value={editData.full_name} onChange={(e) => setEditData((p) => ({ ...p, full_name: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Data di nascita</Label>
+                  <Input type="date" value={editData.data_nascita} onChange={(e) => setEditData((p) => ({ ...p, data_nascita: e.target.value }))} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={editData.residente_altavilla} onCheckedChange={(v) => setEditData((p) => ({ ...p, residente_altavilla: v }))} />
+                  <Label>Residente ad Altavilla</Label>
+                </div>
+
+                <Separator />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Genitori</Label>
+                    <Button variant="outline" size="sm" onClick={addGenitore}><Plus className="h-3 w-3 mr-1" /> Aggiungi</Button>
+                  </div>
+                  {editData.genitori.map((g, idx) => (
+                    <div key={idx} className="bg-muted/50 rounded-lg p-3 space-y-2 relative">
+                      <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => removeGenitore(idx)}>
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                      <Input placeholder="Nome e cognome" value={g.nome_cognome} onChange={(e) => updateGenitore(idx, 'nome_cognome', e.target.value)} />
+                      <Select value={g.ruolo} onValueChange={(v) => updateGenitore(idx, 'ruolo', v)}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Madre">Madre</SelectItem>
+                          <SelectItem value="Padre">Padre</SelectItem>
+                          <SelectItem value="Tutore">Tutore</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input placeholder="Email" value={g.email} onChange={(e) => updateGenitore(idx, 'email', e.target.value)} />
+                      <Input placeholder="Telefono" value={g.telefono} onChange={(e) => updateGenitore(idx, 'telefono', e.target.value)} />
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+
+                {/* Medical fields */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={editData.ha_allergie} onCheckedChange={(v) => setEditData((p) => ({ ...p, ha_allergie: v }))} />
+                    <Label className="flex items-center gap-1"><AlertTriangle className="h-4 w-4 text-red-500" /> Ha allergie/patologie</Label>
+                  </div>
+                  {editData.ha_allergie && (
+                    <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3 space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Dettaglio allergie</Label>
+                        <Input value={editData.allergie_dettaglio} onChange={(e) => setEditData((p) => ({ ...p, allergie_dettaglio: e.target.value }))} placeholder="Es. polvere, polline..." />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Dettaglio patologie</Label>
+                        <Input value={editData.patologie_dettaglio} onChange={(e) => setEditData((p) => ({ ...p, patologie_dettaglio: e.target.value }))} placeholder="Es. asma, stanchezza..." />
+                      </div>
+                      <Separator />
+                      <Label className="text-xs flex items-center gap-1"><Pill className="h-3 w-3" /> Farmaci</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input placeholder="Farmaco 1" value={editData.farmaco_1_nome} onChange={(e) => setEditData((p) => ({ ...p, farmaco_1_nome: e.target.value }))} />
+                        <Input placeholder="Posologia 1" value={editData.farmaco_1_posologia} onChange={(e) => setEditData((p) => ({ ...p, farmaco_1_posologia: e.target.value }))} />
+                        <Input placeholder="Farmaco 2" value={editData.farmaco_2_nome} onChange={(e) => setEditData((p) => ({ ...p, farmaco_2_nome: e.target.value }))} />
+                        <Input placeholder="Posologia 2" value={editData.farmaco_2_posologia} onChange={(e) => setEditData((p) => ({ ...p, farmaco_2_posologia: e.target.value }))} />
+                        <Input placeholder="Farmaco 3" value={editData.farmaco_3_nome} onChange={(e) => setEditData((p) => ({ ...p, farmaco_3_nome: e.target.value }))} />
+                        <Input placeholder="Posologia 3" value={editData.farmaco_3_posologia} onChange={(e) => setEditData((p) => ({ ...p, farmaco_3_posologia: e.target.value }))} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Iscrizioni - editable in edit mode */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium flex items-center gap-1"><GraduationCap className="h-4 w-4" /> Iscrizioni</p>
+                    <Button variant="outline" size="sm" onClick={() => setAddingIscrizione(true)}>
+                      <Plus className="h-3 w-3 mr-1" /> Aggiungi
+                    </Button>
+                  </div>
+
+                  {addingIscrizione && (
+                    <div className="flex items-end gap-2 bg-muted/50 rounded-lg p-2.5">
+                      <div className="flex-1">
+                        <Label className="text-xs">Anno</Label>
+                        <Select value={newAnno} onValueChange={setNewAnno}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>{YEAR_OPTIONS.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-1">
+                        <Label className="text-xs">Turno</Label>
+                        <Select value={newTurno} onValueChange={setNewTurno}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+                          <SelectContent>{TURNI_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <Button size="sm" className="h-8" onClick={handleAddIscrizione} disabled={addIscrizioneMutation.isPending}>
+                        <Save className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8" onClick={() => setAddingIscrizione(false)}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {ragazzo.iscrizioni.length === 0 && <p className="text-sm text-muted-foreground">Nessuna iscrizione</p>}
+                  {ragazzo.iscrizioni.map((i) => (
+                    <div key={i.id} className={`flex items-center justify-between text-sm rounded-lg p-2 ${i.anno === CURRENT_YEAR ? 'bg-primary/10 font-semibold' : 'bg-muted/30'}`}>
+                      <span>{i.anno}: {i.turno}</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteIscrizione(i.id)} disabled={deleteIscrizioneMutation.isPending}>
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={saveEdit} className="flex-1" disabled={updateMutation.isPending}>
+                    <Save className="h-4 w-4 mr-2" /> Salva
+                  </Button>
+                  <Button variant="outline" onClick={cancelEdit} className="flex-1">
+                    <X className="h-4 w-4 mr-2" /> Annulla
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
@@ -578,7 +694,7 @@ export default function AnagraficaRagazzi() {
       )}
 
       {dialogRagazzo && (
-        <RagazzoDialog ragazzo={dialogRagazzo} open={!!selectedRagazzo} onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }} />
+        <RagazzoDrawer ragazzo={dialogRagazzo} open={!!selectedRagazzo} onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }} />
       )}
     </MainLayout>
   );
