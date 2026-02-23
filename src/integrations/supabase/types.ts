@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      anagrafica_invio_logs: {
+        Row: {
+          created_at: string
+          id: string
+          inviato_da: string
+          inviato_da_nome: string
+          ragazzo_id: string
+          successo: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inviato_da: string
+          inviato_da_nome: string
+          ragazzo_id: string
+          successo?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inviato_da?: string
+          inviato_da_nome?: string
+          ragazzo_id?: string
+          successo?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anagrafica_invio_logs_ragazzo_id_fkey"
+            columns: ["ragazzo_id"]
+            isOneToOne: false
+            referencedRelation: "ragazzi"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appello_logs: {
         Row: {
           created_at: string

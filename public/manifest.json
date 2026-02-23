@@ -1,0 +1,16 @@
+{
+  "name": "CUPAV Hub",
+  "short_name": "CUPAV",
+  "start_url": "/home",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "https://storage.googleapis.com/gpt-engineer-file-uploads/s6OMkG5LUWOutGJIxpQJ3tYAzA03/uploads/1769153999319-LOGO CUPAV UFFICIALE.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
