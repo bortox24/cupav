@@ -17,6 +17,7 @@ export interface Ragazzo {
   farmaco_3_nome: string | null;
   farmaco_3_posologia: string | null;
   created_at: string;
+  numero: number | null;
   updated_at: string;
 }
 

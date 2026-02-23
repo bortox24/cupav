@@ -28,6 +28,14 @@ const YEAR_OPTIONS = Array.from({ length: 2040 - 2020 + 1 }, (_, i) => 2020 + i)
 
 function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: () => void }) {
   const iscrizioneCorrente = ragazzo.iscrizioni.find((i) => i.anno === CURRENT_YEAR);
+  const [localNumero, setLocalNumero] = useState<string>(ragazzo.numero != null ? String(ragazzo.numero) : '');
+
+  const handleBlur = async () => {
+    const val = localNumero.trim() === '' ? null : parseInt(localNumero, 10);
+    if (val === ragazzo.numero) return;
+    const { error } = await supabase.from('ragazzi').update({ numero: val } as any).eq('id', ragazzo.id);
+    if (error) toast.error('Errore salvataggio numero');
+  };
 
   return (
     <Card
@@ -38,9 +46,20 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
       <CardContent className="p-5 pt-5 space-y-3">
         <div className="flex items-start justify-between">
           <p className="font-bold text-lg tracking-tight leading-tight">{ragazzo.full_name}</p>
-          <div className="rounded-full p-1.5 bg-muted/60 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-            <Users className="h-4 w-4" />
-          </div>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={localNumero}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, '');
+              setLocalNumero(v);
+            }}
+            onBlur={handleBlur}
+            className="w-10 h-10 rounded-md border border-input bg-background text-center text-sm font-bold focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+            placeholder="#"
+          />
         </div>
         {ragazzo.data_nascita && (
           <p className="text-sm text-muted-foreground flex items-center gap-1.5">

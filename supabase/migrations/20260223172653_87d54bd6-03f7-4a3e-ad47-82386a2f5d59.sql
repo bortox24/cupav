@@ -1,0 +1,1 @@
+ALTER TABLE public.ragazzi ADD COLUMN numero integer;
