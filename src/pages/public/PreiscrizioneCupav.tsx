@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,6 +77,10 @@ export default function PreiscrizioneCupav() {
     if (errors[field]) setErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
   };
 
+  const capitalizeWords = useCallback((value: string) => {
+    return value.replace(/\b\w/g, (char) => char.toUpperCase());
+  }, []);
+
   const header = (
     <header className="bg-card border-b border-border shadow-sm">
       <div className="container mx-auto px-4 py-6 flex items-center justify-between">
@@ -135,7 +139,7 @@ export default function PreiscrizioneCupav() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label className={errors.nomeCognome ? 'text-destructive' : ''}>Nome e Cognome <span className="text-destructive">*</span></Label>
-                    <Input value={nomeCognome} onChange={(e) => { setNomeCognome(e.target.value); clearError('nomeCognome'); }} className={errors.nomeCognome ? 'border-destructive' : ''} />
+                    <Input value={nomeCognome} onChange={(e) => { setNomeCognome(capitalizeWords(e.target.value)); clearError('nomeCognome'); }} className={errors.nomeCognome ? 'border-destructive' : ''} />
                     {errors.nomeCognome && <p className="text-sm text-destructive">{errors.nomeCognome}</p>}
                   </div>
                   <div className="space-y-2">
@@ -178,7 +182,7 @@ export default function PreiscrizioneCupav() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label className={errors.g1Nome ? 'text-destructive' : ''}>Nome e Cognome <span className="text-destructive">*</span></Label>
-                    <Input value={g1Nome} onChange={(e) => { setG1Nome(e.target.value); clearError('g1Nome'); }} className={errors.g1Nome ? 'border-destructive' : ''} />
+                    <Input value={g1Nome} onChange={(e) => { setG1Nome(capitalizeWords(e.target.value)); clearError('g1Nome'); }} className={errors.g1Nome ? 'border-destructive' : ''} />
                     {errors.g1Nome && <p className="text-sm text-destructive">{errors.g1Nome}</p>}
                   </div>
                   <div className="space-y-2">
@@ -216,7 +220,7 @@ export default function PreiscrizioneCupav() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label>Nome e Cognome</Label>
-                    <Input value={g2Nome} onChange={(e) => setG2Nome(e.target.value)} />
+                    <Input value={g2Nome} onChange={(e) => setG2Nome(capitalizeWords(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Chi?</Label>
