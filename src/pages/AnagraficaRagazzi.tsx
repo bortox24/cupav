@@ -609,10 +609,27 @@ export default function AnagraficaRagazzi() {
   const attivi = ragazzi?.filter((r) => !r.archiviato && matchesSearch(r) && matchesTurno(r)) || [];
   const archiviati = ragazzi?.filter((r) => r.archiviato && matchesSearch(r) && matchesTurno(r)) || [];
 
+  const preIscrizioniCount = ragazzi
+    ? ragazzi.filter((r) => !r.archiviato && r.iscrizioni.some((i) =>
+        i.anno === CURRENT_YEAR && (filterTurno === 'all' || i.turno === filterTurno)
+      )).length
+    : 0;
+
+  const counterLabel = filterTurno === 'all'
+    ? `Pre-iscrizioni ${CURRENT_YEAR}`
+    : `Pre-iscrizioni ${CURRENT_YEAR} — ${filterTurno}`;
+
   const dialogRagazzo = selectedRagazzo ? ragazzi?.find((r) => r.id === selectedRagazzo.id) || selectedRagazzo : null;
 
   return (
     <MainLayout title="Anagrafica Ragazzi">
+      <div className="inline-flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2 mb-4">
+        <Users className="h-4 w-4 text-primary" />
+        <span className="text-sm text-primary">
+          <span className="font-bold text-lg leading-none mr-1">{preIscrizioniCount}</span>
+          {counterLabel}
+        </span>
+      </div>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
