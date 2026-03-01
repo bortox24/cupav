@@ -108,6 +108,7 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
   const [newTurno, setNewTurno] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [sendingWebhook, setSendingWebhook] = useState(false);
+  const [confirmInvio, setConfirmInvio] = useState(false);
 
   const updateMutation = useUpdateRagazzo();
   const addIscrizioneMutation = useAddIscrizione();
@@ -367,7 +368,7 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 
                 {/* Buttons */}
                 <div className="flex flex-col gap-2">
-                  <Button onClick={handleInviaIscrizione} disabled={sendingWebhook} variant="default" className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">
+                  <Button onClick={() => setConfirmInvio(true)} disabled={sendingWebhook} variant="default" className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">
                     {sendingWebhook ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                     Invia iscrizione
                   </Button>
@@ -577,6 +578,23 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
             <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Elimina definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmInvio} onOpenChange={setConfirmInvio}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma invio iscrizione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler inviare l'iscrizione di <strong>{ragazzo.full_name}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmInvio(false); handleInviaIscrizione(); }}>
+              Conferma invio
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
