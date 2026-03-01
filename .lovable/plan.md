@@ -1,22 +1,20 @@
 
 
-## Piano: Conferma prima di inviare iscrizione
+## Piano: Toast conferma numero + Fix layout modifica mobile
 
-### Cosa viene fatto
+### Problema 1: Nessun feedback al salvataggio del numero
+Il campo numero nella card salva su `onBlur` ma mostra un toast solo in caso di errore. Manca il feedback positivo.
 
-Aggiungere un `AlertDialog` di conferma quando l'utente preme "Invia iscrizione". Il dialog chiederà "Sei sicuro di voler inviare l'iscrizione?" con due pulsanti: "Annulla" e "Conferma invio". Solo dopo la conferma verrà eseguita la chiamata webhook.
+**Soluzione:** Aggiungere `toast.success('Numero salvato')` dopo il salvataggio riuscito nel `handleBlur` del `RagazzoCard` (riga 36-41). Inoltre invalidare la query `ragazzi` per aggiornare i dati.
 
-### Implementazione
+### Problema 2: Layout modifica si sfalsa su mobile
+Quando si entra in modalità modifica nel Drawer, il contenuto diventa molto più lungo e lo scroll resta nella posizione precedente, mostrando una zona bianca.
 
-**Modifica a `src/pages/AnagraficaRagazzi.tsx`:**
+**Soluzione:**
+1. Aggiungere un `ref` al div scrollabile interno del Drawer
+2. Nel `startEdit`, dopo aver impostato i dati, resettare lo scroll a 0 con `scrollRef.current.scrollTop = 0`
+3. Assicurarsi che il DrawerContent abbia `min-h-0` per evitare overflow su mobile
 
-1. Aggiungere uno stato `confirmInvio` (boolean) per controllare l'apertura del dialog
-2. Il pulsante "Invia iscrizione" ora setta `confirmInvio = true` invece di chiamare direttamente `handleInviaIscrizione`
-3. Inserire un `AlertDialog` con:
-   - Titolo: "Conferma invio iscrizione"
-   - Descrizione: "Sei sicuro di voler inviare l'iscrizione di [nome ragazzo]?"
-   - Azione "Conferma invio" → chiama `handleInviaIscrizione` e chiude il dialog
-   - Azione "Annulla" → chiude il dialog
-
-Il componente `AlertDialog` è già disponibile nel progetto (`src/components/ui/alert-dialog.tsx`).
+### File modificato
+- `src/pages/AnagraficaRagazzi.tsx`
 
