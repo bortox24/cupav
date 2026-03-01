@@ -1,26 +1,22 @@
 
 
-## Piano: Counter pre-iscrizioni in Anagrafica Ragazzi
+## Piano: Conferma prima di inviare iscrizione
 
 ### Cosa viene fatto
 
-Aggiungere un contatore visivo sopra la barra di ricerca nella pagina Anagrafica Ragazzi che mostra il numero di pre-iscrizioni per l'anno corrente. Il contatore si aggiorna dinamicamente in base al filtro turno selezionato:
-
-- **"Tutti i turni"** selezionato → mostra il totale complessivo delle pre-iscrizioni dell'anno corrente
-- **Turno specifico** selezionato → mostra solo il conteggio per quel turno
+Aggiungere un `AlertDialog` di conferma quando l'utente preme "Invia iscrizione". Il dialog chiederà "Sei sicuro di voler inviare l'iscrizione?" con due pulsanti: "Annulla" e "Conferma invio". Solo dopo la conferma verrà eseguita la chiamata webhook.
 
 ### Implementazione
 
-Nessuna modifica al database necessaria. I dati sono già disponibili dalla tabella `ragazzi_iscrizioni` caricata tramite `useRagazzi()`.
-
 **Modifica a `src/pages/AnagraficaRagazzi.tsx`:**
 
-1. Calcolare il conteggio delle iscrizioni per l'anno corrente dai dati già in memoria:
-   - Se `filterTurno === 'all'`: contare tutti i ragazzi non archiviati con almeno un'iscrizione nell'anno corrente
-   - Se turno specifico: contare solo quelli con iscrizione per quel turno nell'anno corrente
+1. Aggiungere uno stato `confirmInvio` (boolean) per controllare l'apertura del dialog
+2. Il pulsante "Invia iscrizione" ora setta `confirmInvio = true` invece di chiamare direttamente `handleInviaIscrizione`
+3. Inserire un `AlertDialog` con:
+   - Titolo: "Conferma invio iscrizione"
+   - Descrizione: "Sei sicuro di voler inviare l'iscrizione di [nome ragazzo]?"
+   - Azione "Conferma invio" → chiama `handleInviaIscrizione` e chiude il dialog
+   - Azione "Annulla" → chiude il dialog
 
-2. Inserire un elemento compatto sopra la riga di ricerca/filtro, con:
-   - Un'icona `Users` e il numero in grassetto
-   - Testo descrittivo ("Pre-iscrizioni 2026" o "Pre-iscrizioni 2026 — 4^ Elementare")
-   - Stile: badge/card piccola con sfondo `primary/10`, bordo `primary/20`, testo `primary`, ben visibile ma non ingombrante
+Il componente `AlertDialog` è già disponibile nel progetto (`src/components/ui/alert-dialog.tsx`).
 
