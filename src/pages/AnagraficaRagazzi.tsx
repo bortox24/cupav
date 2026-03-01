@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useRagazzi, useUpdateRagazzo, useAddIscrizione, useDeleteIscrizione, useArchiveRagazzo, useDeleteRagazzo, RagazzoCompleto, formatDataNascita } from '@/hooks/useRagazzi';
 import { useAuth } from '@/lib/auth';
@@ -37,7 +37,11 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
     const val = localNumero.trim() === '' ? null : parseInt(localNumero, 10);
     if (val === ragazzo.numero) return;
     const { error } = await supabase.from('ragazzi').update({ numero: val } as any).eq('id', ragazzo.id);
-    if (error) toast.error('Errore salvataggio numero');
+    if (error) {
+      toast.error('Errore salvataggio numero');
+    } else {
+      toast.success('Numero salvato');
+    }
   };
 
   return (
@@ -131,6 +135,8 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
     enabled: open,
   });
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const startEdit = () => {
     setEditData({
       full_name: ragazzo.full_name,
@@ -153,6 +159,9 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
       })),
     });
     setEditing(true);
+    setTimeout(() => {
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    }, 0);
   };
 
   const cancelEdit = () => { setEditing(false); setAddingIscrizione(false); };
@@ -289,8 +298,8 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[92vh]">
-          <div className="overflow-y-auto px-5 pb-8">
+        <DrawerContent className="max-h-[92vh] min-h-0">
+          <div ref={scrollRef} className="overflow-y-auto px-5 pb-8">
             <DrawerHeader className="px-0 pb-4">
               <DrawerTitle className="text-xl text-left">{ragazzo.full_name}</DrawerTitle>
               <p className="text-sm text-muted-foreground text-left">Dettaglio anagrafica</p>
