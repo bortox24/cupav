@@ -381,19 +381,20 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 
                 {/* Buttons */}
                 <div className="flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <Button onClick={() => setConfirmConferma(true)} disabled={sendingConferma} variant="default" className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white">
-                      {sendingConferma ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
-                      Conferma Preiscrizione
+                  <div className="flex gap-2 min-w-0">
+                    <Button onClick={() => setConfirmConferma(true)} disabled={sendingConferma} variant="default" size="sm" className="flex-1 min-w-0 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xs px-2">
+                      {sendingConferma ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin shrink-0" /> : <Check className="h-3.5 w-3.5 mr-1 shrink-0" />}
+                      <span className="truncate">Conferma Preiscrizione</span>
                     </Button>
                     <Button
                       onClick={() => setConfirmInvio(true)}
                       disabled={sendingWebhook || !(invioLogs as any[]).some((l: any) => l.tipo === 'conferma_preiscrizione' && l.successo)}
                       variant="default"
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                      size="sm"
+                      className="flex-1 min-w-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs px-2"
                     >
-                      {sendingWebhook ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                      Invia Iscrizione
+                      {sendingWebhook ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin shrink-0" /> : <Send className="h-3.5 w-3.5 mr-1 shrink-0" />}
+                      <span className="truncate">Invia Iscrizione</span>
                     </Button>
                   </div>
                   <Button onClick={startEdit} className="w-full"><Pencil className="h-4 w-4 mr-2" /> Modifica dati</Button>
@@ -437,21 +438,19 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                   ) : (
                     <div className="space-y-1.5">
                       {(invioLogs as any[]).map((log: any) => (
-                        <div key={log.id} className="flex items-center gap-2 text-sm bg-muted/40 rounded-lg px-3 py-2">
+                        <div key={log.id} className="flex items-center gap-1.5 text-xs bg-muted/40 rounded-lg px-2 py-1.5 min-w-0">
                           {log.successo ? (
-                            <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                            <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                           ) : (
-                            <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+                            <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
                           )}
-                          <div className="min-w-0 flex-1">
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full mr-1.5 text-white ${log.tipo === 'conferma_preiscrizione' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
-                              {log.tipo === 'conferma_preiscrizione' ? 'Conferma Preiscrizione' : 'Invio Iscrizione'}
-                            </span>
-                            <span className="font-medium">{log.inviato_da_nome}</span>
-                            <span className="text-muted-foreground ml-2 text-xs">
-                              {format(new Date(log.created_at), 'dd-MM-yyyy, HH:mm')}
-                            </span>
-                          </div>
+                          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0 ${log.tipo === 'conferma_preiscrizione' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
+                            {log.tipo === 'conferma_preiscrizione' ? 'Conferma' : 'Invio'}
+                          </span>
+                          <span className="font-medium truncate">{log.inviato_da_nome}</span>
+                          <span className="text-muted-foreground text-[10px] shrink-0 whitespace-nowrap">
+                            {format(new Date(log.created_at), 'dd-MM-yy, HH:mm')}
+                          </span>
                         </div>
                       ))}
                     </div>
