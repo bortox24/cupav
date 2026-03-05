@@ -22,6 +22,7 @@ export type Database = {
           inviato_da_nome: string
           ragazzo_id: string
           successo: boolean
+          tipo: string
         }
         Insert: {
           created_at?: string
@@ -30,6 +31,7 @@ export type Database = {
           inviato_da_nome: string
           ragazzo_id: string
           successo?: boolean
+          tipo?: string
         }
         Update: {
           created_at?: string
@@ -38,6 +40,7 @@ export type Database = {
           inviato_da_nome?: string
           ragazzo_id?: string
           successo?: boolean
+          tipo?: string
         }
         Relationships: [
           {

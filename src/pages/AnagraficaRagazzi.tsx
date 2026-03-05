@@ -112,7 +112,9 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
   const [newTurno, setNewTurno] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [sendingWebhook, setSendingWebhook] = useState(false);
+  const [sendingConferma, setSendingConferma] = useState(false);
   const [confirmInvio, setConfirmInvio] = useState(false);
+  const [confirmConferma, setConfirmConferma] = useState(false);
 
   const updateMutation = useUpdateRagazzo();
   const addIscrizioneMutation = useAddIscrizione();
@@ -217,26 +219,25 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
     });
   };
 
-  const handleInviaIscrizione = async () => {
+  const handleWebhookCall = async (tipo: 'invio_iscrizione' | 'conferma_preiscrizione', webhookFilter: string, successMsg: string, errorMsg: string) => {
     if (!user || !profile) { toast.error('Utente non autenticato'); return; }
-    setSendingWebhook(true);
+    const setSending = tipo === 'conferma_preiscrizione' ? setSendingConferma : setSendingWebhook;
+    setSending(true);
     let successo = false;
     try {
-      // Get webhook URL from webhook_config with description "Invio iscrizione anagrafica"
       const { data: webhookRows } = await supabase
         .from('webhook_config')
         .select('webhook_url')
-        .ilike('descrizione', '%invio iscrizione%')
+        .ilike('descrizione', `%${webhookFilter}%`)
         .limit(1);
       
       const webhookUrl = webhookRows?.[0]?.webhook_url;
       if (!webhookUrl) {
-        toast.error('Nessun webhook configurato con descrizione "Invio iscrizione"');
-        setSendingWebhook(false);
+        toast.error(`Nessun webhook configurato con descrizione "${webhookFilter}"`);
+        setSending(false);
         return;
       }
 
-      // Call the webhook POST
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -260,24 +261,27 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
       });
       successo = res.ok;
       if (successo) {
-        toast.success('Iscrizione inviata con successo!');
+        toast.success(successMsg);
       } else {
-        toast.error('Errore nell\'invio dell\'iscrizione');
+        toast.error(errorMsg);
       }
     } catch {
       toast.error('Errore di rete nell\'invio');
     }
 
-    // Log the attempt
     await supabase.from('anagrafica_invio_logs' as any).insert({
       ragazzo_id: ragazzo.id,
       inviato_da: user.id,
       inviato_da_nome: profile.full_name || profile.email,
       successo,
+      tipo,
     });
     queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs', ragazzo.id] });
-    setSendingWebhook(false);
+    setSending(false);
   };
+
+  const handleInviaIscrizione = () => handleWebhookCall('invio_iscrizione', 'invio iscrizione', 'Iscrizione inviata con successo!', 'Errore nell\'invio dell\'iscrizione');
+  const handleConfermaPreiscrizione = () => handleWebhookCall('conferma_preiscrizione', 'conferma preiscrizione', 'Preiscrizione confermata!', 'Errore nella conferma preiscrizione');
 
   const updateGenitore = (idx: number, field: string, value: string) => {
     setEditData((prev) => {
@@ -377,10 +381,21 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 
                 {/* Buttons */}
                 <div className="flex flex-col gap-2">
-                  <Button onClick={() => setConfirmInvio(true)} disabled={sendingWebhook} variant="default" className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">
-                    {sendingWebhook ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                    Invia iscrizione
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={() => setConfirmConferma(true)} disabled={sendingConferma} variant="default" className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white">
+                      {sendingConferma ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                      Conferma Preiscrizione
+                    </Button>
+                    <Button
+                      onClick={() => setConfirmInvio(true)}
+                      disabled={sendingWebhook || !(invioLogs as any[]).some((l: any) => l.tipo === 'conferma_preiscrizione' && l.successo)}
+                      variant="default"
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                    >
+                      {sendingWebhook ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                      Invia Iscrizione
+                    </Button>
+                  </div>
                   <Button onClick={startEdit} className="w-full"><Pencil className="h-4 w-4 mr-2" /> Modifica dati</Button>
                   <Button
                     variant="outline"
@@ -429,6 +444,9 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                             <XCircle className="h-4 w-4 text-red-500 shrink-0" />
                           )}
                           <div className="min-w-0 flex-1">
+                            <Badge variant={log.tipo === 'conferma_preiscrizione' ? 'secondary' : 'default'} className="text-[10px] mr-1.5">
+                              {log.tipo === 'conferma_preiscrizione' ? 'Conferma' : 'Invio'}
+                            </Badge>
                             <span className="font-medium">{log.inviato_da_nome}</span>
                             <span className="text-muted-foreground ml-2 text-xs">
                               {format(new Date(log.created_at), 'dd-MM-yyyy, HH:mm')}
@@ -604,6 +622,23 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
             <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setConfirmInvio(false); handleInviaIscrizione(); }}>
               Conferma invio
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmConferma} onOpenChange={setConfirmConferma}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma preiscrizione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler confermare la preiscrizione di <strong>{ragazzo.full_name}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmConferma(false); handleConfermaPreiscrizione(); }} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              Conferma
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
