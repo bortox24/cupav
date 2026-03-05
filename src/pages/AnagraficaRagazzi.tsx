@@ -379,53 +379,66 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 
                 <Separator />
 
-                {/* Buttons */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex gap-2 min-w-0">
-                    <Button onClick={() => setConfirmConferma(true)} disabled={sendingConferma} variant="default" size="sm" className="flex-1 min-w-0 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xs px-2">
-                      {sendingConferma ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin shrink-0" /> : <Check className="h-3.5 w-3.5 mr-1 shrink-0" />}
-                      <span className="truncate">Conferma Preiscrizione</span>
+                {/* Sezione: Gestione iscrizioni */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                    📋 Gestione iscrizioni
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <Button onClick={() => setConfirmConferma(true)} disabled={sendingConferma} variant="default" className="w-full h-11 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-sm">
+                      {sendingConferma ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                      Conferma Preiscrizione
                     </Button>
                     <Button
                       onClick={() => setConfirmInvio(true)}
                       disabled={sendingWebhook || !(invioLogs as any[]).some((l: any) => l.tipo === 'conferma_preiscrizione' && l.successo)}
                       variant="default"
-                      size="sm"
-                      className="flex-1 min-w-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs px-2"
+                      className="w-full h-11 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm"
                     >
-                      {sendingWebhook ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin shrink-0" /> : <Send className="h-3.5 w-3.5 mr-1 shrink-0" />}
-                      <span className="truncate">Invia Iscrizione</span>
+                      {sendingWebhook ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                      Invia Iscrizione
                     </Button>
                   </div>
-                  <Button onClick={startEdit} className="w-full"><Pencil className="h-4 w-4 mr-2" /> Modifica dati</Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={async () => {
-                      toast.info('Arricchimento dati in corso...');
-                      const { data, error } = await supabase.functions.invoke('enrich-anagrafica', {
-                        body: { ragazzo_id: ragazzo.id },
-                      });
-                      if (error) {
-                        toast.error('Errore: ' + error.message);
-                      } else if (data?.enriched) {
-                        toast.success('Dati arricchiti con successo!');
-                        onOpenChange(false);
-                      } else {
-                        toast.info(data?.message || 'Nessun dato da arricchire');
-                      }
-                    }}
-                  >
-                    <Sparkles className="h-4 w-4 mr-2" /> Arricchisci dati
-                  </Button>
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={handleArchive} disabled={archiveMutation.isPending}>
-                      {ragazzo.archiviato ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}
-                      {ragazzo.archiviato ? 'Ripristina' : 'Archivia'}
+                </div>
+
+                <Separator />
+
+                {/* Sezione: Modifica dati */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                    ✏️ Modifica dati
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <Button onClick={startEdit} className="w-full"><Pencil className="h-4 w-4 mr-2" /> Modifica dati</Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={async () => {
+                        toast.info('Arricchimento dati in corso...');
+                        const { data, error } = await supabase.functions.invoke('enrich-anagrafica', {
+                          body: { ragazzo_id: ragazzo.id },
+                        });
+                        if (error) {
+                          toast.error('Errore: ' + error.message);
+                        } else if (data?.enriched) {
+                          toast.success('Dati arricchiti con successo!');
+                          onOpenChange(false);
+                        } else {
+                          toast.info(data?.message || 'Nessun dato da arricchire');
+                        }
+                      }}
+                    >
+                      <Sparkles className="h-4 w-4 mr-2" /> Arricchisci dati
                     </Button>
-                    <Button variant="destructive" className="flex-1" onClick={() => setShowDeleteConfirm(true)}>
-                      <Trash2 className="h-4 w-4 mr-2" /> Elimina
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1" onClick={handleArchive} disabled={archiveMutation.isPending}>
+                        {ragazzo.archiviato ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}
+                        {ragazzo.archiviato ? 'Ripristina' : 'Archivia'}
+                      </Button>
+                      <Button variant="destructive" className="flex-1" onClick={() => setShowDeleteConfirm(true)}>
+                        <Trash2 className="h-4 w-4 mr-2" /> Elimina
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
