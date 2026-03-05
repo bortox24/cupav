@@ -1,20 +1,47 @@
 
 
-## Piano: Toast conferma numero + Fix layout modifica mobile
+## Piano: Pulsante "Conferma Preiscrizione" in Anagrafica Ragazzi
 
-### Problema 1: Nessun feedback al salvataggio del numero
-Il campo numero nella card salva su `onBlur` ma mostra un toast solo in caso di errore. Manca il feedback positivo.
+### Cosa viene fatto
 
-**Soluzione:** Aggiungere `toast.success('Numero salvato')` dopo il salvataggio riuscito nel `handleBlur` del `RagazzoCard` (riga 36-41). Inoltre invalidare la query `ragazzi` per aggiornare i dati.
+Aggiungere un pulsante "Conferma Preiscrizione" accanto a "Invia Iscrizione" nelle card dei ragazzi. Il pulsante chiama un webhook dedicato e registra l'esito nei log. "Invia Iscrizione" resta disabilitato finche non c'e una conferma preiscrizione riuscita.
 
-### Problema 2: Layout modifica si sfalsa su mobile
-Quando si entra in modalità modifica nel Drawer, il contenuto diventa molto più lungo e lo scroll resta nella posizione precedente, mostrando una zona bianca.
+### Modifiche al database
 
-**Soluzione:**
-1. Aggiungere un `ref` al div scrollabile interno del Drawer
-2. Nel `startEdit`, dopo aver impostato i dati, resettare lo scroll a 0 con `scrollRef.current.scrollTop = 0`
-3. Assicurarsi che il DrawerContent abbia `min-h-0` per evitare overflow su mobile
+**Migrazione: aggiungere colonna `tipo` alla tabella `anagrafica_invio_logs`**
 
-### File modificato
+```sql
+ALTER TABLE public.anagrafica_invio_logs
+  ADD COLUMN tipo text NOT NULL DEFAULT 'invio_iscrizione';
+```
+
+Questo permette di distinguere i log di tipo `conferma_preiscrizione` da quelli di tipo `invio_iscrizione`, senza creare una nuova tabella.
+
+### Configurazione webhook
+
+L'utente dovra aggiungere una riga nella tabella `webhook_config` con descrizione contenente "conferma preiscrizione" e il relativo URL webhook.
+
+### Modifiche al codice (`src/pages/AnagraficaRagazzi.tsx`)
+
+1. **Layout pulsanti**: Sostituire il pulsante singolo "Invia iscrizione" con una riga flex contenente:
+   - A sinistra: "Conferma Preiscrizione" (verde/emerald)
+   - A destra: "Invia Iscrizione" (blu/indigo, come ora)
+
+2. **Logica "Conferma Preiscrizione"**:
+   - Cerca webhook_url da `webhook_config` con descrizione contenente "conferma preiscrizione"
+   - Invia POST con i dati del ragazzo
+   - Registra il log in `anagrafica_invio_logs` con `tipo = 'conferma_preiscrizione'`
+   - Toast di conferma/errore
+
+3. **Disabilitazione "Invia Iscrizione"**:
+   - Calcolare dai `invioLogs` se esiste almeno un log con `tipo = 'conferma_preiscrizione'` e `successo = true`
+   - Se non esiste, il pulsante "Invia Iscrizione" e disabilitato
+
+4. **Conferma dialog**: Anche "Conferma Preiscrizione" avra un AlertDialog di conferma prima dell'invio
+
+5. **Log section**: I log mostreranno il tipo (conferma vs invio) con etichette distinte
+
+### File modificati
 - `src/pages/AnagraficaRagazzi.tsx`
+- Migrazione SQL per la colonna `tipo`
 
