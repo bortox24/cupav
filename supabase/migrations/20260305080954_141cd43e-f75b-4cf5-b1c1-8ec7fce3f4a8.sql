@@ -1,0 +1,1 @@
+ALTER TABLE public.anagrafica_invio_logs ADD COLUMN tipo text NOT NULL DEFAULT 'invio_iscrizione';
