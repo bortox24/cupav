@@ -1,47 +1,43 @@
 
 
-## Piano: Pulsante "Conferma Preiscrizione" in Anagrafica Ragazzi
+## Piano: Sezioni distinte nella card ragazzo
 
-### Cosa viene fatto
+### Cosa cambia
 
-Aggiungere un pulsante "Conferma Preiscrizione" accanto a "Invia Iscrizione" nelle card dei ragazzi. Il pulsante chiama un webhook dedicato e registra l'esito nei log. "Invia Iscrizione" resta disabilitato finche non c'e una conferma preiscrizione riuscita.
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
 
-### Modifiche al database
+### Layout finale
 
-**Migrazione: aggiungere colonna `tipo` alla tabella `anagrafica_invio_logs`**
-
-```sql
-ALTER TABLE public.anagrafica_invio_logs
-  ADD COLUMN tipo text NOT NULL DEFAULT 'invio_iscrizione';
+```text
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
 ```
 
-Questo permette di distinguere i log di tipo `conferma_preiscrizione` da quelli di tipo `invio_iscrizione`, senza creare una nuova tabella.
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
 
-### Configurazione webhook
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
 
-L'utente dovra aggiungere una riga nella tabella `webhook_config` con descrizione contenente "conferma preiscrizione" e il relativo URL webhook.
+2. **Separator** tra le due sezioni.
 
-### Modifiche al codice (`src/pages/AnagraficaRagazzi.tsx`)
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
 
-1. **Layout pulsanti**: Sostituire il pulsante singolo "Invia iscrizione" con una riga flex contenente:
-   - A sinistra: "Conferma Preiscrizione" (verde/emerald)
-   - A destra: "Invia Iscrizione" (blu/indigo, come ora)
+4. **Log**: restano sotto come sono, invariati.
 
-2. **Logica "Conferma Preiscrizione"**:
-   - Cerca webhook_url da `webhook_config` con descrizione contenente "conferma preiscrizione"
-   - Invia POST con i dati del ragazzo
-   - Registra il log in `anagrafica_invio_logs` con `tipo = 'conferma_preiscrizione'`
-   - Toast di conferma/errore
-
-3. **Disabilitazione "Invia Iscrizione"**:
-   - Calcolare dai `invioLogs` se esiste almeno un log con `tipo = 'conferma_preiscrizione'` e `successo = true`
-   - Se non esiste, il pulsante "Invia Iscrizione" e disabilitato
-
-4. **Conferma dialog**: Anche "Conferma Preiscrizione" avra un AlertDialog di conferma prima dell'invio
-
-5. **Log section**: I log mostreranno il tipo (conferma vs invio) con etichette distinte
-
-### File modificati
-- `src/pages/AnagraficaRagazzi.tsx`
-- Migrazione SQL per la colonna `tipo`
+### File modificato
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 
