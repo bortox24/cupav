@@ -444,9 +444,9 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                             <XCircle className="h-4 w-4 text-red-500 shrink-0" />
                           )}
                           <div className="min-w-0 flex-1">
-                            <Badge variant={log.tipo === 'conferma_preiscrizione' ? 'secondary' : 'default'} className="text-[10px] mr-1.5">
-                              {log.tipo === 'conferma_preiscrizione' ? 'Conferma' : 'Invio'}
-                            </Badge>
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full mr-1.5 text-white ${log.tipo === 'conferma_preiscrizione' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
+                              {log.tipo === 'conferma_preiscrizione' ? 'Conferma Preiscrizione' : 'Invio Iscrizione'}
+                            </span>
                             <span className="font-medium">{log.inviato_da_nome}</span>
                             <span className="text-muted-foreground ml-2 text-xs">
                               {format(new Date(log.created_at), 'dd-MM-yyyy, HH:mm')}
