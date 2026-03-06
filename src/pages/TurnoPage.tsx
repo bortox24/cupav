@@ -3,13 +3,13 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMyTurnoPermissions, TURNI } from '@/hooks/useTurnoPermissions';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen, Filter, Users, ClipboardCheck, Download } from 'lucide-react';
+import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen, Filter, Users, ClipboardCheck, Download, LayoutGrid, X, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
@@ -18,6 +18,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // ─── Helpers ───────────────────────────────────────────
 
@@ -27,6 +28,192 @@ function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: st
     <p className="text-sm text-muted-foreground">
       💊 {nome}{posologia ? ` — ${posologia}` : ''}
     </p>
+  );
+}
+
+// ─── Tent layout config ────────────────────────────────
+// Each row: { row number, count of tents, grid columns where they start }
+const TENT_ROWS: { riga: number; count: number; colStart: number }[] = [
+  { riga: 1, count: 2, colStart: 3 }, // top right
+  { riga: 2, count: 4, colStart: 1 },
+  { riga: 3, count: 4, colStart: 1 },
+  { riga: 4, count: 4, colStart: 1 },
+  { riga: 5, count: 2, colStart: 1 }, // bottom left
+];
+
+type TendaData = {
+  id?: string;
+  turno: string;
+  riga: number;
+  numero: number;
+  colore: string;
+  assegnati: string[];
+};
+
+const COLORE_STYLES: Record<string, { border: string; bg: string; text: string; label: string }> = {
+  blu: { border: 'border-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/30', text: 'text-blue-700 dark:text-blue-300', label: 'Maschile' },
+  rosa: { border: 'border-pink-400', bg: 'bg-pink-50 dark:bg-pink-950/30', text: 'text-pink-700 dark:text-pink-300', label: 'Femminile' },
+  grigio: { border: 'border-muted-foreground/40', bg: 'bg-muted/30', text: 'text-muted-foreground', label: 'Animatori' },
+};
+
+// ─── Tent card ─────────────────────────────────────────
+
+function TendaCard({ tenda, onClick }: { tenda: TendaData; onClick: () => void }) {
+  const style = COLORE_STYLES[tenda.colore] || COLORE_STYLES.grigio;
+  return (
+    <Card
+      className={`cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95 rounded-2xl border-2 ${style.border} ${style.bg} [-webkit-tap-highlight-color:transparent]`}
+      onClick={onClick}
+    >
+      <CardContent className="p-3 min-h-[100px] flex flex-col">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className={`text-lg font-bold ${style.text}`}>{tenda.numero}</span>
+          <Badge variant="secondary" className="text-[10px] rounded-full px-1.5 py-0.5">
+            {tenda.assegnati.length}/4
+          </Badge>
+        </div>
+        <div className="flex-1 space-y-0.5">
+          {tenda.assegnati.map((nome, i) => (
+            <p key={i} className="text-xs truncate text-foreground">{nome}</p>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Tent assignment drawer ────────────────────────────
+
+function TendaDrawer({
+  tenda,
+  open,
+  onOpenChange,
+  availableRagazzi,
+  onSave,
+  saving,
+}: {
+  tenda: TendaData | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  availableRagazzi: string[];
+  onSave: (tenda: TendaData) => void;
+  saving: boolean;
+}) {
+  const [colore, setColore] = useState('grigio');
+  const [assegnati, setAssegnati] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (tenda) {
+      setColore(tenda.colore);
+      setAssegnati([...tenda.assegnati]);
+    }
+  }, [tenda]);
+
+  if (!tenda) return null;
+
+  const handleAdd = (nome: string) => {
+    if (assegnati.length >= 4) return;
+    const updated = [...assegnati, nome];
+    setAssegnati(updated);
+    onSave({ ...tenda, colore, assegnati: updated });
+  };
+
+  const handleRemove = (idx: number) => {
+    const updated = assegnati.filter((_, i) => i !== idx);
+    setAssegnati(updated);
+    onSave({ ...tenda, colore, assegnati: updated });
+  };
+
+  const handleColorChange = (c: string) => {
+    setColore(c);
+    onSave({ ...tenda, colore: c, assegnati });
+  };
+
+  const style = COLORE_STYLES[colore] || COLORE_STYLES.grigio;
+  // Filter available: not in current tent's assegnati
+  const selectable = availableRagazzi.filter(n => !assegnati.includes(n));
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[85vh]">
+        <div className="overflow-y-auto px-5 pb-8">
+          <DrawerHeader className="px-0 pb-4">
+            <DrawerTitle className="text-xl text-left">
+              Riga {tenda.riga} — Tenda {tenda.numero}
+            </DrawerTitle>
+          </DrawerHeader>
+
+          {/* Color selector */}
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Colore tenda</p>
+            <div className="flex gap-2">
+              {Object.entries(COLORE_STYLES).map(([key, s]) => (
+                <Button
+                  key={key}
+                  variant={colore === key ? 'default' : 'outline'}
+                  size="sm"
+                  className={`rounded-full gap-1.5 ${colore === key ? '' : `${s.border} ${s.text}`}`}
+                  onClick={() => handleColorChange(key)}
+                >
+                  <div className={`w-3 h-3 rounded-full ${key === 'blu' ? 'bg-blue-500' : key === 'rosa' ? 'bg-pink-400' : 'bg-gray-400'}`} />
+                  {s.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Current occupants */}
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Occupanti ({assegnati.length}/4)
+            </p>
+            {assegnati.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">Nessun ragazzo assegnato</p>
+            ) : (
+              <div className="space-y-2">
+                {assegnati.map((nome, idx) => (
+                  <div key={idx} className={`flex items-center justify-between rounded-xl px-3 py-2.5 ${style.bg} border ${style.border}`}>
+                    <span className="text-sm font-medium text-foreground">{nome}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-full hover:bg-destructive/10"
+                      onClick={() => handleRemove(idx)}
+                      disabled={saving}
+                    >
+                      <X className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Add ragazzo */}
+          {assegnati.length < 4 && selectable.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Aggiungi ragazzo/a</p>
+              <Select onValueChange={handleAdd}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Seleziona un ragazzo/a..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectable.map(nome => (
+                    <SelectItem key={nome} value={nome}>{nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {assegnati.length >= 4 && (
+            <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+              ⚠️ Tenda piena (max 4 posti)
+            </p>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
 
@@ -208,7 +395,7 @@ function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; o
 
 // ─── Main Component ────────────────────────────────────
 
-type TabType = 'dettagli' | 'appello' | 'download-lista';
+type TabType = 'dettagli' | 'appello' | 'tende' | 'download-lista';
 
 export default function TurnoPage() {
   const { turnoSlug } = useParams<{ turnoSlug: string }>();
@@ -223,6 +410,8 @@ export default function TurnoPage() {
   const [presentSet, setPresentSet] = useState<Set<string>>(new Set());
   const [showConfirm, setShowConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedTenda, setSelectedTenda] = useState<TendaData | null>(null);
+  const [tendaSaving, setTendaSaving] = useState(false);
 
   const turnoInfo = TURNI.find(t => t.slug === turnoSlug);
   const turnoValue = turnoInfo?.value ?? '';
@@ -244,6 +433,92 @@ export default function TurnoPage() {
     },
     enabled: !!user && hasAccess && !!turnoValue,
   });
+
+  // Load tende
+  const { data: tendeData = [], isLoading: tendeLoading } = useQuery({
+    queryKey: ['tende', turnoValue],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tende' as any)
+        .select('*')
+        .eq('turno', turnoValue);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: !!user && hasAccess && !!turnoValue,
+  });
+
+  // Build tende map: key = "riga-numero"
+  const tendeMap = useMemo(() => {
+    const map = new Map<string, TendaData>();
+    for (const t of tendeData) {
+      map.set(`${t.riga}-${t.numero}`, {
+        id: t.id,
+        turno: t.turno,
+        riga: t.riga,
+        numero: t.numero,
+        colore: t.colore,
+        assegnati: Array.isArray(t.assegnati) ? t.assegnati : [],
+      });
+    }
+    return map;
+  }, [tendeData]);
+
+  // All assigned names across all tents
+  const allAssigned = useMemo(() => {
+    const set = new Set<string>();
+    tendeMap.forEach(t => t.assegnati.forEach(n => set.add(n)));
+    return set;
+  }, [tendeMap]);
+
+  // Available ragazzi names (from iscrizioni, not yet assigned)
+  const availableRagazzi = useMemo(() => {
+    return iscrizioni
+      .map((r: any) => `${r.ragazzo_nome} ${r.ragazzo_cognome}`)
+      .filter(n => !allAssigned.has(n))
+      .sort((a, b) => a.localeCompare(b, 'it'));
+  }, [iscrizioni, allAssigned]);
+
+  // Get tenda data for a specific row/number (or default)
+  const getTenda = useCallback((riga: number, numero: number): TendaData => {
+    return tendeMap.get(`${riga}-${numero}`) || {
+      turno: turnoValue,
+      riga,
+      numero,
+      colore: 'grigio',
+      assegnati: [],
+    };
+  }, [tendeMap, turnoValue]);
+
+  // Upsert tenda
+  const handleSaveTenda = async (tenda: TendaData) => {
+    setTendaSaving(true);
+    try {
+      if (tenda.id) {
+        const { error } = await supabase
+          .from('tende' as any)
+          .update({ colore: tenda.colore, assegnati: tenda.assegnati, updated_at: new Date().toISOString() } as any)
+          .eq('id', tenda.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('tende' as any)
+          .insert({
+            turno: tenda.turno,
+            riga: tenda.riga,
+            numero: tenda.numero,
+            colore: tenda.colore,
+            assegnati: tenda.assegnati,
+          } as any);
+        if (error) throw error;
+      }
+      queryClient.invalidateQueries({ queryKey: ['tende', turnoValue] });
+    } catch (e: any) {
+      toast({ title: 'Errore', description: e.message, variant: 'destructive' });
+    } finally {
+      setTendaSaving(false);
+    }
+  };
 
   // Load current user profile name
   const { data: profile } = useQuery({
@@ -320,6 +595,18 @@ export default function TurnoPage() {
       .channel(`appello-logs-${turnoSlug}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'appello_logs' }, () => {
         queryClient.invalidateQueries({ queryKey: ['appello-logs', turnoValue] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, turnoValue, turnoSlug, queryClient]);
+
+  // Realtime tende
+  useEffect(() => {
+    if (!user || !turnoValue) return;
+    const channel = supabase
+      .channel(`tende-${turnoSlug}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tende' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['tende', turnoValue] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -449,6 +736,14 @@ export default function TurnoPage() {
             <ClipboardCheck className="h-4 w-4" /> Appello
           </Button>
           <Button
+            variant={activeTab === 'tende' ? 'default' : 'outline'}
+            size="sm"
+            className="rounded-full gap-1.5"
+            onClick={() => handleTabClick('tende')}
+          >
+            <LayoutGrid className="h-4 w-4" /> Tende
+          </Button>
+          <Button
             variant="outline"
             size="sm"
             className="rounded-full gap-1.5"
@@ -514,6 +809,78 @@ export default function TurnoPage() {
               r={selectedRagazzo}
               open={!!selectedRagazzo}
               onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }}
+            />
+          </>
+        )}
+
+        {/* ─── Tab: Tende ─── */}
+        {activeTab === 'tende' && (
+          <>
+            {tendeLoading || iscrizioniLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Legend */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  {Object.entries(COLORE_STYLES).map(([key, s]) => (
+                    <div key={key} className="flex items-center gap-1.5 text-xs">
+                      <div className={`w-3 h-3 rounded-full ${key === 'blu' ? 'bg-blue-500' : key === 'rosa' ? 'bg-pink-400' : 'bg-gray-400'}`} />
+                      <span className="text-muted-foreground">{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Tent grid */}
+                <div className="space-y-3">
+                  {TENT_ROWS.map(({ riga, count, colStart }) => (
+                    <div key={riga} className="grid grid-cols-4 gap-3">
+                      {/* Empty cells before */}
+                      {Array.from({ length: colStart - 1 }).map((_, i) => (
+                        <div key={`empty-before-${i}`} />
+                      ))}
+                      {/* Tents: numbered right-to-left, so tent "count" is leftmost, "1" is rightmost */}
+                      {Array.from({ length: count }).map((_, i) => {
+                        const numero = count - i; // right-to-left: first cell = highest number
+                        const tenda = getTenda(riga, numero);
+                        return (
+                          <TendaCard
+                            key={`${riga}-${numero}`}
+                            tenda={tenda}
+                            onClick={() => setSelectedTenda(tenda)}
+                          />
+                        );
+                      })}
+                      {/* Empty cells after */}
+                      {Array.from({ length: 4 - (colStart - 1) - count }).map((_, i) => (
+                        <div key={`empty-after-${i}`} />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Stats */}
+                <Card className="border-0 shadow-sm rounded-2xl bg-muted/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Ragazzi assegnati</span>
+                      <Badge variant="secondary" className="rounded-full">
+                        {allAssigned.size}/{iscrizioni.length}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            <TendaDrawer
+              tenda={selectedTenda}
+              open={!!selectedTenda}
+              onOpenChange={(v) => { if (!v) setSelectedTenda(null); }}
+              availableRagazzi={availableRagazzi}
+              onSave={handleSaveTenda}
+              saving={tendaSaving}
             />
           </>
         )}

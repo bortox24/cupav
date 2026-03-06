@@ -573,6 +573,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tende: {
+        Row: {
+          assegnati: Json
+          colore: string
+          created_at: string | null
+          id: string
+          numero: number
+          riga: number
+          turno: string
+          updated_at: string | null
+        }
+        Insert: {
+          assegnati?: Json
+          colore?: string
+          created_at?: string | null
+          id?: string
+          numero: number
+          riga: number
+          turno: string
+          updated_at?: string | null
+        }
+        Update: {
+          assegnati?: Json
+          colore?: string
+          created_at?: string | null
+          id?: string
+          numero?: number
+          riga?: number
+          turno?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           category_id: string | null

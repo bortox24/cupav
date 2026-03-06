@@ -1,67 +1,43 @@
 
 
-## Piano: Tab "Tende" con numerazione per riga
+## Piano: Sezioni distinte nella card ragazzo
 
-### Layout tende (dallo screenshot)
+### Cosa cambia
 
-Ogni riga ha numerazione indipendente, da destra a sinistra:
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+
+### Layout finale
 
 ```text
-Riga 1 (top):              [2] [1]        (col 3-4, 2 tende)
-Riga 2:           [4] [3] [2] [1]         (4 tende)
-Riga 3:           [4] [3] [2] [1]         (4 tende)
-Riga 4:           [4] [3] [2] [1]         (4 tende)
-Riga 5 (bottom):  [2] [1]                 (col 1-2, 2 tende)
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
 ```
 
-### Database
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
 
-Tabella `tende` — una riga per tenda per turno:
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
 
-```sql
-CREATE TABLE public.tende (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  turno text NOT NULL,
-  riga integer NOT NULL,          -- 1..5
-  numero integer NOT NULL,        -- 1..4 (o 1..2)
-  colore text NOT NULL DEFAULT 'grigio',
-  assegnati jsonb NOT NULL DEFAULT '[]',  -- max 4 nomi
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
-  UNIQUE(turno, riga, numero)
-);
+2. **Separator** tra le due sezioni.
 
-ALTER TABLE public.tende ENABLE ROW LEVEL SECURITY;
--- CRUD per authenticated
-```
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
 
-`assegnati` è un array JSON tipo `["Mario Rossi", "Anna Bianchi"]` (max 4 elementi). Niente FK complesse, solo nomi.
+4. **Log**: restano sotto come sono, invariati.
 
-### UI (`TurnoPage.tsx`)
-
-1. **Nuovo tab pill** "Tende" con icona `Tent` (o `LayoutGrid`).
-
-2. **Griglia CSS 4 colonne** che replica la disposizione:
-   - Riga 1: 2 celle in colonne 3-4
-   - Righe 2-4: 4 celle piene
-   - Riga 5: 2 celle in colonne 1-2
-
-3. **Ogni cella/tenda** mostra:
-   - Bordo colorato (blu/rosa/grigio)
-   - Sfondo tenue corrispondente
-   - Numero della tenda (es. "1")
-   - Conteggio occupanti (es. "2/4")
-   - Nomi assegnati (troncati)
-
-4. **Click su tenda** → Drawer con:
-   - Titolo "Riga X — Tenda N"
-   - 3 pulsanti colore (blu, rosa, grigio) — selezionabile
-   - Lista occupanti con pulsante rimuovi (×)
-   - Select per aggiungere ragazzo (filtrato tra iscritti al turno, non ancora assegnati a nessuna tenda), max 4
-
-5. **Dati**: query `tende` filtrata per turno. Upsert al salvataggio colore/assegnati.
-
-### File modificati
-- `src/pages/TurnoPage.tsx` — tab + griglia + drawer assegnazione
-- **1 migrazione SQL** — tabella `tende`
+### File modificato
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 
