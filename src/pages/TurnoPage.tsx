@@ -494,23 +494,30 @@ export default function TurnoPage() {
   const handleSaveTenda = async (tenda: TendaData) => {
     setTendaSaving(true);
     try {
-      if (tenda.id) {
-        const { error } = await supabase
-          .from('tende' as any)
-          .update({ colore: tenda.colore, assegnati: tenda.assegnati, updated_at: new Date().toISOString() } as any)
-          .eq('id', tenda.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('tende' as any)
-          .insert({
-            turno: tenda.turno,
-            riga: tenda.riga,
-            numero: tenda.numero,
-            colore: tenda.colore,
-            assegnati: tenda.assegnati,
-          } as any);
-        if (error) throw error;
+      const { data: upserted, error } = await supabase
+        .from('tende' as any)
+        .upsert({
+          ...(tenda.id ? { id: tenda.id } : {}),
+          turno: tenda.turno,
+          riga: tenda.riga,
+          numero: tenda.numero,
+          colore: tenda.colore,
+          assegnati: tenda.assegnati,
+          updated_at: new Date().toISOString(),
+        } as any, { onConflict: 'turno,riga,numero' })
+        .select()
+        .single();
+      if (error) throw error;
+      // Update selectedTenda with the returned id so subsequent saves use update path
+      if (upserted) {
+        setSelectedTenda({
+          id: (upserted as any).id,
+          turno: (upserted as any).turno,
+          riga: (upserted as any).riga,
+          numero: (upserted as any).numero,
+          colore: (upserted as any).colore,
+          assegnati: Array.isArray((upserted as any).assegnati) ? (upserted as any).assegnati : [],
+        });
       }
       queryClient.invalidateQueries({ queryKey: ['tende', turnoValue] });
     } catch (e: any) {
