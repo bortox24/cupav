@@ -680,8 +680,18 @@ export default function AnagraficaRagazzi() {
     return r.iscrizioni.some((i) => i.anno === CURRENT_YEAR && i.turno === filterTurno);
   };
 
-  const attivi = ragazzi?.filter((r) => !r.archiviato && matchesSearch(r) && matchesTurno(r)) || [];
-  const archiviati = ragazzi?.filter((r) => r.archiviato && matchesSearch(r) && matchesTurno(r)) || [];
+  const sortRagazzi = (list: RagazzoCompleto[]) =>
+    list.sort((a, b) => {
+      if (filterTurno !== 'all') {
+        const aNum = a.numero ?? Infinity;
+        const bNum = b.numero ?? Infinity;
+        if (aNum !== bNum) return aNum - bNum;
+      }
+      return a.full_name.localeCompare(b.full_name, 'it');
+    });
+
+  const attivi = sortRagazzi(ragazzi?.filter((r) => !r.archiviato && matchesSearch(r) && matchesTurno(r)) || []);
+  const archiviati = sortRagazzi(ragazzi?.filter((r) => r.archiviato && matchesSearch(r) && matchesTurno(r)) || []);
 
   const preIscrizioniCount = ragazzi
     ? ragazzi.filter((r) => !r.archiviato && r.iscrizioni.some((i) =>
