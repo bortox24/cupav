@@ -1,33 +1,43 @@
 
 
-## Piano: Ordinamento condizionale per turno
+## Piano: Sezioni distinte nella card ragazzo
 
 ### Cosa cambia
 
-Quando si filtra per un turno specifico, i ragazzi attivi vengono ordinati:
-1. **Primario**: per `numero` (crescente, chi non ha numero va in fondo)
-2. **Secondario**: per `full_name` alfabetico
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
 
-Quando il filtro è "Tutti i turni" (`all`), si mantiene solo l'ordine alfabetico per `full_name`.
+### Layout finale
 
-### Implementazione (`src/pages/AnagraficaRagazzi.tsx`)
-
-Dopo la riga 683 dove viene definito `attivi`, aggiungere un `.sort()`:
-
-```typescript
-const attivi = (ragazzi?.filter(...) || []).sort((a, b) => {
-  if (filterTurno !== 'all') {
-    // Con turno filtrato: prima per numero, poi alfabetico
-    const aNum = a.numero ?? Infinity;
-    const bNum = b.numero ?? Infinity;
-    if (aNum !== bNum) return aNum - bNum;
-  }
-  return a.full_name.localeCompare(b.full_name, 'it');
-});
+```text
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
 ```
 
-Stessa logica applicata anche ad `archiviati` (riga 684).
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+
+2. **Separator** tra le due sezioni.
+
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+
+4. **Log**: restano sotto come sono, invariati.
 
 ### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 683-684)
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 
