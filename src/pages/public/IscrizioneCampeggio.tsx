@@ -274,7 +274,7 @@ export default function IscrizioneCampeggio() {
         <div className="max-w-2xl mx-auto flex flex-col items-center text-center gap-3 sm:flex-row sm:text-left sm:gap-4">
           <img src={logoCupav} alt="CUPAV" className="h-20 w-20 sm:h-14 sm:w-14 rounded-xl bg-white/20 p-1" />
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">RICHIESTA ISCRIZIONE</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">ISCRIZIONE</h1>
             <p className="text-white/80 text-sm">CUPAV - Campeggio unità pastorale Altavilla Valmarana</p>
           </div>
         </div>
