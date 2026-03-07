@@ -80,6 +80,11 @@ export const availablePages: PageInfo[] = [
     title: 'Gestione Pagamenti',
     description: 'Gestisci stato pagamenti delle iscrizioni',
   },
+  {
+    path: '/impostazioni',
+    title: 'Impostazioni',
+    description: 'Gestisci logo, link pubblici e configurazioni',
+  },
 ];
 
 // Helper to match dynamic routes (e.g., /visualizza-moduli/:id/risposte)

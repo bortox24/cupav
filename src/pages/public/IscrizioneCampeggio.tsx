@@ -14,10 +14,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send, Tent, AlertTriangle, Info, Shield } from "lucide-react";
+import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send, Tent, AlertTriangle, Info, Shield, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import logoCupav from "@/assets/logo-cupav.png";
+import { useCustomLogo } from "@/hooks/useCustomLogo";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const capitalize = (s: string) => s.replace(/\b\w/g, c => c.toUpperCase());
 
@@ -76,6 +78,8 @@ function DatePickerField({ value, onChange, label }: { value: Date | undefined; 
 
 export default function IscrizioneCampeggio() {
   const { toast } = useToast();
+  const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
