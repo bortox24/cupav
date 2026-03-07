@@ -59,26 +59,41 @@ const COLORE_STYLES: Record<string, { border: string; bg: string; text: string; 
 // ─── Tent card ─────────────────────────────────────────
 
 function TendaCard({ tenda, onClick }: { tenda: TendaData; onClick: () => void }) {
-  const style = COLORE_STYLES[tenda.colore] || COLORE_STYLES.grigio;
+  const fillClass = tenda.colore === 'blu' ? 'fill-blue-100 dark:fill-blue-900/40' : tenda.colore === 'rosa' ? 'fill-pink-100 dark:fill-pink-900/40' : 'fill-gray-100 dark:fill-gray-800/40';
+  const strokeClass = tenda.colore === 'blu' ? 'stroke-blue-500' : tenda.colore === 'rosa' ? 'stroke-pink-400' : 'stroke-gray-400';
+  const textColor = tenda.colore === 'blu' ? 'text-blue-700 dark:text-blue-300' : tenda.colore === 'rosa' ? 'text-pink-700 dark:text-pink-300' : 'text-muted-foreground';
+
   return (
-    <Card
-      className={`cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95 rounded-2xl border-2 ${style.border} ${style.bg} [-webkit-tap-highlight-color:transparent]`}
+    <div
+      className="cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95 [-webkit-tap-highlight-color:transparent] relative"
       onClick={onClick}
     >
-      <CardContent className="p-3 min-h-[100px] flex flex-col">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className={`text-lg font-bold ${style.text}`}>{tenda.numero}</span>
-          <Badge variant="secondary" className="text-[10px] rounded-full px-1.5 py-0.5">
-            {tenda.assegnati.length}/4
-          </Badge>
+      {/* SVG tent shape */}
+      <svg viewBox="0 0 120 100" className={`w-full h-auto ${fillClass} ${strokeClass}`} preserveAspectRatio="xMidYMid meet">
+        {/* Tent body - triangle top + rectangular base */}
+        <path d="M60 8 L110 55 L110 92 L10 92 L10 55 Z" strokeWidth="2.5" strokeLinejoin="round" />
+        {/* Tent door flap */}
+        <path d="M60 8 L60 92" strokeWidth="1.5" className="stroke-current opacity-20" fill="none" />
+        {/* Flag on top */}
+        <path d="M60 8 L60 2" strokeWidth="2" fill="none" />
+        <path d="M60 2 L70 5 L60 8" className={tenda.colore === 'blu' ? 'fill-blue-500' : tenda.colore === 'rosa' ? 'fill-pink-400' : 'fill-gray-400'} stroke="none" />
+      </svg>
+
+      {/* Content overlay */}
+      <div className="absolute inset-0 flex flex-col items-center" style={{ paddingTop: '22%' }}>
+        {/* Number + count */}
+        <div className="flex items-center gap-1">
+          <span className={`text-sm sm:text-base font-bold ${textColor}`}>{tenda.numero}</span>
+          <span className="text-[8px] sm:text-[10px] text-muted-foreground">({tenda.assegnati.length}/4)</span>
         </div>
-        <div className="flex-1 space-y-0.5">
+        {/* Names */}
+        <div className="w-full px-[18%] mt-0.5 space-y-0">
           {tenda.assegnati.map((nome, i) => (
-            <p key={i} className="text-xs truncate text-foreground">{nome}</p>
+            <p key={i} className={`text-[8px] sm:text-[10px] md:text-xs text-center truncate ${textColor}`}>{nome}</p>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -147,18 +162,26 @@ function TendaDrawer({
           <div className="mb-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Colore tenda</p>
             <div className="flex gap-2">
-              {Object.entries(COLORE_STYLES).map(([key, s]) => (
-                <Button
-                  key={key}
-                  variant={colore === key ? 'default' : 'outline'}
-                  size="sm"
-                  className={`rounded-full gap-1.5 ${colore === key ? '' : `${s.border} ${s.text}`}`}
-                  onClick={() => handleColorChange(key)}
-                >
-                  <div className={`w-3 h-3 rounded-full ${key === 'blu' ? 'bg-blue-500' : key === 'rosa' ? 'bg-pink-400' : 'bg-gray-400'}`} />
-                  {s.label}
-                </Button>
-              ))}
+              {Object.entries(COLORE_STYLES).map(([key, s]) => {
+                const isSelected = colore === key;
+                const selectedClass = key === 'blu'
+                  ? 'bg-blue-500 text-white hover:bg-blue-600 border-blue-500'
+                  : key === 'rosa'
+                    ? 'bg-pink-400 text-white hover:bg-pink-500 border-pink-400'
+                    : 'bg-gray-500 text-white hover:bg-gray-600 border-gray-500';
+                return (
+                  <Button
+                    key={key}
+                    variant="outline"
+                    size="sm"
+                    className={`rounded-full gap-1.5 ${isSelected ? selectedClass : `${s.border} ${s.text}`}`}
+                    onClick={() => handleColorChange(key)}
+                  >
+                    <div className={`w-3 h-3 rounded-full ${key === 'blu' ? 'bg-blue-500' : key === 'rosa' ? 'bg-pink-400' : 'bg-gray-400'} ${isSelected ? 'border border-white/50' : ''}`} />
+                    {s.label}
+                  </Button>
+                );
+              })}
             </div>
           </div>
 
