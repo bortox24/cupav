@@ -79,17 +79,17 @@ function TendaCard({ tenda, onClick }: { tenda: TendaData; onClick: () => void }
         <path d="M60 2 L70 5 L60 8" className={tenda.colore === 'blu' ? 'fill-blue-500' : tenda.colore === 'rosa' ? 'fill-pink-400' : 'fill-gray-400'} stroke="none" />
       </svg>
 
-      {/* Content overlay */}
-      <div className="absolute inset-0 flex flex-col items-center" style={{ paddingTop: '22%' }}>
+      {/* Content overlay - clipped to tent area */}
+      <div className="absolute inset-0 overflow-hidden flex flex-col items-center" style={{ paddingTop: '20%', paddingBottom: '10%', paddingLeft: '15%', paddingRight: '15%' }}>
         {/* Number + count */}
-        <div className="flex items-center gap-1">
-          <span className={`text-sm sm:text-base font-bold ${textColor}`}>{tenda.numero}</span>
-          <span className="text-[8px] sm:text-[10px] text-muted-foreground">({tenda.assegnati.length}/4)</span>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <span className={`text-xs sm:text-sm font-bold leading-none ${textColor}`}>{tenda.numero}</span>
+          <span className="text-[7px] sm:text-[9px] text-muted-foreground leading-none">({tenda.assegnati.length}/4)</span>
         </div>
-        {/* Names */}
-        <div className="w-full px-[18%] mt-0.5 space-y-0">
+        {/* Names - only show what fits */}
+        <div className="w-full mt-0.5 overflow-hidden flex-1 min-h-0">
           {tenda.assegnati.map((nome, i) => (
-            <p key={i} className={`text-[8px] sm:text-[10px] md:text-xs text-center truncate ${textColor}`}>{nome}</p>
+            <p key={i} className={`text-[7px] sm:text-[9px] md:text-[10px] text-center truncate leading-tight ${textColor}`}>{nome}</p>
           ))}
         </div>
       </div>
