@@ -63,36 +63,34 @@ function TendaCard({ tenda, onClick }: { tenda: TendaData; onClick: () => void }
   const strokeClass = tenda.colore === 'blu' ? 'stroke-blue-500' : tenda.colore === 'rosa' ? 'stroke-pink-400' : 'stroke-gray-400';
   const textColor = tenda.colore === 'blu' ? 'text-blue-700 dark:text-blue-300' : tenda.colore === 'rosa' ? 'text-pink-700 dark:text-pink-300' : 'text-muted-foreground';
 
+  // Dynamic height: base 100, add 14 per occupant beyond 0
+  const n = tenda.assegnati.length;
+  const svgH = 80 + n * 16;
+  const bodyTop = 8;
+  const bodyBottom = svgH - 8;
+  const roofMeet = 55; // where triangle meets the walls (fixed ratio)
+
   return (
     <div
       className="cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95 [-webkit-tap-highlight-color:transparent] relative"
       onClick={onClick}
     >
-      {/* SVG tent shape */}
-      <svg viewBox="0 0 120 100" className={`w-full h-auto ${fillClass} ${strokeClass}`} preserveAspectRatio="xMidYMid meet">
-        {/* Tent body - triangle top + rectangular base */}
-        <path d="M60 8 L110 55 L110 92 L10 92 L10 55 Z" strokeWidth="2.5" strokeLinejoin="round" />
-        {/* Tent door flap */}
-        <path d="M60 8 L60 92" strokeWidth="1.5" className="stroke-current opacity-20" fill="none" />
-        {/* Flag on top */}
-        <path d="M60 8 L60 2" strokeWidth="2" fill="none" />
-        <path d="M60 2 L70 5 L60 8" className={tenda.colore === 'blu' ? 'fill-blue-500' : tenda.colore === 'rosa' ? 'fill-pink-400' : 'fill-gray-400'} stroke="none" />
-      </svg>
+      <svg viewBox={`0 0 120 ${svgH}`} className={`w-full h-auto ${fillClass} ${strokeClass}`} preserveAspectRatio="xMidYMid meet">
+        <path d={`M60 ${bodyTop} L110 ${roofMeet} L110 ${bodyBottom} L10 ${bodyBottom} L10 ${roofMeet} Z`} strokeWidth="2.5" strokeLinejoin="round" />
+        <path d={`M60 ${bodyTop} L60 ${bodyBottom}`} strokeWidth="1.5" className="stroke-current opacity-20" fill="none" />
+        <path d={`M60 ${bodyTop} L60 2`} strokeWidth="2" fill="none" />
+        <path d={`M60 2 L70 5 L60 ${bodyTop}`} className={tenda.colore === 'blu' ? 'fill-blue-500' : tenda.colore === 'rosa' ? 'fill-pink-400' : 'fill-gray-400'} stroke="none" />
 
-      {/* Content overlay - clipped to tent area */}
-      <div className="absolute inset-0 overflow-hidden flex flex-col items-center" style={{ paddingTop: '20%', paddingBottom: '10%', paddingLeft: '15%', paddingRight: '15%' }}>
-        {/* Number + count */}
-        <div className="flex items-center gap-0.5 shrink-0">
-          <span className={`text-xs sm:text-sm font-bold leading-none ${textColor}`}>{tenda.numero}</span>
-          <span className="text-[7px] sm:text-[9px] text-muted-foreground leading-none">({tenda.assegnati.length}/4)</span>
-        </div>
-        {/* Names - only show what fits */}
-        <div className="w-full mt-0.5 overflow-hidden flex-1 min-h-0">
-          {tenda.assegnati.map((nome, i) => (
-            <p key={i} className={`text-[7px] sm:text-[9px] md:text-[10px] text-center truncate leading-tight ${textColor}`}>{nome}</p>
-          ))}
-        </div>
-      </div>
+        {/* Render text directly in SVG for perfect containment */}
+        <text x="60" y={roofMeet - 6} textAnchor="middle" className={tenda.colore === 'blu' ? 'fill-blue-700 dark:fill-blue-300' : tenda.colore === 'rosa' ? 'fill-pink-700 dark:fill-pink-300' : 'fill-gray-500'} fontSize="16" fontWeight="bold">{tenda.numero}</text>
+        <text x="80" y={roofMeet - 6} textAnchor="start" className="fill-gray-400" fontSize="9">({n}/4)</text>
+
+        {tenda.assegnati.map((nome, i) => (
+          <text key={i} x="60" y={roofMeet + 10 + i * 14} textAnchor="middle" className={tenda.colore === 'blu' ? 'fill-blue-700 dark:fill-blue-300' : tenda.colore === 'rosa' ? 'fill-pink-700 dark:fill-pink-300' : 'fill-gray-500'} fontSize="9">
+            {nome.length > 16 ? nome.slice(0, 15) + '…' : nome}
+          </text>
+        ))}
+      </svg>
     </div>
   );
 }
