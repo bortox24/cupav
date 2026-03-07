@@ -94,6 +94,14 @@ export default function PreiscrizioneCupav() {
     </header>
   );
 
+  const footer = (
+    <footer className="bg-card border-t border-border py-4">
+      <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+        © {new Date().getFullYear()} CUPAV
+      </div>
+    </footer>
+  );
+
   // Check if preiscrizioni are disabled
   if (!settingsLoading && siteSettings?.preiscrizione_enabled === 'false') {
     return (
@@ -112,14 +120,6 @@ export default function PreiscrizioneCupav() {
       </div>
     );
   }
-
-  const footer = (
-    <footer className="bg-card border-t border-border py-4">
-      <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} CUPAV
-      </div>
-    </footer>
-  );
 
   if (submitted) {
     return (
