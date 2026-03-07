@@ -1,29 +1,43 @@
 
 
-## Piano: Icone tenda, nomi per esteso, colori pulsanti coerenti
+## Piano: Sezioni distinte nella card ragazzo
 
 ### Cosa cambia
 
-1. **TendaCard** (righe 61-83): sostituire il rettangolo `Card` con un SVG a forma di tenda (triangolo/casetta stilizzata) che contiene il numero e i nomi per esteso. Colore di sfondo/fill della tenda basato su `colore` (blu, rosa, grigio). Responsive: su mobile le tende si ridimensionano proporzionalmente.
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
 
-2. **Pulsanti colore nel TendaDrawer** (righe 147-163): quando selezionato, il pulsante assume il colore corrispondente (blu per Maschile, rosa per Femminile, grigio per Animatori) invece del verde `default`. I pulsanti non selezionati restano `outline` con bordo del colore.
+### Layout finale
 
-### Dettagli implementazione
+```text
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
+```
 
-#### TendaCard — Icona tenda SVG
-- Usare un SVG inline con path a forma di tenda (triangolo con base rettangolare)
-- Il fill usa i colori: `fill-blue-100`/`stroke-blue-500` per blu, `fill-pink-100`/`stroke-pink-400` per rosa, `fill-gray-100`/`stroke-gray-400` per grigio
-- All'interno (via `foreignObject` o posizionamento assoluto sopra l'SVG): numero tenda in alto, nomi completi sotto (font ridotto, `text-[10px]` su mobile, `text-xs` su desktop)
-- Il contenitore usa `aspect-ratio` per mantenere proporzioni
-- Su mobile (griglia 4 colonne): tende più piccole con nomi che vanno a capo o si troncano con `line-clamp-1`
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
 
-#### Pulsanti colore — Drawer
-- Quando `colore === key`: applicare classi di sfondo specifiche invece di `variant="default"`:
-  - `blu`: `bg-blue-500 text-white hover:bg-blue-600`
-  - `rosa`: `bg-pink-400 text-white hover:bg-pink-500`
-  - `grigio`: `bg-gray-500 text-white hover:bg-gray-600`
-- Quando non selezionato: `variant="outline"` con bordo e testo del colore (come ora)
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+
+2. **Separator** tra le due sezioni.
+
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+
+4. **Log**: restano sotto come sono, invariati.
 
 ### File modificato
-- `src/pages/TurnoPage.tsx` (componenti `TendaCard` righe 61-83 e `TendaDrawer` righe 147-163)
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 
