@@ -61,33 +61,35 @@ const COLORE_STYLES: Record<string, { border: string; bg: string; text: string; 
 function TendaCard({ tenda, onClick }: { tenda: TendaData; onClick: () => void }) {
   const fillClass = tenda.colore === 'blu' ? 'fill-blue-100 dark:fill-blue-900/40' : tenda.colore === 'rosa' ? 'fill-pink-100 dark:fill-pink-900/40' : 'fill-gray-100 dark:fill-gray-800/40';
   const strokeClass = tenda.colore === 'blu' ? 'stroke-blue-500' : tenda.colore === 'rosa' ? 'stroke-pink-400' : 'stroke-gray-400';
-  const textColor = tenda.colore === 'blu' ? 'text-blue-700 dark:text-blue-300' : tenda.colore === 'rosa' ? 'text-pink-700 dark:text-pink-300' : 'text-muted-foreground';
-
-  // Dynamic height: base 100, add 14 per occupant beyond 0
+  const fillText = tenda.colore === 'blu' ? 'fill-blue-700 dark:fill-blue-300' : tenda.colore === 'rosa' ? 'fill-pink-700 dark:fill-pink-300' : 'fill-gray-500';
   const n = tenda.assegnati.length;
-  const svgH = 80 + n * 16;
-  const bodyTop = 8;
-  const bodyBottom = svgH - 8;
-  const roofMeet = 55; // where triangle meets the walls (fixed ratio)
+
+  // Fixed viewBox — all tents same size. Names use adaptive font size.
+  const nameFontSize = n <= 2 ? 8 : n === 3 ? 7 : 6.5;
+  const nameLineH = n <= 2 ? 11 : n === 3 ? 9.5 : 8.5;
+  const namesStartY = 58;
 
   return (
     <div
-      className="cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95 [-webkit-tap-highlight-color:transparent] relative"
+      className="cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95 [-webkit-tap-highlight-color:transparent]"
       onClick={onClick}
     >
-      <svg viewBox={`0 0 120 ${svgH}`} className={`w-full h-auto ${fillClass} ${strokeClass}`} preserveAspectRatio="xMidYMid meet">
-        <path d={`M60 ${bodyTop} L110 ${roofMeet} L110 ${bodyBottom} L10 ${bodyBottom} L10 ${roofMeet} Z`} strokeWidth="2.5" strokeLinejoin="round" />
-        <path d={`M60 ${bodyTop} L60 ${bodyBottom}`} strokeWidth="1.5" className="stroke-current opacity-20" fill="none" />
-        <path d={`M60 ${bodyTop} L60 2`} strokeWidth="2" fill="none" />
-        <path d={`M60 2 L70 5 L60 ${bodyTop}`} className={tenda.colore === 'blu' ? 'fill-blue-500' : tenda.colore === 'rosa' ? 'fill-pink-400' : 'fill-gray-400'} stroke="none" />
+      <svg viewBox="0 0 120 100" className={`w-full h-auto ${fillClass} ${strokeClass}`} preserveAspectRatio="xMidYMid meet">
+        {/* Tent body */}
+        <path d="M60 8 L110 50 L110 95 L10 95 L10 50 Z" strokeWidth="2.5" strokeLinejoin="round" />
+        <path d="M60 8 L60 95" strokeWidth="1" className="stroke-current opacity-15" fill="none" />
+        {/* Flag */}
+        <path d="M60 8 L60 2" strokeWidth="2" fill="none" />
+        <path d="M60 2 L70 5 L60 8" className={tenda.colore === 'blu' ? 'fill-blue-500' : tenda.colore === 'rosa' ? 'fill-pink-400' : 'fill-gray-400'} stroke="none" />
 
-        {/* Render text directly in SVG for perfect containment */}
-        <text x="60" y={roofMeet - 6} textAnchor="middle" className={tenda.colore === 'blu' ? 'fill-blue-700 dark:fill-blue-300' : tenda.colore === 'rosa' ? 'fill-pink-700 dark:fill-pink-300' : 'fill-gray-500'} fontSize="16" fontWeight="bold">{tenda.numero}</text>
-        <text x="80" y={roofMeet - 6} textAnchor="start" className="fill-gray-400" fontSize="9">({n}/4)</text>
+        {/* Number + count */}
+        <text x="55" y="46" textAnchor="middle" className={fillText} fontSize="14" fontWeight="bold">{tenda.numero}</text>
+        <text x="74" y="46" textAnchor="start" className="fill-gray-400" fontSize="7">({n}/4)</text>
 
+        {/* Names */}
         {tenda.assegnati.map((nome, i) => (
-          <text key={i} x="60" y={roofMeet + 10 + i * 14} textAnchor="middle" className={tenda.colore === 'blu' ? 'fill-blue-700 dark:fill-blue-300' : tenda.colore === 'rosa' ? 'fill-pink-700 dark:fill-pink-300' : 'fill-gray-500'} fontSize="9">
-            {nome.length > 16 ? nome.slice(0, 15) + '…' : nome}
+          <text key={i} x="60" y={namesStartY + i * nameLineH} textAnchor="middle" className={fillText} fontSize={nameFontSize}>
+            {nome.length > 18 ? nome.slice(0, 17) + '…' : nome}
           </text>
         ))}
       </svg>
@@ -861,9 +863,9 @@ export default function TurnoPage() {
                 </div>
 
                 {/* Tent grid */}
-                <div className="space-y-3">
+                <div className="space-y-1 sm:space-y-2">
                   {TENT_ROWS.map(({ riga, count, colStart }) => (
-                    <div key={riga} className="grid grid-cols-4 gap-3">
+                    <div key={riga} className="grid grid-cols-4 gap-1 sm:gap-2 lg:gap-3 items-end">
                       {/* Empty cells before */}
                       {Array.from({ length: colStart - 1 }).map((_, i) => (
                         <div key={`empty-before-${i}`} />
