@@ -24,6 +24,7 @@ import IscrizioneCampeggio from "./pages/public/IscrizioneCampeggio";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
 import TurnoPage from "./pages/TurnoPage";
 import GestionePagamenti from "./pages/GestionePagamenti";
+import Impostazioni from "./pages/Impostazioni";
 import NotFound from "./pages/NotFound";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -149,6 +150,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <GestionePagamenti />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Impostazioni */}
+      <Route
+        path="/impostazioni"
+        element={
+          <ProtectedRoute>
+            <Impostazioni />
           </ProtectedRoute>
         }
       />

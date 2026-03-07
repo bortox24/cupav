@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn } from 'lucide-react';
-import logoCupav from '@/assets/logo-cupav.png';
+import { useCustomLogo } from '@/hooks/useCustomLogo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -16,6 +16,7 @@ export default function Login() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const logoUrl = useCustomLogo();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +43,7 @@ export default function Login() {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img 
-              src={logoCupav} 
+              src={logoUrl} 
               alt="Logo CUPAV" 
               className="h-24 w-auto object-contain"
             />

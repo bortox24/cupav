@@ -4,10 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { submitPreiscrizione } from '@/hooks/useRagazzi';
-import logoCupav from '@/assets/logo-cupav.png';
+import { useCustomLogo } from '@/hooks/useCustomLogo';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const TURNI = [
   '4^ Elementare',
@@ -18,6 +19,8 @@ const TURNI = [
 ];
 
 export default function PreiscrizioneCupav() {
+  const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -85,7 +88,7 @@ export default function PreiscrizioneCupav() {
     <header className="bg-card border-b border-border shadow-sm">
       <div className="container mx-auto px-4 py-6 flex items-center justify-between">
         <div className="w-9" />
-        <img src={logoCupav} alt="Logo CUPAV" className="h-24 md:h-28 w-auto object-contain" />
+        <img src={logoUrl} alt="Logo CUPAV" className="h-24 md:h-28 w-auto object-contain" />
         <ThemeToggle />
       </div>
     </header>
@@ -98,6 +101,25 @@ export default function PreiscrizioneCupav() {
       </div>
     </footer>
   );
+
+  // Check if preiscrizioni are disabled
+  if (!settingsLoading && siteSettings?.preiscrizione_enabled === 'false') {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        {header}
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full text-center">
+            <CardHeader>
+              <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <CardTitle>Preiscrizioni chiuse</CardTitle>
+              <CardDescription>Le preiscrizioni sono attualmente chiuse. Riprova più tardi.</CardDescription>
+            </CardHeader>
+          </Card>
+        </main>
+        {footer}
+      </div>
+    );
+  }
 
   if (submitted) {
     return (

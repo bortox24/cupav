@@ -19,10 +19,12 @@ import {
   Calendar,
   GraduationCap,
   CreditCard,
+  Settings,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { useState, useEffect } from 'react';
 import { useMyTurnoPermissions, TURNI } from '@/hooks/useTurnoPermissions';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 // Countdown Component
 function CountdownBox({ value, label }: { value: number; label: string }) {
@@ -184,6 +186,16 @@ const allQuickAccessCards: QuickAccessCard[] = [
     iconBg: 'bg-gradient-to-br from-lime-500 to-emerald-600',
     iconColor: 'text-white',
   },
+  {
+    title: 'Impostazioni',
+    description: 'Logo, link pubblici e configurazioni',
+    icon: <Settings className="h-7 w-7" />,
+    path: '/impostazioni',
+    gradient: 'bg-gradient-to-br from-slate-100 via-gray-50 to-zinc-50 dark:from-slate-950/50 dark:via-gray-950/30 dark:to-zinc-950/30',
+    borderColor: 'border-slate-300 dark:border-slate-700',
+    iconBg: 'bg-gradient-to-br from-slate-500 to-gray-600',
+    iconColor: 'text-white',
+  },
 ];
 
 // Turno quick access cards with distinct gradients
@@ -244,6 +256,7 @@ export default function Home() {
   const { profile, isAdmin } = useAuth();
   const { canAccessPage, isLoading } = useMyPagePermissions();
   const { data: myTurnoPerms = [], isLoading: turnoPermsLoading } = useMyTurnoPermissions();
+  const { data: siteSettings } = useSiteSettings();
 
   // Fetch iscrizioni counts per turno
   const { data: turnoCountsRaw = [] } = useQuery({
@@ -313,14 +326,18 @@ export default function Home() {
             </div>
             <CampingCountdown />
             <div className="mt-4 flex flex-wrap gap-3">
-              <Link to="/iscrizione" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
-                <Tent className="h-5 w-5" />
-                Iscrizioni
-              </Link>
-              <Link to="/preiscrizione-cupav" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
-                <FileText className="h-5 w-5" />
-                Preiscrizioni
-              </Link>
+              {siteSettings?.iscrizione_enabled !== 'false' && (
+                <Link to="/iscrizione" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                  <Tent className="h-5 w-5" />
+                  Iscrizioni
+                </Link>
+              )}
+              {siteSettings?.preiscrizione_enabled !== 'false' && (
+                <Link to="/preiscrizione-cupav" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                  <FileText className="h-5 w-5" />
+                  Preiscrizioni
+                </Link>
+              )}
             </div>
           </div>
         </div>

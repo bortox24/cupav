@@ -14,10 +14,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send, Tent, AlertTriangle, Info, Shield } from "lucide-react";
+import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send, Tent, AlertTriangle, Info, Shield, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import logoCupav from "@/assets/logo-cupav.png";
+import { useCustomLogo } from "@/hooks/useCustomLogo";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+
 
 const capitalize = (s: string) => s.replace(/\b\w/g, c => c.toUpperCase());
 
@@ -76,6 +78,8 @@ function DatePickerField({ value, onChange, label }: { value: Date | undefined; 
 
 export default function IscrizioneCampeggio() {
   const { toast } = useToast();
+  const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -244,6 +248,21 @@ export default function IscrizioneCampeggio() {
     }
   };
 
+  // Check if iscrizioni are disabled
+  if (!settingsLoading && siteSettings?.iscrizione_enabled === 'false') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-background flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full text-center shadow-xl">
+          <CardHeader>
+            <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <CardTitle>Iscrizioni chiuse</CardTitle>
+            <CardDescription>Le iscrizioni sono attualmente chiuse. Riprova più tardi.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-background flex items-center justify-center p-4">
@@ -272,7 +291,7 @@ export default function IscrizioneCampeggio() {
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500 text-white py-6 px-4 shadow-lg">
         <div className="max-w-2xl mx-auto flex flex-col items-center text-center gap-3 sm:flex-row sm:text-left sm:gap-4">
-          <img src={logoCupav} alt="CUPAV" className="h-20 w-20 sm:h-14 sm:w-14 rounded-xl bg-white/20 p-1" />
+          <img src={logoUrl} alt="CUPAV" className="h-20 w-20 sm:h-14 sm:w-14 rounded-xl bg-white/20 p-1" />
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">ISCRIZIONE</h1>
             <p className="text-white/80 text-sm">CUPAV - Campeggio unità pastorale Altavilla Valmarana</p>
