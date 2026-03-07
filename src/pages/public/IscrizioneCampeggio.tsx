@@ -248,6 +248,21 @@ export default function IscrizioneCampeggio() {
     }
   };
 
+  // Check if iscrizioni are disabled
+  if (!settingsLoading && siteSettings?.iscrizione_enabled === 'false') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-background flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full text-center shadow-xl">
+          <CardHeader>
+            <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <CardTitle>Iscrizioni chiuse</CardTitle>
+            <CardDescription>Le iscrizioni sono attualmente chiuse. Riprova più tardi.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-background flex items-center justify-center p-4">
