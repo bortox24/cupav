@@ -863,9 +863,9 @@ export default function TurnoPage() {
                 </div>
 
                 {/* Tent grid */}
-                <div className="space-y-1 sm:space-y-2">
+                <div className="space-y-0 sm:space-y-1 max-w-md sm:max-w-lg lg:max-w-xl mx-auto">
                   {TENT_ROWS.map(({ riga, count, colStart }) => (
-                    <div key={riga} className="grid grid-cols-4 gap-1 sm:gap-2 lg:gap-3 items-end">
+                    <div key={riga} className="grid grid-cols-4 gap-0.5 sm:gap-1 lg:gap-2 items-end">
                       {/* Empty cells before */}
                       {Array.from({ length: colStart - 1 }).map((_, i) => (
                         <div key={`empty-before-${i}`} />
