@@ -1,43 +1,31 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Aggiungere ruolo "Responsabile Animatori" + Ordinamento gerarchico Staff nei turni
 
-### Cosa cambia
+### 1. Aggiornare `src/hooks/useAnimatori.ts`
+- Aggiungere `responsabile_animatori` a `RUOLO_LABELS` ("Resp. Animatori") e `RUOLO_COLORS` (colore viola/purple)
+- Aggiungere costante `RUOLO_ORDER` per l'ordinamento gerarchico:
+  1. `responsabile_campo`
+  2. `cuoco`
+  3. `responsabile_animatori`
+  4. `animatore`
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### 2. Aggiornare `src/pages/AnagraficaAnimatori.tsx`
+- Nel Select del ruolo (sia nel drawer di modifica che nel form di aggiunta), aggiungere l'opzione "Responsabile Animatori"
+- Nel filtro ruolo aggiungere "Resp. Animatori"
 
-### Layout finale
+### 3. Aggiornare `src/pages/TurnoPage.tsx`
+- Nella tab Staff, ordinare la lista `animatoriTurno` usando `RUOLO_ORDER` prima di renderizzare le card
+- Anche nel PDF, ordinare la sezione Staff con lo stesso criterio
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+### 4. Aggiornare `src/pages/public/ModuloStaff.tsx`
+- Aggiungere "Responsabile Animatori" come opzione nel Select del ruolo nel modulo pubblico
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+### File coinvolti
+- `src/hooks/useAnimatori.ts` — nuove costanti ruolo + ordine
+- `src/pages/AnagraficaAnimatori.tsx` — opzione ruolo nel drawer/form e filtro
+- `src/pages/TurnoPage.tsx` — sorting gerarchico nella tab staff e nel PDF
+- `src/pages/public/ModuloStaff.tsx` — opzione ruolo nel modulo pubblico
 
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
-
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+Nessuna migrazione DB necessaria: il campo `ruolo` è già `text`, basta usare il nuovo valore.
 
