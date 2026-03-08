@@ -1,43 +1,21 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Fix salvataggio ruolo + aggiornamento card e turno
 
-### Cosa cambia
+### Bug identificato
+Il problema e' su **riga 554** di `AnagraficaAnimatori.tsx`: `setSelectedAnimatore(a)` salva uno **snapshot** dell'oggetto. Dopo il salvataggio e il refetch della query, lo state `selectedAnimatore` conserva ancora i dati vecchi. La card esterna e il drawer non si aggiornano.
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Fix
 
-### Layout finale
+**`src/pages/AnagraficaAnimatori.tsx`**:
+1. Invece di passare direttamente `selectedAnimatore` al drawer, derivare l'animatore aggiornato dall'array `animatori` usando l'id:
+   - Salvare solo l'ID nello state (`selectedAnimatoreId`)
+   - Derivare `selectedAnimatore` con `animatori.find(a => a.id === selectedAnimatoreId)`
+   - Questo garantisce che il drawer mostri sempre i dati aggiornati dopo il refetch
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+### Nessun problema nella tab Staff dei turni
+La pagina `TurnoPage.tsx` usa `useAnimatoriByTurno` che carica i dati direttamente dalla query, quindi il ruolo nei turni si aggiorna gia' correttamente dopo il refetch. Il sorting gerarchico e il badge ruolo sono gia' implementati.
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
-
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
-
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+### File modificati
+- `src/pages/AnagraficaAnimatori.tsx` — cambiare da `selectedAnimatore` (oggetto) a `selectedAnimatoreId` (string) e derivare l'oggetto dall'array query
 
