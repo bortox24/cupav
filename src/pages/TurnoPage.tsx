@@ -1015,7 +1015,49 @@ export default function TurnoPage() {
           </>
         )}
 
-        {/* ─── Tab: Appello ─── */}
+        {/* ─── Tab: Download lista ─── */}
+        {activeTab === 'download-lista' && (
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="p-6 space-y-5">
+              <p className="text-sm text-muted-foreground">Seleziona cosa includere nel PDF:</p>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={dlIncludeRagazzi}
+                    onChange={(e) => setDlIncludeRagazzi(e.target.checked)}
+                    className="h-5 w-5 rounded border-2 border-primary accent-primary"
+                  />
+                  <div>
+                    <p className="font-medium text-foreground">Ragazzi</p>
+                    <p className="text-xs text-muted-foreground">Nome, genitore e telefono</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={dlIncludeStaff}
+                    onChange={(e) => setDlIncludeStaff(e.target.checked)}
+                    className="h-5 w-5 rounded border-2 border-primary accent-primary"
+                  />
+                  <div>
+                    <p className="font-medium text-foreground">Staff</p>
+                    <p className="text-xs text-muted-foreground">Animatori, cuochi e responsabili di campo</p>
+                  </div>
+                </label>
+              </div>
+              <Button
+                className="rounded-full gap-2"
+                disabled={!dlIncludeRagazzi && !dlIncludeStaff}
+                onClick={handleDownloadPDF}
+              >
+                <Download className="h-4 w-4" /> Scarica PDF
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+
         {activeTab === 'appello' && (
           <>
             {iscrizioniLoading ? (
