@@ -1,43 +1,42 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Pagina Regolamento con upload PDF e visualizzatore inline
 
-### Cosa cambia
+### Obiettivo
+Creare una pagina `/regolamento` dove gli admin possono caricare un PDF del regolamento, e tutti gli utenti con permesso possono visualizzarlo direttamente nella pagina tramite un viewer integrato.
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Implementazione
 
-### Layout finale
+#### 1. Storage bucket `regolamento`
+- Creare un bucket pubblico `regolamento` via migration
+- RLS: admin può upload/delete, authenticated con permesso pagina può leggere
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
+#### 2. Nuova pagina `src/pages/Regolamento.tsx`
+- Layout con `MainLayout`
+- **Admin**: pulsante upload PDF (input file accept=".pdf"), pulsante elimina PDF corrente
+- **Tutti**: viewer PDF inline usando `<iframe>` o `<object>` con l'URL pubblico del file dal bucket
+- Il file viene salvato sempre con un nome fisso (es. `regolamento.pdf`) per semplicità, sovrascrivendo il precedente
+- Usa `supabase.storage.from('regolamento')` per upload/list/getPublicUrl
+
+#### 3. Registrare la pagina nel sistema
+- **`usePagePermissions.ts`**: aggiungere `/regolamento` in `availablePages`
+- **`App.tsx`**: aggiungere route protetta `/regolamento`
+- **`Home.tsx`**: aggiungere card di accesso rapido "Regolamento" con icona `BookOpen`
+
+#### 4. Migration SQL
+```sql
+INSERT INTO storage.buckets (id, name, public) VALUES ('regolamento', 'regolamento', true);
+
+CREATE POLICY "Anyone authenticated can read regolamento" ON storage.objects FOR SELECT USING (bucket_id = 'regolamento' AND auth.uid() IS NOT NULL);
+CREATE POLICY "Admins can upload regolamento" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'regolamento' AND is_admin());
+CREATE POLICY "Admins can update regolamento" ON storage.objects FOR UPDATE USING (bucket_id = 'regolamento' AND is_admin());
+CREATE POLICY "Admins can delete regolamento" ON storage.objects FOR DELETE USING (bucket_id = 'regolamento' AND is_admin());
 ```
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
-
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
-
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+### File modificati
+- `supabase/migrations/` — nuovo file migration per bucket + policies
+- `src/pages/Regolamento.tsx` — nuova pagina
+- `src/App.tsx` — route
+- `src/hooks/usePagePermissions.ts` — aggiunta pagina
+- `src/pages/Home.tsx` — card accesso rapido
 
