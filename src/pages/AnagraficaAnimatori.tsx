@@ -181,6 +181,37 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
   const assignedTurni = animatore.turni.filter((t) => t.anno === CURRENT_YEAR);
   const availableTurni = TURNI_OPTIONS.filter((t) => !assignedTurni.some((at) => at.turno === t));
 
+  const canCreateAccount = isAdmin && !!animatore.email && assignedTurni.length > 0;
+
+  const handleCreateAccount = async () => {
+    setCreatingAccount(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-staff-account', {
+        body: {
+          email: animatore.email,
+          fullName: animatore.full_name,
+          turni: assignedTurni.map((t) => t.turno),
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setGeneratedPassword(data.password);
+      setShowAccountConfirm(false);
+      setShowAccountResult(true);
+      toast.success('Account creato con successo');
+    } catch (err: any) {
+      toast.error(err?.message || 'Errore nella creazione account');
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
+
+  const handleCopyPassword = () => {
+    navigator.clipboard.writeText(generatedPassword);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
