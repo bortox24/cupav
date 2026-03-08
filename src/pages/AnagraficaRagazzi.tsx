@@ -858,19 +858,19 @@ export default function AnagraficaRagazzi() {
           {enrichingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           Arricchisci tutti
         </Button>
-        <DropdownMenu>
+        <DropdownMenu open={exportOpen} onOpenChange={setExportOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={(e) => { e.preventDefault(); setExportOpen(!exportOpen); }}>
               <Download className="h-4 w-4" />
               Esporta
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={exportPDF} className="gap-2">
+            <DropdownMenuItem onClick={() => { exportPDF(); setExportOpen(false); }} className="gap-2">
               <FileText className="h-4 w-4" />
               Scarica PDF
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportCSV} className="gap-2">
+            <DropdownMenuItem onClick={() => { exportCSV(); setExportOpen(false); }} className="gap-2">
               <FileSpreadsheet className="h-4 w-4" />
               Scarica CSV
             </DropdownMenuItem>
