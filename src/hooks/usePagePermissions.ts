@@ -76,6 +76,11 @@ export const availablePages: PageInfo[] = [
     description: 'Gestionale anagrafico ragazzi CUPAV',
   },
   {
+    path: '/anagrafica-animatori',
+    title: 'Anagrafica Animatori',
+    description: 'Gestionale anagrafico animatori CUPAV',
+  },
+  {
     path: '/gestione-pagamenti',
     title: 'Gestione Pagamenti',
     description: 'Gestisci stato pagamenti delle iscrizioni',

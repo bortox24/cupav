@@ -52,6 +52,77 @@ export type Database = {
           },
         ]
       }
+      animatori: {
+        Row: {
+          archiviato: boolean
+          created_at: string
+          data_nascita: string | null
+          email: string | null
+          full_name: string
+          id: string
+          note: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          archiviato?: boolean
+          created_at?: string
+          data_nascita?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          note?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archiviato?: boolean
+          created_at?: string
+          data_nascita?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          note?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      animatori_turni: {
+        Row: {
+          animatore_id: string
+          anno: number
+          assegnato_da: string | null
+          created_at: string
+          id: string
+          turno: string
+        }
+        Insert: {
+          animatore_id: string
+          anno?: number
+          assegnato_da?: string | null
+          created_at?: string
+          id?: string
+          turno: string
+        }
+        Update: {
+          animatore_id?: string
+          anno?: number
+          assegnato_da?: string | null
+          created_at?: string
+          id?: string
+          turno?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "animatori_turni_animatore_id_fkey"
+            columns: ["animatore_id"]
+            isOneToOne: false
+            referencedRelation: "animatori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appello_logs: {
         Row: {
           created_at: string
