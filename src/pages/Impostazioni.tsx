@@ -1,14 +1,17 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, Image, Link2 } from 'lucide-react';
+import { Loader2, Upload, Image, Link2, Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings, useUpdateSiteSetting } from '@/hooks/useSiteSettings';
 import { useCustomLogo } from '@/hooks/useCustomLogo';
+import { availablePages } from '@/hooks/usePagePermissions';
+import { useQueryClient } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function Impostazioni() {
