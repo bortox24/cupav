@@ -179,16 +179,16 @@ function TendaDrawer({
               {Object.entries(COLORE_STYLES).map(([key, s]) => {
                 const isSelected = colore === key;
                 const selectedClass = key === 'blu'
-                  ? 'bg-blue-500 text-white hover:bg-blue-600 border-blue-500'
+                  ? 'bg-blue-500 text-white hover:bg-blue-600 hover:text-white border-blue-500'
                   : key === 'rosa'
-                    ? 'bg-pink-400 text-white hover:bg-pink-500 border-pink-400'
-                    : 'bg-gray-500 text-white hover:bg-gray-600 border-gray-500';
+                    ? 'bg-pink-400 text-white hover:bg-pink-500 hover:text-white border-pink-400'
+                    : 'bg-gray-500 text-white hover:bg-gray-600 hover:text-white border-gray-500';
                 return (
                   <Button
                     key={key}
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className={`rounded-full gap-1.5 ${isSelected ? selectedClass : `${s.border} ${s.text} hover:bg-transparent hover:text-current`}`}
+                    className={`rounded-full gap-1.5 border ${isSelected ? selectedClass : `${s.border} ${s.text} hover:bg-transparent hover:text-current`}`}
                     onClick={() => handleColorChange(key)}
                   >
                     <div className={`w-3 h-3 rounded-full ${key === 'blu' ? 'bg-blue-500' : key === 'rosa' ? 'bg-pink-400' : 'bg-gray-400'} ${isSelected ? 'border border-white/50' : ''}`} />
