@@ -767,7 +767,13 @@ export default function TurnoPage() {
       doc.setFontSize(16);
       doc.text(`Staff — ${turnoLabel}`, 14, currentY);
 
-      const sortedStaff = [...animatoriTurno].sort((a, b) => (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99));
+      const sortedStaff = [...animatoriTurno].sort((a, b) => {
+        const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
+        if (r !== 0) return r;
+        const nameA = `${a.full_name} ${a.cognome || ''}`.trim().toLowerCase();
+        const nameB = `${b.full_name} ${b.cognome || ''}`.trim().toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
       const staffRows = sortedStaff.map((a: AnimatoreCompleto) => [
         a.full_name + (a.cognome ? ` ${a.cognome}` : ''),
         RUOLO_LABELS[a.ruolo] || a.ruolo,
@@ -1025,7 +1031,13 @@ export default function TurnoPage() {
                   {animatoriTurno.length} staff assegnat{animatoriTurno.length === 1 ? 'o' : 'i'}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[...animatoriTurno].sort((a, b) => (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99)).map((a: AnimatoreCompleto) => (
+                  {[...animatoriTurno].sort((a, b) => {
+                    const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
+                    if (r !== 0) return r;
+                    const nameA = `${a.full_name} ${a.cognome || ''}`.trim().toLowerCase();
+                    const nameB = `${b.full_name} ${b.cognome || ''}`.trim().toLowerCase();
+                    return nameA.localeCompare(nameB);
+                  }).map((a: AnimatoreCompleto) => (
                     <Card key={a.id} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden">
                       <div className="h-1 bg-gradient-to-r from-primary to-primary/60" />
                       <CardContent className="p-4 space-y-2">
