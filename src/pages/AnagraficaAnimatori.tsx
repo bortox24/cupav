@@ -460,7 +460,7 @@ export default function AnagraficaAnimatori() {
   const { data: animatori = [], isLoading } = useAnimatori();
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
-  const [selectedAnimatore, setSelectedAnimatore] = useState<AnimatoreCompleto | null>(null);
+  const [selectedAnimatoreId, setSelectedAnimatoreId] = useState<string | null>(null);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [roleFilter, setRoleFilter] = useState('all');
   const [turnoFilter, setTurnoFilter] = useState('all');
