@@ -62,6 +62,19 @@ serve(async (req) => {
 
     const password = generatePassword(8);
 
+    // Check if user with this email already exists in auth
+    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
+
+    if (existingUser) {
+      // Clean up existing user first (re-creation scenario)
+      await adminClient.from('user_roles').delete().eq('user_id', existingUser.id);
+      await adminClient.from('turno_permessi').delete().eq('user_id', existingUser.id);
+      await adminClient.from('user_page_permissions').delete().eq('user_id', existingUser.id);
+      await adminClient.from('profiles').delete().eq('id', existingUser.id);
+      await adminClient.auth.admin.deleteUser(existingUser.id);
+    }
+
     // Create user
     const { data: userData, error: createError } = await adminClient.auth.admin.createUser({
       email,
