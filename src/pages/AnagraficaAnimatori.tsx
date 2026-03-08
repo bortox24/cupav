@@ -316,6 +316,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                       <SelectItem value="animatore">Animatore</SelectItem>
                       <SelectItem value="cuoco">Cuoco</SelectItem>
                       <SelectItem value="responsabile_campo">Responsabile di campo</SelectItem>
+                      <SelectItem value="responsabile_animatori">Responsabile animatori</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -424,6 +425,7 @@ function AddAnimatoreDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
                   <SelectItem value="animatore">Animatore</SelectItem>
                   <SelectItem value="cuoco">Cuoco</SelectItem>
                   <SelectItem value="responsabile_campo">Responsabile di campo</SelectItem>
+                  <SelectItem value="responsabile_animatori">Responsabile animatori</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -502,6 +504,7 @@ export default function AnagraficaAnimatori() {
                   <SelectItem value="animatore">Animatore</SelectItem>
                   <SelectItem value="cuoco">Cuoco</SelectItem>
                   <SelectItem value="responsabile_campo">Resp. Campo</SelectItem>
+                  <SelectItem value="responsabile_animatori">Resp. Animatori</SelectItem>
                 </SelectContent>
               </Select>
 

@@ -42,12 +42,21 @@ export const RUOLO_LABELS: Record<string, string> = {
   animatore: 'Animatore',
   cuoco: 'Cuoco',
   responsabile_campo: 'Resp. Campo',
+  responsabile_animatori: 'Resp. Animatori',
 };
 
 export const RUOLO_COLORS: Record<string, string> = {
   animatore: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
   cuoco: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
   responsabile_campo: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  responsabile_animatori: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+};
+
+export const RUOLO_ORDER: Record<string, number> = {
+  responsabile_campo: 1,
+  cuoco: 2,
+  responsabile_animatori: 3,
+  animatore: 4,
 };
 
 export function useAnimatori() {

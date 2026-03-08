@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMyTurnoPermissions, TURNI } from '@/hooks/useTurnoPermissions';
-import { useAnimatoriByTurno, AnimatoreCompleto, RUOLO_LABELS, RUOLO_COLORS } from '@/hooks/useAnimatori';
+import { useAnimatoriByTurno, AnimatoreCompleto, RUOLO_LABELS, RUOLO_COLORS, RUOLO_ORDER } from '@/hooks/useAnimatori';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -722,7 +722,8 @@ export default function TurnoPage() {
       doc.setFontSize(16);
       doc.text(`Staff — ${turnoLabel}`, 14, currentY);
 
-      const staffRows = animatoriTurno.map((a: AnimatoreCompleto) => [
+      const sortedStaff = [...animatoriTurno].sort((a, b) => (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99));
+      const staffRows = sortedStaff.map((a: AnimatoreCompleto) => [
         a.full_name + (a.cognome ? ` ${a.cognome}` : ''),
         RUOLO_LABELS[a.ruolo] || a.ruolo,
         a.telefono || '',
@@ -978,7 +979,7 @@ export default function TurnoPage() {
                   {animatoriTurno.length} staff assegnat{animatoriTurno.length === 1 ? 'o' : 'i'}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {animatoriTurno.map((a: AnimatoreCompleto) => (
+                  {[...animatoriTurno].sort((a, b) => (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99)).map((a: AnimatoreCompleto) => (
                     <Card key={a.id} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden">
                       <div className="h-1 bg-gradient-to-r from-primary to-primary/60" />
                       <CardContent className="p-4 space-y-2">
