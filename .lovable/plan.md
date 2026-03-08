@@ -1,43 +1,23 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Aggiungere ordinamento alfabetico secondario nello staff dei turni
 
-### Cosa cambia
+### Problema
+Attualmente lo staff nella tab turni è ordinato solo per gerarchia del ruolo (`RUOLO_ORDER`). All'interno dello stesso ruolo, l'ordine è casuale.
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Soluzione
+Modificare le due `.sort()` in `TurnoPage.tsx` (riga ~770 per il PDF e riga ~1028 per la UI) aggiungendo un confronto alfabetico secondario su `full_name` + `cognome`:
 
-### Layout finale
-
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
+```ts
+.sort((a, b) => {
+  const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
+  if (r !== 0) return r;
+  const nameA = `${a.full_name} ${a.cognome || ''}`.trim().toLowerCase();
+  const nameB = `${b.full_name} ${b.cognome || ''}`.trim().toLowerCase();
+  return nameA.localeCompare(nameB);
+})
 ```
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
-
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
-
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
 ### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+- `src/pages/TurnoPage.tsx` — due sort: riga ~770 (PDF) e riga ~1028 (UI cards)
 
