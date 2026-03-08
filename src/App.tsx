@@ -27,6 +27,7 @@ import TurnoPage from "./pages/TurnoPage";
 import GestionePagamenti from "./pages/GestionePagamenti";
 import Impostazioni from "./pages/Impostazioni";
 import AnagraficaAnimatori from "./pages/AnagraficaAnimatori";
+import Regolamento from "./pages/Regolamento";
 import NotFound from "./pages/NotFound";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -180,6 +181,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <TurnoPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Regolamento */}
+      <Route
+        path="/regolamento"
+        element={
+          <ProtectedRoute>
+            <Regolamento />
           </ProtectedRoute>
         }
       />
