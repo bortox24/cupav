@@ -1,43 +1,63 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Pagina Anagrafica Animatori + Tab Animatori nei Turni
 
-### Cosa cambia
+### Panoramica
+1. Nuova tabella `animatori` per i dati degli animatori
+2. Nuova tabella `animatori_turni` per l'assegnazione animatori ai turni (con conferma)
+3. Nuova pagina `/anagrafica-animatori` con card stile AnagraficaRagazzi
+4. Nuova tab "Animatori" nelle pagine `/turno/:slug` che mostra gli animatori assegnati a quel turno
+5. Integrazione nel sistema permessi pagine
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Database
 
-### Layout finale
+**Tabella `animatori`**:
+- `id` (uuid, PK)
+- `full_name` (text, NOT NULL)
+- `email` (text, nullable)
+- `telefono` (text, nullable)
+- `data_nascita` (text, nullable)
+- `note` (text, nullable)
+- `archiviato` (boolean, default false)
+- `created_at`, `updated_at` (timestamps)
+- RLS: admin o chi ha accesso a `/anagrafica-animatori` può CRUD; lettura anche per chi ha accesso ai turni
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+**Tabella `animatori_turni`** (assegnazione ai turni):
+- `id` (uuid, PK)
+- `animatore_id` (uuid, FK -> animatori)
+- `turno` (text, NOT NULL) — es. "4° Elementare"
+- `anno` (integer, default anno corrente)
+- `assegnato_da` (uuid, nullable)
+- `created_at` (timestamp)
+- RLS: admin o chi ha accesso a `/anagrafica-animatori` può insert/delete; lettura per utenti autenticati
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+### Nuova pagina `src/pages/AnagraficaAnimatori.tsx`
+- Stile identico ad AnagraficaRagazzi: griglia di card con ricerca, filtro archiviati
+- Drawer dettaglio con modifica dati, aggiunta/rimozione turni
+- **Assegnazione turno con AlertDialog di conferma** ("Sei sicuro di voler assegnare [nome] al turno [turno]?")
+- Possibilità di creare manualmente un animatore (in attesa del modulo futuro)
 
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+### Nuovo hook `src/hooks/useAnimatori.ts`
+- Query animatori + join animatori_turni
+- Mutations: add, update, archive, delete animatore
+- Mutations: assign/remove turno (con invalidazione cache)
 
-2. **Separator** tra le due sezioni.
+### Modifica `src/pages/TurnoPage.tsx`
+- Aggiungere tab "Animatori" (icona UserPlus, gia importata) dopo "Tende"
+- Query `animatori_turni` filtrata per turno corrente, join con `animatori`
+- Lista card degli animatori assegnati a quel turno con nome, telefono, email
 
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+### Modifiche ai file esistenti
+- **`src/hooks/usePagePermissions.ts`**: aggiungere `/anagrafica-animatori`
+- **`src/App.tsx`**: nuova route protetta `/anagrafica-animatori`
+- **`src/pages/Home.tsx`**: aggiungere card accesso rapido "Anagrafica Animatori"
 
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+### File coinvolti
+- `src/pages/AnagraficaAnimatori.tsx` (nuovo)
+- `src/hooks/useAnimatori.ts` (nuovo)
+- `src/pages/TurnoPage.tsx` (aggiunta tab Animatori)
+- `src/hooks/usePagePermissions.ts`
+- `src/App.tsx`
+- `src/pages/Home.tsx`
+- 1 migrazione DB (2 tabelle + RLS + realtime)
 
