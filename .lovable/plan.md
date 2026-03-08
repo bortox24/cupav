@@ -1,21 +1,43 @@
 
 
-## Piano: Esporta dropdown solo su click
+## Piano: Sezioni distinte nella card ragazzo
 
-### Problema
-Il menu "Esporta" nella pagina Anagrafica Ragazzi si apre involontariamente durante lo scroll (su mobile il touch-scroll sul pulsante viene interpretato come tap).
+### Cosa cambia
 
-### Soluzione
-Sostituire il `DropdownMenu` con un `Popover` controllato manualmente tramite stato `open`/`setOpen`, in modo che si apra solo su click esplicito del pulsante (non su touch passivo durante lo scroll).
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
 
-In alternativa, gestire lo stato `open` del `DropdownMenu` stesso con `onOpenChange` e un controllo che distingua click intenzionali dallo scroll.
+### Layout finale
 
-### Approccio concreto
-In `src/pages/AnagraficaRagazzi.tsx` (righe 861-878):
-- Aggiungere uno stato `const [exportOpen, setExportOpen] = useState(false)`
-- Passare `open={exportOpen}` e `onOpenChange={setExportOpen}` al `DropdownMenu`
-- Sul `Button` trigger, aggiungere `onClick={(e) => { e.preventDefault(); setExportOpen(!exportOpen); }}` per garantire apertura solo su click esplicito
+```text
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
+```
+
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+
+2. **Separator** tra le due sezioni.
+
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+
+4. **Log**: restano sotto come sono, invariati.
 
 ### File modificato
-- `src/pages/AnagraficaRagazzi.tsx`
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 
