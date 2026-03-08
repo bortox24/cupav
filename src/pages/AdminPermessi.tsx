@@ -67,6 +67,7 @@ export default function AdminPermessi() {
   const createUser = useCreateUser();
   const toggleAdmin = useToggleAdmin();
   const toggleActive = useToggleActive();
+  const deleteUser = useDeleteUser();
 
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
