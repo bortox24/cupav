@@ -1038,7 +1038,7 @@ export default function TurnoPage() {
                         {a.telefono && (
                           <a 
                             href={`tel:${a.telefono.replace(/[^0-9+]/g, '')}`}
-                            className="text-sm text-primary flex items-center gap-1.5 hover:underline"
+                            className="text-sm text-primary flex items-center gap-1.5 hover:underline w-fit"
                           >
                             <Phone className="h-3.5 w-3.5" />
                             {a.telefono}
@@ -1047,7 +1047,7 @@ export default function TurnoPage() {
                         {a.email && (
                           <a 
                             href={`mailto:${a.email}`}
-                            className="text-sm text-muted-foreground flex items-center gap-1.5 hover:underline"
+                            className="text-sm text-muted-foreground flex items-center gap-1.5 hover:underline w-fit"
                           >
                             <Mail className="h-3.5 w-3.5" />
                             {a.email}
