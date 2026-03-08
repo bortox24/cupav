@@ -669,6 +669,7 @@ export default function AnagraficaRagazzi() {
   const [selectedRagazzo, setSelectedRagazzo] = useState<RagazzoCompleto | null>(null);
   const [archiviatiOpen, setArchiviatiOpen] = useState(false);
   const [enrichingAll, setEnrichingAll] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const getGroupedData = () => {
     if (!ragazzi) return [];
