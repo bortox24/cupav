@@ -117,11 +117,12 @@ export default function Regolamento() {
                 </a>
               </Button>
             </div>
-            <div className="w-full rounded-lg border border-border overflow-hidden bg-muted" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
+            <div className="w-full rounded-lg border border-border overflow-hidden bg-muted" style={{ height: 'calc(100vh - 280px)', minHeight: '600px' }}>
               <iframe
-                src={pdfUrl}
+                src={pdfUrl + '#view=FitH&scrollbar=1&toolbar=1&navpanes=0'}
                 className="w-full h-full"
                 title="Regolamento CUPAV"
+                style={{ border: 'none' }}
               />
             </div>
           </div>
