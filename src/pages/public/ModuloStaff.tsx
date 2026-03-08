@@ -20,6 +20,8 @@ import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send } from "luc
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { XCircle } from "lucide-react";
 
 const capitalize = (s: string) =>
   s
@@ -101,6 +103,7 @@ function DatePickerField({
 export default function ModuloStaff() {
   const { toast } = useToast();
   const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
