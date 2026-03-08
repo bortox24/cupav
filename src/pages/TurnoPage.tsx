@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMyTurnoPermissions, TURNI } from '@/hooks/useTurnoPermissions';
+import { useAnimatoriByTurno, AnimatoreCompleto } from '@/hooks/useAnimatori';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -418,7 +419,7 @@ function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; o
 
 // ─── Main Component ────────────────────────────────────
 
-type TabType = 'dettagli' | 'appello' | 'tende' | 'download-lista';
+type TabType = 'dettagli' | 'appello' | 'tende' | 'animatori' | 'download-lista';
 
 export default function TurnoPage() {
   const { turnoSlug } = useParams<{ turnoSlug: string }>();
