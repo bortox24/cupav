@@ -72,6 +72,7 @@ export default function Impostazioni() {
 
   const iscrizioneEnabled = settings?.iscrizione_enabled === 'true';
   const preiscrizioneEnabled = settings?.preiscrizione_enabled === 'true';
+  const moduloStaffEnabled = settings?.modulo_staff_enabled === 'true';
 
   return (
     <MainLayout title="Impostazioni">
@@ -154,6 +155,19 @@ export default function Impostazioni() {
               <Switch
                 checked={preiscrizioneEnabled}
                 onCheckedChange={(checked) => handleToggle('preiscrizione_enabled', checked)}
+                disabled={updateSetting.isPending}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base font-medium">Modulo Staff</Label>
+                <p className="text-sm text-muted-foreground">
+                  Registrazione staff campeggio (/modulo-staff)
+                </p>
+              </div>
+              <Switch
+                checked={moduloStaffEnabled}
+                onCheckedChange={(checked) => handleToggle('modulo_staff_enabled', checked)}
                 disabled={updateSetting.isPending}
               />
             </div>
