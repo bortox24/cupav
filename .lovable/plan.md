@@ -1,25 +1,43 @@
 
 
-## Piano: Rinomina tab "Staff" + Download con selezione Ragazzi/Staff
+## Piano: Sezioni distinte nella card ragazzo
 
-### 1. Rinomina tab "Animatori" → "Staff"
-- Linea 786: cambiare testo da "Animatori" a "Staff"
-- Linea 941: aggiornare messaggio vuoto ("Nessuno staff assegnato...")
-- Linea 948: aggiornare conteggio ("X staff assegnati")
+### Cosa cambia
 
-### 2. Trasformare "Download lista" da azione diretta a tab con checkbox
-Attualmente il click su "Download lista" chiama direttamente `handleDownloadPDF()`. Cambiare in:
-- Diventa una tab vera (`download-lista` gia' definita nel type ma non usata come tab)
-- Mostra una card con due checkbox: **Ragazzi** e **Staff**
-- Almeno uno deve essere selezionato
-- Pulsante "Scarica PDF"
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
 
-### 3. PDF con sezioni
-Il PDF generato includera':
-- **Se "Ragazzi" selezionato**: sezione "Ragazzi" con tabella (Nome Cognome Ragazzo, Genitore, Telefono) — come oggi
-- **Se "Staff" selezionato**: sezione "Staff" con tabella (Nome Cognome, Ruolo, Telefono, Email)
-- Se entrambi: unico file con entrambe le sezioni una dopo l'altra
+### Layout finale
 
-### File modificati
-- `src/pages/TurnoPage.tsx` — unico file da modificare
+```text
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
+```
+
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+
+2. **Separator** tra le due sezioni.
+
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+
+4. **Log**: restano sotto come sono, invariati.
+
+### File modificato
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 
