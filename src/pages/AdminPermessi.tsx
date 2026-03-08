@@ -20,6 +20,17 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Form,
   FormControl,
   FormField,
@@ -36,7 +47,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useUsers, useCreateUser, useToggleAdmin, useToggleActive } from '@/hooks/useUsers';
+import { useUsers, useCreateUser, useToggleAdmin, useToggleActive, useDeleteUser } from '@/hooks/useUsers';
 import { useAuth } from '@/lib/auth';
 
 const createUserSchema = z.object({
