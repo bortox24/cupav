@@ -108,6 +108,20 @@ serve(async (req) => {
       );
     }
 
+    // Grant access to /home page
+    const { error: homePermError } = await adminClient
+      .from('user_page_permissions')
+      .insert({
+        user_id: userId,
+        page_path: '/home',
+        can_access: true,
+      });
+
+    if (homePermError) {
+      console.error('Error granting /home access:', homePermError);
+      // Non-critical, don't rollback
+    }
+
     return new Response(
       JSON.stringify({ userId, password }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
