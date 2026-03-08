@@ -1,14 +1,16 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, Image, Link2 } from 'lucide-react';
+import { Loader2, Upload, Image, Link2, Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings, useUpdateSiteSetting } from '@/hooks/useSiteSettings';
 import { useCustomLogo } from '@/hooks/useCustomLogo';
+import { availablePages } from '@/hooks/usePagePermissions';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function Impostazioni() {
@@ -19,6 +21,23 @@ export default function Impostazioni() {
   const updateSetting = useUpdateSiteSetting();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [defaultPages, setDefaultPages] = useState<string[]>(['/home']);
+
+  // Sync defaultPages from settings
+  useEffect(() => {
+    if (settings?.staff_default_pages) {
+      try {
+        const parsed = JSON.parse(settings.staff_default_pages);
+        if (Array.isArray(parsed)) {
+          // Ensure /home is always included
+          const pages = parsed.includes('/home') ? parsed : ['/home', ...parsed];
+          setDefaultPages(pages);
+        }
+      } catch {
+        setDefaultPages(['/home']);
+      }
+    }
+  }, [settings?.staff_default_pages]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -171,6 +190,54 @@ export default function Impostazioni() {
                 disabled={updateSetting.isPending}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Pagine predefinite account staff */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Pagine predefinite account staff
+            </CardTitle>
+            <CardDescription>
+              Seleziona le pagine che verranno assegnate automaticamente ai nuovi account creati dal pulsante "Crea Account" nell'Anagrafica Staff.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {availablePages.map((page) => {
+              const isHome = page.path === '/home';
+              const isChecked = defaultPages.includes(page.path);
+              return (
+                <div key={page.path} className="flex items-start gap-3">
+                  <Checkbox
+                    id={`default-page-${page.path}`}
+                    checked={isChecked}
+                    disabled={isHome || updateSetting.isPending}
+                    onCheckedChange={(checked) => {
+                      const newPages = checked
+                        ? [...defaultPages, page.path]
+                        : defaultPages.filter((p) => p !== page.path);
+                      setDefaultPages(newPages);
+                      updateSetting.mutate(
+                        { key: 'staff_default_pages', value: JSON.stringify(newPages) },
+                        {
+                          onSuccess: () => toast({ title: 'Pagine predefinite aggiornate' }),
+                          onError: (err) => toast({ title: 'Errore', description: err.message, variant: 'destructive' }),
+                        }
+                      );
+                    }}
+                  />
+                  <div className="grid gap-0.5 leading-none">
+                    <Label htmlFor={`default-page-${page.path}`} className="text-sm font-medium cursor-pointer">
+                      {page.title}
+                      {isHome && <span className="ml-2 text-xs text-muted-foreground">(obbligatoria)</span>}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">{page.description}</p>
+                  </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       </div>

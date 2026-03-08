@@ -121,17 +121,38 @@ serve(async (req) => {
       );
     }
 
-    // Grant access to /home page
-    const { error: homePermError } = await adminClient
-      .from('user_page_permissions')
-      .insert({
-        user_id: userId,
-        page_path: '/home',
-        can_access: true,
-      });
+    // Read default pages from site_settings
+    let defaultPages: string[] = ['/home'];
+    const { data: settingRow } = await adminClient
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'staff_default_pages')
+      .maybeSingle();
 
-    if (homePermError) {
-      console.error('Error granting /home access:', homePermError);
+    if (settingRow?.value) {
+      try {
+        const parsed = JSON.parse(settingRow.value);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          defaultPages = parsed.includes('/home') ? parsed : ['/home', ...parsed];
+        }
+      } catch {
+        // Keep default ['/home']
+      }
+    }
+
+    // Grant access to all default pages
+    const pagePermRows = defaultPages.map((pagePath: string) => ({
+      user_id: userId,
+      page_path: pagePath,
+      can_access: true,
+    }));
+
+    const { error: pagePermError } = await adminClient
+      .from('user_page_permissions')
+      .insert(pagePermRows);
+
+    if (pagePermError) {
+      console.error('Error granting default page access:', pagePermError);
       // Non-critical, don't rollback
     }
 
