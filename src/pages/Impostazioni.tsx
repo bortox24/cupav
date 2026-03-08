@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings, useUpdateSiteSetting } from '@/hooks/useSiteSettings';
 import { useCustomLogo } from '@/hooks/useCustomLogo';
-import { availablePages } from '@/hooks/usePagePermissions';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 
