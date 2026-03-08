@@ -178,6 +178,16 @@ const allQuickAccessCards: QuickAccessCard[] = [
     iconColor: 'text-white',
   },
   {
+    title: 'Anagrafica Animatori',
+    description: 'Gestionale animatori CUPAV',
+    icon: <UserPlus className="h-7 w-7" />,
+    path: '/anagrafica-animatori',
+    gradient: 'bg-gradient-to-br from-cyan-100 via-sky-50 to-blue-50 dark:from-cyan-950/50 dark:via-sky-950/30 dark:to-blue-950/30',
+    borderColor: 'border-cyan-300 dark:border-cyan-700',
+    iconBg: 'bg-gradient-to-br from-cyan-500 to-sky-600',
+    iconColor: 'text-white',
+  },
+  {
     title: 'Gestione Pagamenti',
     description: 'Gestisci stato pagamenti iscrizioni',
     icon: <CreditCard className="h-7 w-7" />,
