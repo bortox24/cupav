@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
@@ -6,9 +6,63 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Upload, Trash2, FileText, Loader2, Download } from 'lucide-react';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const BUCKET = 'regolamento';
 const FILE_NAME = 'regolamento.pdf';
+
+function PdfViewer({ url }: { url: string }) {
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const updateWidth = useCallback(() => {
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.clientWidth);
+    }
+  }, []);
+
+  useEffect(() => {
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [updateWidth]);
+
+  return (
+    <div ref={containerRef} className="w-full">
+      <Document
+        file={url}
+        onLoadSuccess={({ numPages: n }) => setNumPages(n)}
+        loading={
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        }
+        error={
+          <div className="text-center py-10 text-destructive">
+            Errore nel caricamento del PDF
+          </div>
+        }
+      >
+        {numPages && containerWidth > 0 && Array.from({ length: numPages }, (_, i) => (
+          <div key={i} className={i < numPages - 1 ? 'mb-4' : ''}>
+            <Page
+              pageNumber={i + 1}
+              width={containerWidth}
+              renderTextLayer
+              renderAnnotationLayer
+            />
+          </div>
+        ))}
+      </Document>
+    </div>
+  );
+}
 
 export default function Regolamento() {
   const { isAdmin } = useAuth();
@@ -23,7 +77,6 @@ export default function Regolamento() {
     const { data } = await supabase.storage.from(BUCKET).list('', { limit: 1, search: FILE_NAME });
     if (data && data.length > 0) {
       const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(FILE_NAME);
-      // Add cache buster
       setPdfUrl(urlData.publicUrl + '?t=' + Date.now());
     } else {
       setPdfUrl(null);
@@ -74,7 +127,6 @@ export default function Regolamento() {
   return (
     <MainLayout title="Regolamento">
       <div className="space-y-6">
-        {/* Admin controls */}
         {isAdmin && (
           <Card>
             <CardContent className="flex flex-wrap items-center gap-3 pt-6">
@@ -102,7 +154,6 @@ export default function Regolamento() {
           </Card>
         )}
 
-        {/* PDF Viewer */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -117,13 +168,8 @@ export default function Regolamento() {
                 </a>
               </Button>
             </div>
-            <div className="w-full rounded-lg border border-border overflow-hidden bg-muted" style={{ height: 'calc(100vh - 280px)', minHeight: '600px' }}>
-              <iframe
-                src={pdfUrl + '#view=FitH&scrollbar=1&toolbar=1&navpanes=0'}
-                className="w-full h-full"
-                title="Regolamento CUPAV"
-                style={{ border: 'none' }}
-              />
+            <div className="w-full rounded-lg border border-border overflow-hidden bg-muted p-2 sm:p-4">
+              <PdfViewer url={pdfUrl} />
             </div>
           </div>
         ) : (
