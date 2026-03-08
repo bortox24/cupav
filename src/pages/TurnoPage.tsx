@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMyTurnoPermissions, TURNI } from '@/hooks/useTurnoPermissions';
-import { useAnimatoriByTurno, AnimatoreCompleto } from '@/hooks/useAnimatori';
+import { useAnimatoriByTurno, AnimatoreCompleto, RUOLO_LABELS, RUOLO_COLORS } from '@/hooks/useAnimatori';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -939,7 +939,7 @@ export default function TurnoPage() {
                 <CardContent className="py-8 text-center">
                   <UserPlus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Nessun animatore assegnato a questo turno.</p>
-                  <p className="text-sm text-muted-foreground mt-1">Vai su Anagrafica Animatori per assegnare animatori.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Vai su Anagrafica Staff per assegnare il personale.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -952,7 +952,12 @@ export default function TurnoPage() {
                     <Card key={a.id} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden">
                       <div className="h-1 bg-gradient-to-r from-primary to-primary/60" />
                       <CardContent className="p-4 space-y-2">
-                        <p className="font-bold text-base">{a.full_name}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-bold text-base">{a.full_name}</p>
+                          <Badge className={`text-[11px] border-0 rounded-full px-2.5 py-0.5 pointer-events-none ${RUOLO_COLORS[a.ruolo] || 'bg-muted text-muted-foreground'}`}>
+                            {RUOLO_LABELS[a.ruolo] || a.ruolo}
+                          </Badge>
+                        </div>
                         {a.telefono && (
                           <a 
                             href={`tel:${a.telefono.replace(/[^0-9+]/g, '')}`}
