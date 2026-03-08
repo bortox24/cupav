@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -20,6 +20,8 @@ import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send } from "luc
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { XCircle } from "lucide-react";
 
 const capitalize = (s: string) =>
   s
@@ -101,6 +103,7 @@ function DatePickerField({
 export default function ModuloStaff() {
   const { toast } = useToast();
   const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -195,6 +198,21 @@ export default function ModuloStaff() {
       setSubmitting(false);
     }
   };
+
+  // Check if modulo staff is disabled
+  if (!settingsLoading && siteSettings?.modulo_staff_enabled === 'false') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-background flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full text-center shadow-xl">
+          <CardHeader>
+            <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <CardTitle>Registrazione staff chiusa</CardTitle>
+            <CardDescription>Le registrazioni staff sono attualmente chiuse. Riprova più tardi.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (

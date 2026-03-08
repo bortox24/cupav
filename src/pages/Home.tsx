@@ -349,6 +349,12 @@ export default function Home() {
                   Preiscrizioni
                 </Link>
               )}
+              {siteSettings?.modulo_staff_enabled !== 'false' && (
+                <Link to="/modulo-staff" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                  <UserPlus className="h-5 w-5" />
+                  Registrazione Staff
+                </Link>
+              )}
             </div>
           </div>
         </div>
