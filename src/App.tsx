@@ -21,6 +21,7 @@ import VisualizzaModuloRisposte from "./pages/VisualizzaModuloRisposte";
 import ModuloForm from "./pages/public/ModuloForm";
 import PreiscrizioneCupav from "./pages/public/PreiscrizioneCupav";
 import IscrizioneCampeggio from "./pages/public/IscrizioneCampeggio";
+import ModuloStaff from "./pages/public/ModuloStaff";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
 import TurnoPage from "./pages/TurnoPage";
 import GestionePagamenti from "./pages/GestionePagamenti";
@@ -187,6 +188,7 @@ function AppRoutes() {
       <Route path="/preiscrizione-cupav" element={<PreiscrizioneCupav />} />
       <Route path="/iscrizione" element={<IscrizioneCampeggio />} />
       <Route path="/modulo/:slug" element={<ModuloForm />} />
+      <Route path="/modulo-staff" element={<ModuloStaff />} />
 
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />

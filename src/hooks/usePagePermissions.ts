@@ -77,8 +77,8 @@ export const availablePages: PageInfo[] = [
   },
   {
     path: '/anagrafica-animatori',
-    title: 'Anagrafica Animatori',
-    description: 'Gestionale anagrafico animatori CUPAV',
+    title: 'Anagrafica Staff',
+    description: 'Gestionale staff CUPAV (animatori, cuochi, responsabili)',
   },
   {
     path: '/gestione-pagamenti',
