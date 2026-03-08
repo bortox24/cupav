@@ -103,6 +103,11 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAssignConfirm, setShowAssignConfirm] = useState(false);
   const [pendingTurno, setPendingTurno] = useState('');
+  const [showAccountConfirm, setShowAccountConfirm] = useState(false);
+  const [showAccountResult, setShowAccountResult] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState('');
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const updateMutation = useUpdateAnimatore();
   const archiveMutation = useArchiveAnimatore();
