@@ -436,6 +436,8 @@ export default function TurnoPage() {
   const [saving, setSaving] = useState(false);
   const [selectedTenda, setSelectedTenda] = useState<TendaData | null>(null);
   const [tendaSaving, setTendaSaving] = useState(false);
+  const [dlIncludeRagazzi, setDlIncludeRagazzi] = useState(true);
+  const [dlIncludeStaff, setDlIncludeStaff] = useState(true);
 
   const turnoInfo = TURNI.find(t => t.slug === turnoSlug);
   const turnoValue = turnoInfo?.value ?? '';
@@ -680,38 +682,66 @@ export default function TurnoPage() {
     }
   };
 
-  // Download PDF
+  // Download PDF with sections
   const handleDownloadPDF = async () => {
+    if (!dlIncludeRagazzi && !dlIncludeStaff) return;
+
     const { jsPDF } = await import('jspdf');
     const { autoTable } = await import('jspdf-autotable');
 
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`Lista ${turnoLabel}`, 14, 20);
+    let currentY = 20;
 
-    const rows = sortedIscrizioni.map((r: any) => [
-      `${r.ragazzo_nome} ${r.ragazzo_cognome}`,
-      `${r.genitore_nome} ${r.genitore_cognome}`,
-      r.recapiti_telefonici || '',
-    ]);
+    if (dlIncludeRagazzi) {
+      doc.setFontSize(16);
+      doc.text(`Ragazzi — ${turnoLabel}`, 14, currentY);
 
-    autoTable(doc, {
-      startY: 30,
-      head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono']],
-      body: rows,
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [59, 130, 246] },
-    });
+      const rows = sortedIscrizioni.map((r: any) => [
+        `${r.ragazzo_nome} ${r.ragazzo_cognome}`,
+        `${r.genitore_nome} ${r.genitore_cognome}`,
+        r.recapiti_telefonici || '',
+      ]);
+
+      autoTable(doc, {
+        startY: currentY + 10,
+        head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono']],
+        body: rows,
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [59, 130, 246] },
+      });
+
+      currentY = (doc as any).lastAutoTable?.finalY ?? currentY + 30;
+    }
+
+    if (dlIncludeStaff) {
+      if (dlIncludeRagazzi) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      doc.setFontSize(16);
+      doc.text(`Staff — ${turnoLabel}`, 14, currentY);
+
+      const staffRows = animatoriTurno.map((a: AnimatoreCompleto) => [
+        a.full_name + (a.cognome ? ` ${a.cognome}` : ''),
+        RUOLO_LABELS[a.ruolo] || a.ruolo,
+        a.telefono || '',
+        a.email || '',
+      ]);
+
+      autoTable(doc, {
+        startY: currentY + 10,
+        head: [['Nome e Cognome', 'Ruolo', 'Telefono', 'Email']],
+        body: staffRows,
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [59, 130, 246] },
+      });
+    }
 
     doc.save(`lista-${turnoSlug}.pdf`);
   };
 
-  // Tab click handler for download
   const handleTabClick = (tab: TabType) => {
-    if (tab === 'download-lista') {
-      handleDownloadPDF();
-      return;
-    }
     setActiveTab(tab);
   };
 
@@ -783,10 +813,10 @@ export default function TurnoPage() {
             className="rounded-full gap-1.5"
             onClick={() => handleTabClick('animatori')}
           >
-            <UserPlus className="h-4 w-4" /> Animatori
+            <UserPlus className="h-4 w-4" /> Staff
           </Button>
           <Button
-            variant="outline"
+            variant={activeTab === 'download-lista' ? 'default' : 'outline'}
             size="sm"
             className="rounded-full gap-1.5"
             onClick={() => handleTabClick('download-lista')}
@@ -938,14 +968,14 @@ export default function TurnoPage() {
               <Card>
                 <CardContent className="py-8 text-center">
                   <UserPlus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Nessun animatore assegnato a questo turno.</p>
+                  <p className="text-muted-foreground">Nessuno staff assegnato a questo turno.</p>
                   <p className="text-sm text-muted-foreground mt-1">Vai su Anagrafica Staff per assegnare il personale.</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="space-y-4">
                 <div className="text-sm text-muted-foreground">
-                  {animatoriTurno.length} animatore{animatoriTurno.length === 1 ? '' : 'i'} assegnat{animatoriTurno.length === 1 ? 'o' : 'i'}
+                  {animatoriTurno.length} staff assegnat{animatoriTurno.length === 1 ? 'o' : 'i'}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {animatoriTurno.map((a: AnimatoreCompleto) => (
