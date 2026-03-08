@@ -188,7 +188,7 @@ function TendaDrawer({
                     key={key}
                     variant="outline"
                     size="sm"
-                    className={`rounded-full gap-1.5 ${isSelected ? selectedClass : `${s.border} ${s.text}`}`}
+                    className={`rounded-full gap-1.5 ${isSelected ? selectedClass : `${s.border} ${s.text} hover:bg-transparent hover:text-current`}`}
                     onClick={() => handleColorChange(key)}
                   >
                     <div className={`w-3 h-3 rounded-full ${key === 'blu' ? 'bg-blue-500' : key === 'rosa' ? 'bg-pink-400' : 'bg-gray-400'} ${isSelected ? 'border border-white/50' : ''}`} />
