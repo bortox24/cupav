@@ -1,43 +1,31 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Export PDF/CSV lista ragazzi divisi per turno
 
-### Cosa cambia
+### Obiettivo
+Aggiungere un pulsante di download nella pagina Anagrafica Ragazzi che permette di esportare la lista dei ragazzi attivi (non archiviati) in PDF o CSV, divisi per turno (gruppo), con ordinamento: prima per numero crescente (nulli in fondo), poi alfabetico A-Z.
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Implementazione
 
-### Layout finale
+#### 1. Pulsante download con dropdown (PDF/CSV)
+- Aggiungere un `DropdownMenu` nella toolbar accanto al pulsante "Arricchisci tutti"
+- Icona `Download` con due opzioni: "Scarica PDF" e "Scarica CSV"
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+#### 2. Logica di raggruppamento e ordinamento
+- Raggruppare i ragazzi attivi con iscrizione anno corrente per turno
+- Ordinare i turni secondo l'ordine di `TURNI_OPTIONS`
+- Dentro ogni turno: prima per `numero` crescente (null in fondo), poi per `full_name` alfabetico
+- Ragazzi senza iscrizione corrente in un gruppo "Senza turno" alla fine
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+#### 3. Export PDF (jspdf + jspdf-autotable, già installati)
+- Per ogni turno: titolo sezione + tabella con colonne: #, Nome, Data nascita, Residente, Genitore, Telefono
+- Layout professionale con separazione tra gruppi
 
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+#### 4. Export CSV
+- Header: Turno, Numero, Nome, Data nascita, Residente, Genitore, Telefono
+- UTF-8 BOM per compatibilità Excel
+- Righe raggruppate per turno
 
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+### File modificati
+- `src/pages/AnagraficaRagazzi.tsx` — aggiunta pulsante dropdown + funzioni `exportPDF` e `exportCSV`
 
