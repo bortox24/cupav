@@ -90,6 +90,11 @@ export const availablePages: PageInfo[] = [
     title: 'Impostazioni',
     description: 'Gestisci logo, link pubblici e configurazioni',
   },
+  {
+    path: '/regolamento',
+    title: 'Regolamento',
+    description: 'Visualizza il regolamento del campeggio',
+  },
 ];
 
 // Helper to match dynamic routes (e.g., /visualizza-moduli/:id/risposte)

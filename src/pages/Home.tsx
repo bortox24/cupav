@@ -21,6 +21,7 @@ import {
   CreditCard,
   Settings,
   UserPlus,
+  BookOpen,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { useState, useEffect } from 'react';
@@ -205,6 +206,16 @@ const allQuickAccessCards: QuickAccessCard[] = [
     gradient: 'bg-gradient-to-br from-slate-100 via-gray-50 to-zinc-50 dark:from-slate-950/50 dark:via-gray-950/30 dark:to-zinc-950/30',
     borderColor: 'border-slate-300 dark:border-slate-700',
     iconBg: 'bg-gradient-to-br from-slate-500 to-gray-600',
+    iconColor: 'text-white',
+  },
+  {
+    title: 'Regolamento',
+    description: 'Visualizza il regolamento del campeggio',
+    icon: <BookOpen className="h-7 w-7" />,
+    path: '/regolamento',
+    gradient: 'bg-gradient-to-br from-amber-100 via-orange-50 to-red-50 dark:from-amber-950/50 dark:via-orange-950/30 dark:to-red-950/30',
+    borderColor: 'border-amber-300 dark:border-amber-700',
+    iconBg: 'bg-gradient-to-br from-amber-500 to-orange-600',
     iconColor: 'text-white',
   },
 ];
