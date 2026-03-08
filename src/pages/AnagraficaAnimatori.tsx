@@ -6,6 +6,7 @@ import {
   AnimatoreCompleto, RUOLO_LABELS, RUOLO_COLORS,
 } from '@/hooks/useAnimatori';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,11 +19,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Loader2, Search, Phone, Mail, Pencil, Plus, Trash2, X, Save,
-  Archive, ArchiveRestore, GraduationCap, StickyNote, AlertTriangle,
+  Archive, ArchiveRestore, GraduationCap, StickyNote, AlertTriangle, UserPlus, Copy, Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -101,6 +103,11 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAssignConfirm, setShowAssignConfirm] = useState(false);
   const [pendingTurno, setPendingTurno] = useState('');
+  const [showAccountConfirm, setShowAccountConfirm] = useState(false);
+  const [showAccountResult, setShowAccountResult] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState('');
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const updateMutation = useUpdateAnimatore();
   const archiveMutation = useArchiveAnimatore();
@@ -173,6 +180,37 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
 
   const assignedTurni = animatore.turni.filter((t) => t.anno === CURRENT_YEAR);
   const availableTurni = TURNI_OPTIONS.filter((t) => !assignedTurni.some((at) => at.turno === t));
+
+  const canCreateAccount = isAdmin && !!animatore.email && assignedTurni.length > 0;
+
+  const handleCreateAccount = async () => {
+    setCreatingAccount(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-staff-account', {
+        body: {
+          email: animatore.email,
+          fullName: animatore.full_name,
+          turni: assignedTurni.map((t) => t.turno),
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setGeneratedPassword(data.password);
+      setShowAccountConfirm(false);
+      setShowAccountResult(true);
+      toast.success('Account creato con successo');
+    } catch (err: any) {
+      toast.error(err?.message || 'Errore nella creazione account');
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
+
+  const handleCopyPassword = () => {
+    navigator.clipboard.writeText(generatedPassword);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <>
@@ -298,6 +336,11 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                     <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteConfirm(true)}>
                       <Trash2 className="h-3.5 w-3.5" /> Elimina
                     </Button>
+                    {canCreateAccount && (
+                      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAccountConfirm(true)}>
+                        <UserPlus className="h-3.5 w-3.5" /> Crea account
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -385,6 +428,63 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Account creation confirmation */}
+      <AlertDialog open={showAccountConfirm} onOpenChange={setShowAccountConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Crea account per {animatore.full_name}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Verrà creato un account con:</p>
+                <p><strong>Email:</strong> {animatore.email}</p>
+                <p><strong>Turni assegnati:</strong></p>
+                <ul className="list-disc pl-5">
+                  {assignedTurni.map((t) => <li key={t.id}>{t.turno}</li>)}
+                </ul>
+                <p className="text-xs text-muted-foreground">L'utente potrà accedere solo ai turni sopra elencati.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCreateAccount} disabled={creatingAccount}>
+              {creatingAccount && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Crea account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Account created - show password */}
+      <Dialog open={showAccountResult} onOpenChange={setShowAccountResult}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Account creato!</DialogTitle>
+            <DialogDescription>
+              Comunica queste credenziali a <strong>{animatore.full_name}</strong>:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Email</Label>
+              <p className="font-medium">{animatore.email}</p>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Password temporanea</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <code className="flex-1 bg-muted px-3 py-2 rounded-md font-mono text-lg tracking-wider">{generatedPassword}</code>
+                <Button variant="outline" size="icon" onClick={handleCopyPassword}>
+                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowAccountResult(false)}>Chiudi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
