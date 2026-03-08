@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import {
   useAnimatori, useAddAnimatore, useUpdateAnimatore, useArchiveAnimatore,
@@ -25,8 +26,10 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Loader2, Search, Phone, Mail, Pencil, Plus, Trash2, X, Save,
   Archive, ArchiveRestore, GraduationCap, StickyNote, AlertTriangle, UserPlus, Copy, Check,
+  History,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -35,6 +38,16 @@ const TURNI_OPTIONS = [
   '1° Media', '2° Media', '3° Media',
   'Turno famiglie',
 ];
+
+const LOG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
+  turno_assegnato: { label: 'Turno assegnato', className: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+  turno_rimosso: { label: 'Turno rimosso', className: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+  ruolo_cambiato: { label: 'Ruolo cambiato', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
+  dati_modificati: { label: 'Dati modificati', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+  account_creato: { label: 'Account creato', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+  archiviato: { label: 'Archiviato', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+  ripristinato: { label: 'Ripristinato', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+};
 
 function RuoloBadge({ ruolo }: { ruolo: string }) {
   return (
@@ -94,7 +107,8 @@ function AnimatoreCard({ animatore, onClick }: { animatore: AnimatoreCompleto; o
 }
 
 function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: AnimatoreCompleto; open: boolean; onOpenChange: (v: boolean) => void }) {
-  const { isAdmin } = useAuth();
+  const { user, profile } = useAuth();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState({
     full_name: '', email: '', telefono: '', data_nascita: '', note: '', ruolo: 'animatore',
@@ -117,6 +131,32 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Fetch activity logs
+  const { data: activityLogs = [] } = useQuery({
+    queryKey: ['staff-logs', animatore.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_activity_logs' as any)
+        .select('*')
+        .eq('animatore_id', animatore.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: open,
+  });
+
+  const insertLog = async (azione: string, dettaglio?: string) => {
+    await supabase.from('staff_activity_logs' as any).insert({
+      animatore_id: animatore.id,
+      azione,
+      dettaglio: dettaglio || null,
+      eseguito_da: user?.id,
+      eseguito_da_nome: profile?.full_name || 'Utente',
+    });
+    queryClient.invalidateQueries({ queryKey: ['staff-logs', animatore.id] });
+  };
+
   const startEdit = () => {
     setEditData({
       full_name: animatore.full_name,
@@ -131,6 +171,8 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
   };
 
   const saveEdit = () => {
+    const oldRuolo = animatore.ruolo;
+    const newRuolo = editData.ruolo;
     updateMutation.mutate({
       id: animatore.id,
       full_name: editData.full_name,
@@ -140,7 +182,15 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
       note: editData.note || null,
       ruolo: editData.ruolo,
     }, {
-      onSuccess: () => { toast.success('Dati aggiornati'); setEditing(false); },
+      onSuccess: () => {
+        toast.success('Dati aggiornati');
+        setEditing(false);
+        if (oldRuolo !== newRuolo) {
+          insertLog('ruolo_cambiato', `Da ${RUOLO_LABELS[oldRuolo] || oldRuolo} a ${RUOLO_LABELS[newRuolo] || newRuolo}`);
+        } else {
+          insertLog('dati_modificati');
+        }
+      },
       onError: () => toast.error('Errore durante il salvataggio'),
     });
   };
@@ -152,21 +202,33 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
 
   const confirmAssignTurno = () => {
     assignTurnoMutation.mutate({ animatore_id: animatore.id, turno: pendingTurno }, {
-      onSuccess: () => { toast.success(`${animatore.full_name} assegnato al turno ${pendingTurno}`); setShowAssignConfirm(false); },
+      onSuccess: () => {
+        toast.success(`${animatore.full_name} assegnato al turno ${pendingTurno}`);
+        setShowAssignConfirm(false);
+        insertLog('turno_assegnato', `Turno: ${pendingTurno}`);
+      },
       onError: () => { toast.error('Errore nell\'assegnazione'); setShowAssignConfirm(false); },
     });
   };
 
-  const handleRemoveTurno = (id: string) => {
+  const handleRemoveTurno = (id: string, turnoName: string) => {
     removeTurnoMutation.mutate(id, {
-      onSuccess: () => toast.success('Turno rimosso'),
+      onSuccess: () => {
+        toast.success('Turno rimosso');
+        insertLog('turno_rimosso', `Turno: ${turnoName}`);
+      },
       onError: () => toast.error('Errore'),
     });
   };
 
   const handleArchive = () => {
+    const wasArchived = animatore.archiviato;
     archiveMutation.mutate({ id: animatore.id, archiviato: !animatore.archiviato }, {
-      onSuccess: () => { toast.success(animatore.archiviato ? 'Ripristinato' : 'Archiviato'); onOpenChange(false); },
+      onSuccess: () => {
+        toast.success(wasArchived ? 'Ripristinato' : 'Archiviato');
+        insertLog(wasArchived ? 'ripristinato' : 'archiviato');
+        onOpenChange(false);
+      },
       onError: () => toast.error('Errore'),
     });
   };
@@ -181,7 +243,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
   const assignedTurni = animatore.turni.filter((t) => t.anno === CURRENT_YEAR);
   const availableTurni = TURNI_OPTIONS.filter((t) => !assignedTurni.some((at) => at.turno === t));
 
-  const canCreateAccount = isAdmin && !!animatore.email && assignedTurni.length > 0;
+  const canCreateAccount = !!animatore.email && assignedTurni.length > 0;
 
   const handleCreateAccount = async () => {
     setCreatingAccount(true);
@@ -199,6 +261,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
       setShowAccountConfirm(false);
       setShowAccountResult(true);
       toast.success('Account creato con successo');
+      insertLog('account_creato', `Email: ${animatore.email}`);
     } catch (err: any) {
       toast.error(err?.message || 'Errore nella creazione account');
     } finally {
@@ -283,17 +346,15 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                   {assignedTurni.map((t) => (
                     <div key={t.id} className="flex items-center justify-between bg-primary/10 rounded-lg p-2">
                       <span className="text-sm font-semibold">{t.turno}</span>
-                      {isAdmin && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-destructive/10" onClick={() => handleRemoveTurno(t.id)}>
-                          <X className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-destructive/10" onClick={() => handleRemoveTurno(t.id, t.turno)}>
+                        <X className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   ))}
                 </div>
 
                 {/* Assign new turno */}
-                {isAdmin && availableTurni.length > 0 && (
+                {availableTurni.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assegna a turno</p>
                     <Select onValueChange={handleAssignTurno}>
@@ -324,24 +385,51 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                 )}
 
                 {/* Actions */}
-                {isAdmin && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="gap-1.5" onClick={startEdit}>
-                      <Pencil className="h-3.5 w-3.5" /> Modifica
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={startEdit}>
+                    <Pencil className="h-3.5 w-3.5" /> Modifica
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={handleArchive}>
+                    {animatore.archiviato ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+                    {animatore.archiviato ? 'Ripristina' : 'Archivia'}
+                  </Button>
+                  <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteConfirm(true)}>
+                    <Trash2 className="h-3.5 w-3.5" /> Elimina
+                  </Button>
+                  {canCreateAccount && (
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAccountConfirm(true)}>
+                      <UserPlus className="h-3.5 w-3.5" /> Crea account
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-1.5" onClick={handleArchive}>
-                      {animatore.archiviato ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
-                      {animatore.archiviato ? 'Ripristina' : 'Archivia'}
-                    </Button>
-                    <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteConfirm(true)}>
-                      <Trash2 className="h-3.5 w-3.5" /> Elimina
-                    </Button>
-                    {canCreateAccount && (
-                      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAccountConfirm(true)}>
-                        <UserPlus className="h-3.5 w-3.5" /> Crea account
-                      </Button>
-                    )}
-                  </div>
+                  )}
+                </div>
+
+                {/* Activity Logs */}
+                {activityLogs.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium flex items-center gap-1.5">
+                        <History className="h-4 w-4" /> Log attività
+                      </p>
+                      <div className="space-y-1.5">
+                        {activityLogs.map((log: any) => {
+                          const config = LOG_BADGE_CONFIG[log.azione] || { label: log.azione, className: 'bg-muted text-muted-foreground' };
+                          return (
+                            <div key={log.id} className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                              <Badge className={`text-[10px] border-0 rounded-full px-2 py-0.5 pointer-events-none ${config.className}`}>
+                                {config.label}
+                              </Badge>
+                              {log.dettaglio && <span className="font-medium text-foreground/70">{log.dettaglio}</span>}
+                              <span>— {log.eseguito_da_nome}</span>
+                              <span className="text-muted-foreground/60">
+                                {format(new Date(log.created_at), 'dd-MM-yyyy HH:mm')}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             ) : (
@@ -556,7 +644,6 @@ function AddAnimatoreDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
 }
 
 export default function AnagraficaAnimatori() {
-  const { isAdmin } = useAuth();
   const { data: animatori = [], isLoading } = useAnimatori();
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
@@ -594,7 +681,6 @@ export default function AnagraficaAnimatori() {
               />
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              {/* Role filter */}
               <Select value={roleFilter} onValueChange={setRoleFilter}>
                 <SelectTrigger className="w-[180px] rounded-xl">
                   <SelectValue placeholder="Filtro ruolo" />
@@ -608,7 +694,6 @@ export default function AnagraficaAnimatori() {
                 </SelectContent>
               </Select>
 
-              {/* Turno filter */}
               <Select value={turnoFilter} onValueChange={setTurnoFilter}>
                 <SelectTrigger className="w-[180px] rounded-xl">
                   <SelectValue placeholder="Filtro turno" />
@@ -632,11 +717,9 @@ export default function AnagraficaAnimatori() {
         {/* Count + Add button */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{filtered.length} risultat{filtered.length === 1 ? 'o' : 'i'}</p>
-          {isAdmin && (
-            <Button size="sm" className="gap-1.5 rounded-xl" onClick={() => setShowAddDrawer(true)}>
-              <Plus className="h-4 w-4" /> Nuovo
-            </Button>
-          )}
+          <Button size="sm" className="gap-1.5 rounded-xl" onClick={() => setShowAddDrawer(true)}>
+            <Plus className="h-4 w-4" /> Nuovo
+          </Button>
         </div>
 
         {/* Grid */}
