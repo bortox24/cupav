@@ -458,6 +458,9 @@ export default function TurnoPage() {
     enabled: !!user && hasAccess && !!turnoValue,
   });
 
+  // Load animatori for this turno
+  const { data: animatoriTurno = [], isLoading: animatoriLoading } = useAnimatoriByTurno(turnoValue);
+
   // Load tende
   const { data: tendeData = [], isLoading: tendeLoading } = useQuery({
     queryKey: ['tende', turnoValue],
