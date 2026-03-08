@@ -1,34 +1,43 @@
 
 
-## Piano: Eliminazione account utente da Gestione Utenti
+## Piano: Sezioni distinte nella card ragazzo
 
-### Obiettivo
-Aggiungere un pulsante "Elimina" per ogni utente (tranne se stesso) nella tabella Gestione Utenti. L'eliminazione rimuove completamente l'account auth, permettendo di ricreare l'account dalla pagina Anagrafica Staff.
+### Cosa cambia
 
-### Implementazione
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
 
-#### 1. Nuova edge function `delete-user`
-- Riceve `userId` nel body
-- Verifica che il chiamante sia autenticato
-- Usa `adminClient.auth.admin.deleteUser(userId)` per eliminare l'utente da auth
-- Il profilo viene eliminato automaticamente tramite il trigger/cascade esistente (`handle_new_user` crea il profilo, e la tabella profiles ha `id` che referenzia `auth.users`)
-- Pulisce anche: `user_roles`, `turno_permessi`, `user_page_permissions` per sicurezza (dato che potrebbero non avere CASCADE)
-- Config: aggiungere `[functions.delete-user] verify_jwt = false` in `config.toml`
+### Layout finale
 
-#### 2. Hook `useDeleteUser` in `useUsers.ts`
-- Mutation che invoca `supabase.functions.invoke('delete-user', { body: { userId } })`
-- Invalida query `['users']` on success
-- Toast di conferma/errore
+```text
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
+```
 
-#### 3. UI in `AdminPermessi.tsx`
-- Nuova colonna "Azioni" nella tabella
-- Pulsante icona `Trash2` rosso per ogni riga (nascosto per l'utente corrente)
-- Dialog di conferma con AlertDialog prima dell'eliminazione (mostra nome + email)
-- Import `AlertDialog` components + `Trash2` icon
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
 
-### File modificati
-- `supabase/functions/delete-user/index.ts` — nuova edge function
-- `supabase/config.toml` — aggiunta config
-- `src/hooks/useUsers.ts` — nuovo hook `useDeleteUser`
-- `src/pages/AdminPermessi.tsx` — colonna azioni + dialog conferma eliminazione
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+
+2. **Separator** tra le due sezioni.
+
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+
+4. **Log**: restano sotto come sono, invariati.
+
+### File modificato
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 

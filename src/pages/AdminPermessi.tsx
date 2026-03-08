@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Loader2, UserPlus, Shield, Info, Check, X } from 'lucide-react';
+import { Plus, Loader2, UserPlus, Shield, Info, Check, X, Trash2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,17 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Form,
   FormControl,
   FormField,
@@ -36,7 +47,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useUsers, useCreateUser, useToggleAdmin, useToggleActive } from '@/hooks/useUsers';
+import { useUsers, useCreateUser, useToggleAdmin, useToggleActive, useDeleteUser } from '@/hooks/useUsers';
 import { useAuth } from '@/lib/auth';
 
 const createUserSchema = z.object({
@@ -56,6 +67,7 @@ export default function AdminPermessi() {
   const createUser = useCreateUser();
   const toggleAdmin = useToggleAdmin();
   const toggleActive = useToggleActive();
+  const deleteUser = useDeleteUser();
 
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
@@ -224,6 +236,7 @@ export default function AdminPermessi() {
                       <TableHead className="hidden sm:table-cell">Email</TableHead>
                       <TableHead className="text-center">Admin</TableHead>
                       <TableHead className="text-center">Attivo</TableHead>
+                      <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -282,6 +295,44 @@ export default function AdminPermessi() {
                                   <X className="h-4 w-4 text-destructive" />
                                 )}
                               </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {!isCurrentUser && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Eliminare questo utente?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Stai per eliminare l'account di <strong>{u.full_name}</strong> ({u.email}).
+                                      Questa azione è irreversibile. L'utente non potrà più accedere al sistema.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Annulla</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteUser.mutateAsync(u.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      {deleteUser.isPending ? (
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                      ) : (
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                      )}
+                                      Elimina
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             )}
                           </TableCell>
                         </TableRow>
