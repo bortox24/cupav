@@ -336,6 +336,11 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                     <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteConfirm(true)}>
                       <Trash2 className="h-3.5 w-3.5" /> Elimina
                     </Button>
+                    {canCreateAccount && (
+                      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAccountConfirm(true)}>
+                        <UserPlus className="h-3.5 w-3.5" /> Crea account
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
