@@ -927,6 +927,59 @@ export default function TurnoPage() {
           </>
         )}
 
+        {/* ─── Tab: Animatori ─── */}
+        {activeTab === 'animatori' && (
+          <>
+            {animatoriLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : animatoriTurno.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <UserPlus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Nessun animatore assegnato a questo turno.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Vai su Anagrafica Animatori per assegnare animatori.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  {animatoriTurno.length} animatore{animatoriTurno.length === 1 ? '' : 'i'} assegnat{animatoriTurno.length === 1 ? 'o' : 'i'}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {animatoriTurno.map((a: AnimatoreCompleto) => (
+                    <Card key={a.id} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden">
+                      <div className="h-1 bg-gradient-to-r from-primary to-primary/60" />
+                      <CardContent className="p-4 space-y-2">
+                        <p className="font-bold text-base">{a.full_name}</p>
+                        {a.telefono && (
+                          <a 
+                            href={`tel:${a.telefono.replace(/[^0-9+]/g, '')}`}
+                            className="text-sm text-primary flex items-center gap-1.5 hover:underline"
+                          >
+                            <Phone className="h-3.5 w-3.5" />
+                            {a.telefono}
+                          </a>
+                        )}
+                        {a.email && (
+                          <a 
+                            href={`mailto:${a.email}`}
+                            className="text-sm text-muted-foreground flex items-center gap-1.5 hover:underline"
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            {a.email}
+                          </a>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         {/* ─── Tab: Appello ─── */}
         {activeTab === 'appello' && (
           <>
