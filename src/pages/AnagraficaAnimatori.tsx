@@ -428,6 +428,63 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Account creation confirmation */}
+      <AlertDialog open={showAccountConfirm} onOpenChange={setShowAccountConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Crea account per {animatore.full_name}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Verrà creato un account con:</p>
+                <p><strong>Email:</strong> {animatore.email}</p>
+                <p><strong>Turni assegnati:</strong></p>
+                <ul className="list-disc pl-5">
+                  {assignedTurni.map((t) => <li key={t.id}>{t.turno}</li>)}
+                </ul>
+                <p className="text-xs text-muted-foreground">L'utente potrà accedere solo ai turni sopra elencati.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCreateAccount} disabled={creatingAccount}>
+              {creatingAccount && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Crea account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Account created - show password */}
+      <Dialog open={showAccountResult} onOpenChange={setShowAccountResult}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Account creato!</DialogTitle>
+            <DialogDescription>
+              Comunica queste credenziali a <strong>{animatore.full_name}</strong>:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Email</Label>
+              <p className="font-medium">{animatore.email}</p>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Password temporanea</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <code className="flex-1 bg-muted px-3 py-2 rounded-md font-mono text-lg tracking-wider">{generatedPassword}</code>
+                <Button variant="outline" size="icon" onClick={handleCopyPassword}>
+                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowAccountResult(false)}>Chiudi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
