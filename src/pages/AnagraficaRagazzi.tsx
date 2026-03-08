@@ -14,7 +14,10 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles, AlertTriangle, Pill, Send, Check, XCircle } from 'lucide-react';
+import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles, AlertTriangle, Pill, Send, Check, XCircle, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -667,6 +670,107 @@ export default function AnagraficaRagazzi() {
   const [archiviatiOpen, setArchiviatiOpen] = useState(false);
   const [enrichingAll, setEnrichingAll] = useState(false);
 
+  const getGroupedData = () => {
+    if (!ragazzi) return [];
+    const attivi = ragazzi.filter((r) => !r.archiviato);
+    const groups: { turno: string; ragazzi: RagazzoCompleto[] }[] = [];
+
+    for (const turno of TURNI_OPTIONS) {
+      const list = attivi.filter((r) =>
+        r.iscrizioni.some((i) => i.anno === CURRENT_YEAR && i.turno === turno)
+      );
+      if (list.length > 0) groups.push({ turno, ragazzi: sortForExport(list) });
+    }
+
+    const senzaTurno = attivi.filter(
+      (r) => !r.iscrizioni.some((i) => i.anno === CURRENT_YEAR)
+    );
+    if (senzaTurno.length > 0) groups.push({ turno: 'Senza turno', ragazzi: sortForExport(senzaTurno) });
+
+    return groups;
+  };
+
+  const sortForExport = (list: RagazzoCompleto[]) =>
+    [...list].sort((a, b) => {
+      const aNum = a.numero ?? Infinity;
+      const bNum = b.numero ?? Infinity;
+      if (aNum !== bNum) return aNum - bNum;
+      return a.full_name.localeCompare(b.full_name, 'it');
+    });
+
+  const exportPDF = () => {
+    const groups = getGroupedData();
+    if (groups.length === 0) { toast.error('Nessun dato da esportare'); return; }
+
+    const doc = new jsPDF();
+    let first = true;
+
+    for (const group of groups) {
+      if (!first) doc.addPage();
+      first = false;
+
+      doc.setFontSize(14);
+      doc.text(group.turno, 14, 20);
+
+      const rows = group.ragazzi.map((r) => {
+        const genitore = r.genitori[0];
+        return [
+          r.numero != null ? String(r.numero) : '',
+          r.full_name,
+          formatDataNascita(r.data_nascita),
+          r.residente_altavilla ? 'Sì' : 'No',
+          genitore ? genitore.nome_cognome : '',
+          genitore?.telefono || '',
+        ];
+      });
+
+      autoTable(doc, {
+        startY: 26,
+        head: [['#', 'Nome', 'Data nascita', 'Residente', 'Genitore', 'Telefono']],
+        body: rows,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [59, 130, 246] },
+      });
+    }
+
+    doc.save(`anagrafica-ragazzi-${CURRENT_YEAR}.pdf`);
+    toast.success('PDF scaricato');
+  };
+
+  const exportCSV = () => {
+    const groups = getGroupedData();
+    if (groups.length === 0) { toast.error('Nessun dato da esportare'); return; }
+
+    const header = 'Turno;Numero;Nome;Data nascita;Residente;Genitore;Telefono';
+    const rows: string[] = [];
+
+    for (const group of groups) {
+      for (const r of group.ragazzi) {
+        const genitore = r.genitori[0];
+        const escape = (s: string) => `"${(s || '').replace(/"/g, '""')}"`;
+        rows.push([
+          escape(group.turno),
+          r.numero != null ? String(r.numero) : '',
+          escape(r.full_name),
+          escape(formatDataNascita(r.data_nascita)),
+          r.residente_altavilla ? 'Sì' : 'No',
+          escape(genitore?.nome_cognome || ''),
+          escape(genitore?.telefono || ''),
+        ].join(';'));
+      }
+    }
+
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `anagrafica-ragazzi-${CURRENT_YEAR}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV scaricato');
+  };
+
   const matchesSearch = (r: RagazzoCompleto) => {
     const q = search.toLowerCase();
     if (!q) return true;
@@ -754,6 +858,24 @@ export default function AnagraficaRagazzi() {
           {enrichingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           Arricchisci tutti
         </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <Download className="h-4 w-4" />
+              Esporta
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={exportPDF} className="gap-2">
+              <FileText className="h-4 w-4" />
+              Scarica PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportCSV} className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              Scarica CSV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {isLoading ? (
