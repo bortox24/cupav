@@ -460,7 +460,7 @@ export default function AnagraficaAnimatori() {
   const { data: animatori = [], isLoading } = useAnimatori();
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
-  const [selectedAnimatore, setSelectedAnimatore] = useState<AnimatoreCompleto | null>(null);
+  const [selectedAnimatoreId, setSelectedAnimatoreId] = useState<string | null>(null);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [roleFilter, setRoleFilter] = useState('all');
   const [turnoFilter, setTurnoFilter] = useState('all');
@@ -551,19 +551,22 @@ export default function AnagraficaAnimatori() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((a) => (
-              <AnimatoreCard key={a.id} animatore={a} onClick={() => setSelectedAnimatore(a)} />
+              <AnimatoreCard key={a.id} animatore={a} onClick={() => setSelectedAnimatoreId(a.id)} />
             ))}
           </div>
         )}
       </div>
 
-      {selectedAnimatore && (
-        <AnimatoreDrawer
-          animatore={selectedAnimatore}
-          open={!!selectedAnimatore}
-          onOpenChange={(v) => { if (!v) setSelectedAnimatore(null); }}
-        />
-      )}
+      {selectedAnimatoreId && (() => {
+        const selectedAnimatore = animatori?.find(a => a.id === selectedAnimatoreId);
+        return selectedAnimatore ? (
+          <AnimatoreDrawer
+            animatore={selectedAnimatore}
+            open={true}
+            onOpenChange={(v) => { if (!v) setSelectedAnimatoreId(null); }}
+          />
+        ) : null;
+      })()}
 
       <AddAnimatoreDrawer open={showAddDrawer} onOpenChange={setShowAddDrawer} />
     </MainLayout>
