@@ -1,43 +1,27 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Pagine automatiche per account staff
 
-### Cosa cambia
+### Obiettivo
+Creare una configurazione admin che permette di scegliere quali pagine vengono assegnate automaticamente quando si crea un account staff dal pulsante "Crea Account" nell'Anagrafica Staff.
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Approccio
+Usare la tabella `site_settings` esistente con una chiave `staff_default_pages` che contiene un array JSON di path. Nessuna migration necessaria.
 
-### Layout finale
+### Implementazione
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+#### 1. Nuova sezione nella pagina Impostazioni (`src/pages/Impostazioni.tsx`)
+- Aggiungere una card "Pagine predefinite account staff"
+- Lista di checkbox con tutte le `availablePages` da `usePagePermissions`
+- Al toggle, salva/aggiorna la riga `site_settings` con key `staff_default_pages` e value = JSON array dei path selezionati
+- `/home` sempre selezionato e disabilitato (obbligatorio)
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+#### 2. Aggiornare Edge Function `create-staff-account/index.ts`
+- Dopo la creazione utente, leggere `site_settings` dove `key = 'staff_default_pages'`
+- Parsare il JSON array e inserire una riga `user_page_permissions` per ogni path (oltre a `/home` già presente)
+- Se la setting non esiste, comportamento attuale (solo `/home`)
 
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
-
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+### File modificati
+- `src/pages/Impostazioni.tsx` — nuova sezione con checkbox pagine predefinite
+- `supabase/functions/create-staff-account/index.ts` — leggere setting e assegnare pagine automatiche
 
