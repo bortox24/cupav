@@ -778,6 +778,14 @@ export default function TurnoPage() {
             <LayoutGrid className="h-4 w-4" /> Tende
           </Button>
           <Button
+            variant={activeTab === 'animatori' ? 'default' : 'outline'}
+            size="sm"
+            className="rounded-full gap-1.5"
+            onClick={() => handleTabClick('animatori')}
+          >
+            <UserPlus className="h-4 w-4" /> Animatori
+          </Button>
+          <Button
             variant="outline"
             size="sm"
             className="rounded-full gap-1.5"
