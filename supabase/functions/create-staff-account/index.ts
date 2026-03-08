@@ -51,19 +51,6 @@ serve(async (req) => {
       );
     }
 
-    const { data: roleData } = await adminClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', callingUser.id)
-      .maybeSingle();
-
-    if (roleData?.role !== 'admin') {
-      return new Response(
-        JSON.stringify({ error: "Forbidden: Only admins can create staff accounts" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const { email, fullName, turni }: CreateStaffRequest = await req.json();
 
     if (!email || !fullName || !turni || turni.length === 0) {

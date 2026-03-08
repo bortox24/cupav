@@ -695,6 +695,36 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_activity_logs: {
+        Row: {
+          animatore_id: string
+          azione: string
+          created_at: string | null
+          dettaglio: string | null
+          eseguito_da: string
+          eseguito_da_nome: string
+          id: string
+        }
+        Insert: {
+          animatore_id: string
+          azione: string
+          created_at?: string | null
+          dettaglio?: string | null
+          eseguito_da: string
+          eseguito_da_nome: string
+          id?: string
+        }
+        Update: {
+          animatore_id?: string
+          azione?: string
+          created_at?: string | null
+          dettaglio?: string | null
+          eseguito_da?: string
+          eseguito_da_nome?: string
+          id?: string
+        }
+        Relationships: []
+      }
       tende: {
         Row: {
           assegnati: Json
