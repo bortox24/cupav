@@ -20,6 +20,7 @@ import {
   GraduationCap,
   CreditCard,
   Settings,
+  UserPlus,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { useState, useEffect } from 'react';

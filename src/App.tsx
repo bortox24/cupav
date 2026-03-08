@@ -25,6 +25,7 @@ import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
 import TurnoPage from "./pages/TurnoPage";
 import GestionePagamenti from "./pages/GestionePagamenti";
 import Impostazioni from "./pages/Impostazioni";
+import AnagraficaAnimatori from "./pages/AnagraficaAnimatori";
 import NotFound from "./pages/NotFound";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -140,6 +141,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AnagraficaRagazzi />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/anagrafica-animatori"
+        element={
+          <ProtectedRoute>
+            <AnagraficaAnimatori />
           </ProtectedRoute>
         }
       />
