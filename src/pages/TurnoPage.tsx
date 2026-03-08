@@ -65,11 +65,6 @@ function TendaCard({ tenda, onClick }: { tenda: TendaData; onClick: () => void }
   const fillText = tenda.colore === 'blu' ? 'fill-blue-700 dark:fill-blue-300' : tenda.colore === 'rosa' ? 'fill-pink-700 dark:fill-pink-300' : 'fill-gray-500';
   const n = tenda.assegnati.length;
 
-  // Fixed viewBox — all tents same size. Names use adaptive font size.
-  const nameFontSize = n <= 2 ? 8 : n === 3 ? 7 : 6.5;
-  const nameLineH = n <= 2 ? 11 : n === 3 ? 9.5 : 8.5;
-  const namesStartY = 58;
-
   return (
     <div
       className="cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95 [-webkit-tap-highlight-color:transparent]"
@@ -84,15 +79,8 @@ function TendaCard({ tenda, onClick }: { tenda: TendaData; onClick: () => void }
         <path d="M60 2 L70 5 L60 8" className={tenda.colore === 'blu' ? 'fill-blue-500' : tenda.colore === 'rosa' ? 'fill-pink-400' : 'fill-gray-400'} stroke="none" />
 
         {/* Number + count */}
-        <text x="55" y="46" textAnchor="middle" className={fillText} fontSize="14" fontWeight="bold">{tenda.numero}</text>
-        <text x="74" y="46" textAnchor="start" className="fill-gray-400" fontSize="7">({n}/4)</text>
-
-        {/* Names */}
-        {tenda.assegnati.map((nome, i) => (
-          <text key={i} x="60" y={namesStartY + i * nameLineH} textAnchor="middle" className={fillText} fontSize={nameFontSize}>
-            {nome.length > 18 ? nome.slice(0, 17) + '…' : nome}
-          </text>
-        ))}
+        <text x="55" y="52" textAnchor="middle" className={fillText} fontSize="18" fontWeight="bold">{tenda.numero}</text>
+        <text x="60" y="72" textAnchor="middle" className="fill-gray-400" fontSize="11">({n}/4)</text>
       </svg>
     </div>
   );
@@ -105,6 +93,7 @@ function TendaDrawer({
   open,
   onOpenChange,
   availableRagazzi,
+  availableStaff,
   onSave,
   saving,
 }: {
@@ -112,6 +101,7 @@ function TendaDrawer({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   availableRagazzi: string[];
+  availableStaff: { id: string; full_name: string; cognome: string | null }[];
   onSave: (tenda: TendaData) => void;
   saving: boolean;
 }) {
@@ -127,9 +117,19 @@ function TendaDrawer({
 
   if (!tenda) return null;
 
+  const isStaffTent = colore === 'grigio';
+
   const handleAdd = (nome: string) => {
     if (assegnati.length >= 4) return;
     const updated = [...assegnati, nome];
+    setAssegnati(updated);
+    onSave({ ...tenda, colore, assegnati: updated });
+  };
+
+  const handleAddStaff = (staffName: string) => {
+    if (assegnati.length >= 4) return;
+    const prefixed = `§${staffName}`;
+    const updated = [...assegnati, prefixed];
     setAssegnati(updated);
     onSave({ ...tenda, colore, assegnati: updated });
   };
@@ -142,12 +142,25 @@ function TendaDrawer({
 
   const handleColorChange = (c: string) => {
     setColore(c);
+    // When switching color, clear staff or ragazzi that don't belong
+    // Keep all for now — user can manually remove
     onSave({ ...tenda, colore: c, assegnati });
   };
 
   const style = COLORE_STYLES[colore] || COLORE_STYLES.grigio;
-  // Filter available: not in current tent's assegnati
-  const selectable = availableRagazzi.filter(n => !assegnati.includes(n));
+
+  // For ragazzi tents: filter available ragazzi not already assigned
+  const selectableRagazzi = availableRagazzi.filter(n => !assegnati.includes(n));
+
+  // For staff tents: filter available staff not already assigned (check with § prefix)
+  const assignedStaffNames = assegnati.filter(n => n.startsWith('§')).map(n => n.slice(1));
+  const selectableStaff = availableStaff.filter(s => {
+    const displayName = s.cognome ? `${s.full_name} ${s.cognome}` : s.full_name;
+    return !assignedStaffNames.includes(displayName);
+  });
+
+  const displayName = (nome: string) => nome.startsWith('§') ? nome.slice(1) : nome;
+  const isStaff = (nome: string) => nome.startsWith('§');
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -192,12 +205,19 @@ function TendaDrawer({
               Occupanti ({assegnati.length}/4)
             </p>
             {assegnati.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">Nessun ragazzo assegnato</p>
+              <p className="text-sm text-muted-foreground italic">Nessuno assegnato</p>
             ) : (
               <div className="space-y-2">
                 {assegnati.map((nome, idx) => (
                   <div key={idx} className={`flex items-center justify-between rounded-xl px-3 py-2.5 ${style.bg} border ${style.border}`}>
-                    <span className="text-sm font-medium text-foreground">{nome}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">{displayName(nome)}</span>
+                      {isStaff(nome) && (
+                        <Badge className="text-[10px] bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 border-0 rounded-full px-2 py-0.5 pointer-events-none">
+                          Staff
+                        </Badge>
+                      )}
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -213,8 +233,8 @@ function TendaDrawer({
             )}
           </div>
 
-          {/* Add ragazzo */}
-          {assegnati.length < 4 && selectable.length > 0 && (
+          {/* Add ragazzi (only for blu/rosa tents) */}
+          {!isStaffTent && assegnati.length < 4 && selectableRagazzi.length > 0 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Aggiungi ragazzo/a</p>
               <Select onValueChange={handleAdd}>
@@ -222,9 +242,27 @@ function TendaDrawer({
                   <SelectValue placeholder="Seleziona un ragazzo/a..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {selectable.map(nome => (
+                  {selectableRagazzi.map(nome => (
                     <SelectItem key={nome} value={nome}>{nome}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Add staff (only for grigio/animatori tents) */}
+          {isStaffTent && assegnati.length < 4 && selectableStaff.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Aggiungi staff</p>
+              <Select onValueChange={(val) => handleAddStaff(val)}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Seleziona uno staff..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectableStaff.map(s => {
+                    const name = s.cognome ? `${s.full_name} ${s.cognome}` : s.full_name;
+                    return <SelectItem key={s.id} value={name}>{name}</SelectItem>;
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -498,6 +536,13 @@ export default function TurnoPage() {
     const set = new Set<string>();
     tendeMap.forEach(t => t.assegnati.forEach(n => set.add(n)));
     return set;
+  }, [tendeMap]);
+
+  // Count only ragazzi (exclude staff prefixed with §) for stats
+  const ragazziAssignedCount = useMemo(() => {
+    let count = 0;
+    tendeMap.forEach(t => t.assegnati.forEach(n => { if (!n.startsWith('§')) count++; }));
+    return count;
   }, [tendeMap]);
 
   // Available ragazzi names (from iscrizioni, not yet assigned)
@@ -939,7 +984,7 @@ export default function TurnoPage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Ragazzi assegnati</span>
                       <Badge variant="secondary" className="rounded-full">
-                        {allAssigned.size}/{iscrizioni.length}
+                        {ragazziAssignedCount}/{iscrizioni.length}
                       </Badge>
                     </div>
                   </CardContent>
@@ -952,6 +997,7 @@ export default function TurnoPage() {
               open={!!selectedTenda}
               onOpenChange={(v) => { if (!v) setSelectedTenda(null); }}
               availableRagazzi={availableRagazzi}
+              availableStaff={animatoriTurno.map(a => ({ id: a.id, full_name: a.full_name, cognome: a.cognome }))}
               onSave={handleSaveTenda}
               saving={tendaSaving}
             />
