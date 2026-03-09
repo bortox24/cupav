@@ -1,47 +1,43 @@
 
 
-## Piano: Aggiungere log per modifiche al numero nella card ragazzo
+## Piano: Sezioni distinte nella card ragazzo
 
-### Problema
-Quando un utente inserisce, modifica o elimina il numero nella card di un ragazzo, l'azione non viene tracciata nei log (`anagrafica_invio_logs`).
+### Cosa cambia
 
-### Soluzione
-Modificare la funzione `handleBlur` nel componente `RagazzoCard` (righe 39-48) per inserire un log nella tabella `anagrafica_invio_logs` dopo ogni salvataggio riuscito del numero.
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
 
-### Dettagli
-- Serve recuperare l'utente corrente (`auth.getUser()`) e il profilo dentro `RagazzoCard` per popolare `inviato_da` e `inviato_da_nome`.
-- Usare un nuovo valore `tipo` per distinguere l'azione, ad esempio:
-  - `"numero_assegnato"` — quando si inserisce un numero dove prima era vuoto
-  - `"numero_modificato"` — quando si cambia un numero esistente  
-  - `"numero_rimosso"` — quando si svuota il campo
-- Il campo `dettaglio` (o `successo`) può contenere info come "Da 5 a 12" o "Numero 5 rimosso".
-- Dopo l'insert del log, invalidare la query `['anagrafica-invio-logs', ragazzo.id]` per aggiornare la lista log nel Drawer.
+### Layout finale
 
-### Implementazione concreta
-In `RagazzoCard` (riga 39-48), dopo il `toast.success`:
-```typescript
-const user = (await supabase.auth.getUser()).data.user;
-if (user) {
-  const profile = (await supabase.from('profiles').select('full_name, email').eq('id', user.id).single()).data;
-  const oldNum = ragazzo.numero;
-  const newNum = val;
-  let tipo = 'numero_modificato';
-  let dettaglio = `Da ${oldNum} a ${newNum}`;
-  if (oldNum == null && newNum != null) { tipo = 'numero_assegnato'; dettaglio = `Numero ${newNum} assegnato`; }
-  else if (oldNum != null && newNum == null) { tipo = 'numero_rimosso'; dettaglio = `Numero ${oldNum} rimosso`; }
-  
-  await supabase.from('anagrafica_invio_logs').insert({
-    ragazzo_id: ragazzo.id,
-    inviato_da: user.id,
-    inviato_da_nome: profile?.full_name || profile?.email || '',
-    successo: true,
-    tipo,
-  });
-}
+```text
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
 ```
 
-Inoltre bisognerà passare `queryClient` a `RagazzoCard` (o usare `useQueryClient`) per invalidare i log.
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+
+2. **Separator** tra le due sezioni.
+
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+
+4. **Log**: restano sotto come sono, invariati.
 
 ### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` — componente `RagazzoCard`, funzione `handleBlur`
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 
