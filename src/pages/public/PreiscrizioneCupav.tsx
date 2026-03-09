@@ -4,11 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { submitPreiscrizione } from '@/hooks/useRagazzi';
 import { useCustomLogo } from '@/hooks/useCustomLogo';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { supabase } from '@/integrations/supabase/client';
+
+const IMAGE_URL = 'https://lymuvosryafhpeaiqcba.supabase.co/storage/v1/object/public/immaginivarie/Date_preiscrizioni_CUPAV_2026.jpeg';
 
 const TURNI = [
   '4^ Elementare',
