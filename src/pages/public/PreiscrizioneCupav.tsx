@@ -27,6 +27,7 @@ export default function PreiscrizioneCupav() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
   // Form state
   const [nomeCognome, setNomeCognome] = useState('');
