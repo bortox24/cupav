@@ -138,6 +138,36 @@ export default function PreiscrizioneCupav() {
     );
   }
 
+  if (alreadyRegistered) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        {header}
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-lg w-full text-center">
+            <CardHeader>
+              <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+              <CardTitle>Già preiscritto/a!</CardTitle>
+              <CardDescription className="text-base mt-2">
+                Tuo figlio/a è già stato/a preiscritto/a! Ricordati di presentarti in patronato la serata di preiscrizione del turno di iscrizione di tuo figlio/a.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <img
+                src={IMAGE_URL}
+                alt="Date preiscrizioni CUPAV 2026"
+                className="w-full rounded-lg border border-border shadow-sm"
+              />
+              <Button variant="outline" onClick={() => { setAlreadyRegistered(false); }}>
+                Torna al modulo
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        {footer}
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
