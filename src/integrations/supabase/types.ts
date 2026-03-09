@@ -17,6 +17,7 @@ export type Database = {
       anagrafica_invio_logs: {
         Row: {
           created_at: string
+          dettaglio: string | null
           id: string
           inviato_da: string
           inviato_da_nome: string
@@ -26,6 +27,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dettaglio?: string | null
           id?: string
           inviato_da: string
           inviato_da_nome: string
@@ -35,6 +37,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dettaglio?: string | null
           id?: string
           inviato_da?: string
           inviato_da_nome?: string

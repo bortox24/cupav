@@ -1,0 +1,1 @@
+ALTER TABLE public.anagrafica_invio_logs ADD COLUMN dettaglio text DEFAULT NULL;
