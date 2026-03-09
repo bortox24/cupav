@@ -64,8 +64,21 @@ export default function PreiscrizioneCupav() {
     if (!validate()) return;
     setSubmitting(true);
     try {
+      // Check if already registered for 2026
+      const trimmedName = nomeCognome.trim();
+      const { data: existing } = await supabase
+        .from('ragazzi')
+        .select('id, ragazzi_iscrizioni!inner(anno)')
+        .ilike('full_name', trimmedName)
+        .eq('ragazzi_iscrizioni.anno', 2026);
+
+      if (existing && existing.length > 0) {
+        setAlreadyRegistered(true);
+        return;
+      }
+
       await submitPreiscrizione({
-        fullName: nomeCognome.trim(),
+        fullName: trimmedName,
         dataNascita,
         turno,
         residenteAltavilla: residente === 'si',
