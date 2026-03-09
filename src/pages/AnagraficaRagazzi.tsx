@@ -481,8 +481,18 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                           ) : (
                             <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
                           )}
-                          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0 ${log.tipo === 'conferma_preiscrizione' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
-                            {log.tipo === 'conferma_preiscrizione' ? 'Conferma' : 'Invio'}
+                          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0 ${
+                            log.tipo === 'conferma_preiscrizione' ? 'bg-emerald-500' :
+                            log.tipo === 'numero_assegnato' ? 'bg-violet-500' :
+                            log.tipo === 'numero_modificato' ? 'bg-amber-500' :
+                            log.tipo === 'numero_rimosso' ? 'bg-red-500' :
+                            'bg-blue-500'
+                          }`}>
+                            {log.tipo === 'conferma_preiscrizione' ? 'Conferma' :
+                             log.tipo === 'numero_assegnato' ? 'N° assegnato' :
+                             log.tipo === 'numero_modificato' ? 'N° modificato' :
+                             log.tipo === 'numero_rimosso' ? 'N° rimosso' :
+                             'Invio'}
                           </span>
                           <span className="font-medium truncate">{log.inviato_da_nome}</span>
                           <span className="text-muted-foreground text-[10px] shrink-0 whitespace-nowrap">
