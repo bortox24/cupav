@@ -36,6 +36,8 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
   const iscrizioneCorrente = ragazzo.iscrizioni.find((i) => i.anno === CURRENT_YEAR);
   const [localNumero, setLocalNumero] = useState<string>(ragazzo.numero != null ? String(ragazzo.numero) : '');
 
+  const queryClient = useQueryClient();
+
   const handleBlur = async () => {
     const val = localNumero.trim() === '' ? null : parseInt(localNumero, 10);
     if (val === ragazzo.numero) return;
@@ -44,6 +46,25 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
       toast.error('Errore salvataggio numero');
     } else {
       toast.success('Numero salvato');
+      // Log the number change
+      const user = (await supabase.auth.getUser()).data.user;
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('full_name, email').eq('id', user.id).single();
+        const oldNum = ragazzo.numero;
+        let tipo = 'numero_modificato';
+        if (oldNum == null && val != null) tipo = 'numero_assegnato';
+        else if (oldNum != null && val == null) tipo = 'numero_rimosso';
+
+        await supabase.from('anagrafica_invio_logs').insert({
+          ragazzo_id: ragazzo.id,
+          inviato_da: user.id,
+          inviato_da_nome: profile?.full_name || profile?.email || '',
+          successo: true,
+          tipo,
+        });
+        queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs', ragazzo.id] });
+        queryClient.invalidateQueries({ queryKey: ['ragazzi'] });
+      }
     }
   };
 
