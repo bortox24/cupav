@@ -1,37 +1,43 @@
 
 
-## Piano: Avviso "già preiscritto" con immagine date preiscrizioni
+## Piano: Sezioni distinte nella card ragazzo
 
-### Problema
-Attualmente, se un ragazzo è già presente nel database, `submitPreiscrizione` aggiorna silenziosamente i dati senza avvisare il genitore. Si vuole invece mostrare un avviso specifico con un'immagine delle date di preiscrizione.
+### Cosa cambia
 
-### Soluzione
-Modificare il flusso in `PreiscrizioneCupav.tsx`:
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
 
-1. **Pre-check prima del submit**: Prima di chiamare `submitPreiscrizione`, fare una query al database per verificare se il nome esiste già nella tabella `ragazzi` E ha un'iscrizione per l'anno corrente (2026).
+### Layout finale
 
-2. **Stato "già preiscritto"**: Aggiungere uno stato `alreadyRegistered` che, se `true`, mostra una schermata di avviso al posto della conferma standard.
-
-3. **Schermata avviso**: Mostrare una Card con:
-   - Icona di avviso (AlertCircle)
-   - Messaggio: "Tuo figlio/a è già stato/a preiscritto/a! Ricordati di presentarti in patronato la serata di preiscrizione del turno di iscrizione di tuo figlio/a."
-   - Immagine `Date_preiscrizioni_CUPAV_2026.jpeg` dal bucket `immaginivarie` (URL pubblico)
-   - Pulsante per tornare al form
-
-4. **Non aggiornare i dati**: Se il ragazzo è già preiscritto per l'anno corrente, NON sovrascrivere i dati esistenti — mostrare solo l'avviso.
-
-### Flusso
 ```text
-Submit → Check DB (ragazzo + iscrizione anno corrente)
-  ├─ Esiste → Mostra avviso "già preiscritto" + immagine date
-  └─ Non esiste → Procedi con submitPreiscrizione → Mostra conferma
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
 ```
 
-### File modificati
-- `src/pages/public/PreiscrizioneCupav.tsx` — aggiungere pre-check, stato `alreadyRegistered`, e schermata avviso con immagine
-- `src/hooks/useRagazzi.ts` — nessuna modifica (il check viene fatto direttamente nel componente con una query Supabase)
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
 
-### Dettagli tecnici
-- URL immagine: `https://lymuvosryafhpeaiqcba.supabase.co/storage/v1/object/public/immaginivarie/Date_preiscrizioni_CUPAV_2026.jpeg`
-- La query di check usa le stesse tabelle `ragazzi` e `ragazzi_iscrizioni` che hanno già policy di SELECT pubblica (anon)
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+
+2. **Separator** tra le due sezioni.
+
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+
+4. **Log**: restano sotto come sono, invariati.
+
+### File modificato
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 

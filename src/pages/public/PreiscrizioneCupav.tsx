@@ -4,11 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { submitPreiscrizione } from '@/hooks/useRagazzi';
 import { useCustomLogo } from '@/hooks/useCustomLogo';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { supabase } from '@/integrations/supabase/client';
+
+const IMAGE_URL = 'https://lymuvosryafhpeaiqcba.supabase.co/storage/v1/object/public/immaginivarie/Date_preiscrizioni_CUPAV_2026.jpeg';
 
 const TURNI = [
   '4^ Elementare',
@@ -24,6 +27,7 @@ export default function PreiscrizioneCupav() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
   // Form state
   const [nomeCognome, setNomeCognome] = useState('');
@@ -60,8 +64,21 @@ export default function PreiscrizioneCupav() {
     if (!validate()) return;
     setSubmitting(true);
     try {
+      // Check if already registered for 2026
+      const trimmedName = nomeCognome.trim();
+      const { data: existing } = await supabase
+        .from('ragazzi')
+        .select('id, ragazzi_iscrizioni!inner(anno)')
+        .ilike('full_name', trimmedName)
+        .eq('ragazzi_iscrizioni.anno', 2026);
+
+      if (existing && existing.length > 0) {
+        setAlreadyRegistered(true);
+        return;
+      }
+
       await submitPreiscrizione({
-        fullName: nomeCognome.trim(),
+        fullName: trimmedName,
         dataNascita,
         turno,
         residenteAltavilla: residente === 'si',
@@ -114,6 +131,36 @@ export default function PreiscrizioneCupav() {
               <CardTitle>Preiscrizioni chiuse</CardTitle>
               <CardDescription>Le preiscrizioni sono attualmente chiuse. Riprova più tardi.</CardDescription>
             </CardHeader>
+          </Card>
+        </main>
+        {footer}
+      </div>
+    );
+  }
+
+  if (alreadyRegistered) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        {header}
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-lg w-full text-center">
+            <CardHeader>
+              <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+              <CardTitle>Già preiscritto/a!</CardTitle>
+              <CardDescription className="text-base mt-2">
+                Tuo figlio/a è già stato/a preiscritto/a! Ricordati di presentarti in patronato la serata di preiscrizione del turno di iscrizione di tuo figlio/a.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <img
+                src={IMAGE_URL}
+                alt="Date preiscrizioni CUPAV 2026"
+                className="w-full rounded-lg border border-border shadow-sm"
+              />
+              <Button variant="outline" onClick={() => { setAlreadyRegistered(false); }}>
+                Torna al modulo
+              </Button>
+            </CardContent>
           </Card>
         </main>
         {footer}
