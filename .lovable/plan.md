@@ -1,43 +1,25 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Log numero più dettagliato
 
-### Cosa cambia
+### Problema
+I log per le modifiche al numero non mostrano i dettagli (quale numero è stato assegnato, da quale a quale è stato cambiato, quale è stato rimosso).
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Soluzione
 
-### Layout finale
+**1. Aggiungere colonna `dettaglio` alla tabella `anagrafica_invio_logs`**
+- Nuova colonna `dettaglio text nullable` (default null)
+- Migrazione SQL
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+**2. Popolare `dettaglio` nell'insert del log** (`AnagraficaRagazzi.tsx`, riga 58)
+- `numero_assegnato`: `"Numero 7 assegnato"`
+- `numero_modificato`: `"Numero cambiato da 5 a 12"`
+- `numero_rimosso`: `"Numero 5 rimosso"`
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+**3. Mostrare `dettaglio` nel Drawer dei log** (riga ~497)
+- Sotto o accanto al badge, mostrare `log.dettaglio` se presente, come testo secondario
 
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
-
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+### File modificati
+- Migrazione SQL (nuova colonna `dettaglio`)
+- `src/pages/AnagraficaRagazzi.tsx` — insert del log + rendering nel Drawer
 
