@@ -52,8 +52,16 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
         const { data: profile } = await supabase.from('profiles').select('full_name, email').eq('id', user.id).single();
         const oldNum = ragazzo.numero;
         let tipo = 'numero_modificato';
-        if (oldNum == null && val != null) tipo = 'numero_assegnato';
-        else if (oldNum != null && val == null) tipo = 'numero_rimosso';
+        let dettaglio = '';
+        if (oldNum == null && val != null) {
+          tipo = 'numero_assegnato';
+          dettaglio = `Numero ${val} assegnato`;
+        } else if (oldNum != null && val == null) {
+          tipo = 'numero_rimosso';
+          dettaglio = `Numero ${oldNum} rimosso`;
+        } else {
+          dettaglio = `Numero cambiato da ${oldNum} a ${val}`;
+        }
 
         await supabase.from('anagrafica_invio_logs').insert({
           ragazzo_id: ragazzo.id,
@@ -61,7 +69,8 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
           inviato_da_nome: profile?.full_name || profile?.email || '',
           successo: true,
           tipo,
-        });
+          dettaglio,
+        } as any);
         queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs', ragazzo.id] });
         queryClient.invalidateQueries({ queryKey: ['ragazzi'] });
       }
@@ -499,6 +508,9 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                             {format(new Date(log.created_at), 'dd-MM-yy, HH:mm')}
                           </span>
                         </div>
+                        {(log as any).dettaglio && (
+                          <p className="text-xs text-muted-foreground ml-1 -mt-1">{(log as any).dettaglio}</p>
+                        )}
                       ))}
                     </div>
                   )}
