@@ -41,6 +41,22 @@ export default function Impostazioni() {
     }
   }, [settings?.staff_default_pages]);
 
+  // Sync turniAttivi from settings
+  useEffect(() => {
+    if (settings?.preiscrizione_turni_attivi) {
+      try {
+        const parsed = JSON.parse(settings.preiscrizione_turni_attivi);
+        if (Array.isArray(parsed)) {
+          setTurniAttivi(parsed);
+        }
+      } catch {
+        setTurniAttivi(ALL_TURNI);
+      }
+    } else if (settings && !settings.preiscrizione_turni_attivi) {
+      setTurniAttivi(ALL_TURNI);
+    }
+  }, [settings?.preiscrizione_turni_attivi]);
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
