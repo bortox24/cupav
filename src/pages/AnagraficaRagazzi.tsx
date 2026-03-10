@@ -250,22 +250,21 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
     });
   };
 
-  const handleWebhookCall = async (tipo: 'invio_iscrizione' | 'conferma_preiscrizione', webhookFilter: string, successMsg: string, errorMsg: string) => {
+  const handleInviaIscrizione = async () => {
     if (!user || !profile) { toast.error('Utente non autenticato'); return; }
-    const setSending = tipo === 'conferma_preiscrizione' ? setSendingConferma : setSendingWebhook;
-    setSending(true);
+    setSendingWebhook(true);
     let successo = false;
     try {
       const { data: webhookRows } = await supabase
         .from('webhook_config')
         .select('webhook_url')
-        .ilike('descrizione', `%${webhookFilter}%`)
+        .ilike('descrizione', '%invio iscrizione%')
         .limit(1);
       
       const webhookUrl = webhookRows?.[0]?.webhook_url;
       if (!webhookUrl) {
-        toast.error(`Nessun webhook configurato con descrizione "${webhookFilter}"`);
-        setSending(false);
+        toast.error('Nessun webhook configurato con descrizione "invio iscrizione"');
+        setSendingWebhook(false);
         return;
       }
 
@@ -292,9 +291,9 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
       });
       successo = res.ok;
       if (successo) {
-        toast.success(successMsg);
+        toast.success('Iscrizione inviata con successo!');
       } else {
-        toast.error(errorMsg);
+        toast.error('Errore nell\'invio dell\'iscrizione');
       }
     } catch {
       toast.error('Errore di rete nell\'invio');
@@ -305,14 +304,11 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
       inviato_da: user.id,
       inviato_da_nome: profile.full_name || profile.email,
       successo,
-      tipo,
+      tipo: 'invio_iscrizione',
     });
     queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs', ragazzo.id] });
-    setSending(false);
+    setSendingWebhook(false);
   };
-
-  const handleInviaIscrizione = () => handleWebhookCall('invio_iscrizione', 'invio iscrizione', 'Iscrizione inviata con successo!', 'Errore nell\'invio dell\'iscrizione');
-  const handleConfermaPreiscrizione = () => handleWebhookCall('conferma_preiscrizione', 'conferma preiscrizione', 'Preiscrizione confermata!', 'Errore nella conferma preiscrizione');
 
   const updateGenitore = (idx: number, field: string, value: string) => {
     setEditData((prev) => {
