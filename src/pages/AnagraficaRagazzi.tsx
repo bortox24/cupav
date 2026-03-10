@@ -145,9 +145,7 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
   const [newTurno, setNewTurno] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [sendingWebhook, setSendingWebhook] = useState(false);
-  const [sendingConferma, setSendingConferma] = useState(false);
   const [confirmInvio, setConfirmInvio] = useState(false);
-  const [confirmConferma, setConfirmConferma] = useState(false);
 
   const updateMutation = useUpdateRagazzo();
   const addIscrizioneMutation = useAddIscrizione();
