@@ -14,7 +14,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles, AlertTriangle, Pill, Send, Check, XCircle, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles, AlertTriangle, Pill, Send, XCircle, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
