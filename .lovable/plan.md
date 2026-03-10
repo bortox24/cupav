@@ -1,43 +1,26 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Rimuovere "Conferma Preiscrizione" dall'Anagrafica Ragazzi
 
 ### Cosa cambia
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+Il pulsante "Conferma Preiscrizione" viene rimosso. Il pulsante "Invia Iscrizione" diventa sempre cliccabile (senza più richiedere una conferma preiscrizione precedente). Si rimuove anche il dialog di conferma preiscrizione e tutto lo stato associato.
 
-### Layout finale
+### Modifiche in `src/pages/AnagraficaRagazzi.tsx`
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+1. **Rimuovere stato e funzioni**:
+   - Rimuovere `sendingConferma`, `confirmConferma` (useState)
+   - Rimuovere `handleConfermaPreiscrizione`
+   - Semplificare `handleWebhookCall` per non gestire più il tipo `conferma_preiscrizione` (rimuovere il ternario su `setSending`)
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+2. **Rimuovere il pulsante "Conferma Preiscrizione"** (riga ~421-424)
 
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+3. **Sbloccare "Invia Iscrizione"**: rimuovere la condizione `disabled` che controlla la presenza di log `conferma_preiscrizione` (riga 427). Il pulsante sarà disabilitato solo durante l'invio (`sendingWebhook`).
 
-2. **Separator** tra le due sezioni.
+4. **Rimuovere l'AlertDialog di conferma preiscrizione** (righe 690-705)
 
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+5. **Log rendering**: i log `conferma_preiscrizione` esistenti nel database restano visibili (non si toccano), quindi il rendering nel log continuerà a mostrare eventuali vecchi log di conferma con badge verde.
 
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+### Nessuna modifica al database
+I webhook e i log esistenti non vengono toccati. Il webhook "conferma preiscrizione" nella tabella `webhook_config` può restare (non viene più invocato dal codice).
 
