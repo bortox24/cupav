@@ -412,13 +412,9 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                     📋 Gestione iscrizioni
                   </p>
                   <div className="flex flex-col gap-2">
-                    <Button onClick={() => setConfirmConferma(true)} disabled={sendingConferma} variant="default" className="w-full h-11 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-sm">
-                      {sendingConferma ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
-                      Conferma Preiscrizione
-                    </Button>
                     <Button
                       onClick={() => setConfirmInvio(true)}
-                      disabled={sendingWebhook || !(invioLogs as any[]).some((l: any) => l.tipo === 'conferma_preiscrizione' && l.successo)}
+                      disabled={sendingWebhook}
                       variant="default"
                       className="w-full h-11 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm"
                     >
