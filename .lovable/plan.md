@@ -1,43 +1,20 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Fix navigazione step senza allergie
 
-### Cosa cambia
+### Problema
+Quando si seleziona "No" alle allergie, il codice salta dallo step 1 allo step 3 (`setCurrentStep(3)`), ma la Liberatoria foto si renderizza a `currentStep === 2` (quando `showStep2=false`), e il Regolamento a `currentStep === 3`. Quindi dopo il salto allo step 3, si vede direttamente il Regolamento, saltando la Liberatoria.
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Soluzione
+Cambiare la logica di skip: quando non ci sono allergie, saltare dallo step 1 allo step **2** (non 3). I render condizionali già mappano correttamente gli step quando `showStep2=false`:
+- Step 2 → Liberatoria (`showStep2 ? 3 : 2`)
+- Step 3 → Regolamento (`showStep2 ? 4 : 3`)
 
-### Layout finale
+### Modifiche in `src/pages/public/IscrizioneCampeggio.tsx`
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+1. **Riga 194** — `nextStep()`: cambiare `setCurrentStep(3)` → `setCurrentStep(2)`
+2. **Riga 200** — `prevStep()`: cambiare la condizione `currentStep === 3` → `currentStep === 2` per tornare allo step 1
+3. **Riga 287** — `lastStep`: cambiare `showStep2 ? 4 : 3` → il lastStep diventa `showStep2 ? 4 : 3` (già corretto, nessun cambiamento)
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
-
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
-
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+In pratica: senza allergie gli step effettivi diventano 1 → 2 → 3, coerenti con i render condizionali.
 
