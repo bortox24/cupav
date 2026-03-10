@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, Image, Link2, Users } from 'lucide-react';
+import { Loader2, Upload, Image, Link2, Users, CalendarDays } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,8 @@ export default function Impostazioni() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [defaultPages, setDefaultPages] = useState<string[]>(['/home']);
+  const ALL_TURNI = ['4^ Elementare', '5^ Elementare', '1^ Media', '2^ Media', '3^ Media'];
+  const [turniAttivi, setTurniAttivi] = useState<string[]>(ALL_TURNI);
 
   // Sync defaultPages from settings
   useEffect(() => {
@@ -38,6 +40,22 @@ export default function Impostazioni() {
       }
     }
   }, [settings?.staff_default_pages]);
+
+  // Sync turniAttivi from settings
+  useEffect(() => {
+    if (settings?.preiscrizione_turni_attivi) {
+      try {
+        const parsed = JSON.parse(settings.preiscrizione_turni_attivi);
+        if (Array.isArray(parsed)) {
+          setTurniAttivi(parsed);
+        }
+      } catch {
+        setTurniAttivi(ALL_TURNI);
+      }
+    } else if (settings && !settings.preiscrizione_turni_attivi) {
+      setTurniAttivi(ALL_TURNI);
+    }
+  }, [settings?.preiscrizione_turni_attivi]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,7 +211,49 @@ export default function Impostazioni() {
           </CardContent>
         </Card>
 
-        {/* Pagine predefinite account staff */}
+        {/* Turni Preiscrizione */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Turni Preiscrizione
+            </CardTitle>
+            <CardDescription>
+              Seleziona i turni disponibili nel modulo di preiscrizione pubblico.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {ALL_TURNI.map((t) => {
+              const isChecked = turniAttivi.includes(t);
+              return (
+                <div key={t} className="flex items-start gap-3">
+                  <Checkbox
+                    id={`turno-${t}`}
+                    checked={isChecked}
+                    disabled={updateSetting.isPending}
+                    onCheckedChange={(checked) => {
+                      const newTurni = checked
+                        ? [...turniAttivi, t]
+                        : turniAttivi.filter((x) => x !== t);
+                      setTurniAttivi(newTurni);
+                      updateSetting.mutate(
+                        { key: 'preiscrizione_turni_attivi', value: JSON.stringify(newTurni) },
+                        {
+                          onSuccess: () => toast({ title: 'Turni aggiornati' }),
+                          onError: (err) => toast({ title: 'Errore', description: err.message, variant: 'destructive' }),
+                        }
+                      );
+                    }}
+                  />
+                  <Label htmlFor={`turno-${t}`} className="text-sm font-medium cursor-pointer">
+                    {t}
+                  </Label>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

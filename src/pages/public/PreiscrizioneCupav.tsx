@@ -219,14 +219,27 @@ export default function PreiscrizioneCupav() {
                 </div>
                 <div className="space-y-2">
                   <Label className={errors.turno ? 'text-destructive' : ''}>Turno <span className="text-destructive">*</span></Label>
-                  <RadioGroup value={turno} onValueChange={(v) => { setTurno(v); clearError('turno'); }} className="flex flex-wrap gap-4">
-                    {TURNI.map((t) => (
-                      <div key={t} className="flex items-center space-x-2">
-                        <RadioGroupItem value={t} id={`turno-${t}`} />
-                        <Label htmlFor={`turno-${t}`} className="font-normal cursor-pointer">{t}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                  {(() => {
+                    let visibleTurni = TURNI;
+                    if (siteSettings?.preiscrizione_turni_attivi) {
+                      try {
+                        const parsed = JSON.parse(siteSettings.preiscrizione_turni_attivi);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                          visibleTurni = TURNI.filter(t => parsed.includes(t));
+                        }
+                      } catch { /* use all */ }
+                    }
+                    return (
+                      <RadioGroup value={visibleTurni.includes(turno) ? turno : ''} onValueChange={(v) => { setTurno(v); clearError('turno'); }} className="flex flex-wrap gap-4">
+                        {visibleTurni.map((t) => (
+                          <div key={t} className="flex items-center space-x-2">
+                            <RadioGroupItem value={t} id={`turno-${t}`} />
+                            <Label htmlFor={`turno-${t}`} className="font-normal cursor-pointer">{t}</Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    );
+                  })()}
                   {errors.turno && <p className="text-sm text-destructive">{errors.turno}</p>}
                 </div>
                 <div className="space-y-2">
