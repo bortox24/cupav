@@ -197,7 +197,7 @@ export default function IscrizioneCampeggio() {
   };
 
   const prevStep = () => {
-    if (currentStep === 3 && !showStep2) setCurrentStep(1);
+    if (currentStep === 2 && !showStep2) setCurrentStep(1);
     else setCurrentStep(currentStep - 1);
     scrollToTop();
   };
