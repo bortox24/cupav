@@ -22,6 +22,8 @@ export default function Impostazioni() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [defaultPages, setDefaultPages] = useState<string[]>(['/home']);
+  const ALL_TURNI = ['4^ Elementare', '5^ Elementare', '1^ Media', '2^ Media', '3^ Media'];
+  const [turniAttivi, setTurniAttivi] = useState<string[]>(ALL_TURNI);
 
   // Sync defaultPages from settings
   useEffect(() => {
