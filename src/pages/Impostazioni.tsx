@@ -211,7 +211,49 @@ export default function Impostazioni() {
           </CardContent>
         </Card>
 
-        {/* Pagine predefinite account staff */}
+        {/* Turni Preiscrizione */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Turni Preiscrizione
+            </CardTitle>
+            <CardDescription>
+              Seleziona i turni disponibili nel modulo di preiscrizione pubblico.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {ALL_TURNI.map((t) => {
+              const isChecked = turniAttivi.includes(t);
+              return (
+                <div key={t} className="flex items-start gap-3">
+                  <Checkbox
+                    id={`turno-${t}`}
+                    checked={isChecked}
+                    disabled={updateSetting.isPending}
+                    onCheckedChange={(checked) => {
+                      const newTurni = checked
+                        ? [...turniAttivi, t]
+                        : turniAttivi.filter((x) => x !== t);
+                      setTurniAttivi(newTurni);
+                      updateSetting.mutate(
+                        { key: 'preiscrizione_turni_attivi', value: JSON.stringify(newTurni) },
+                        {
+                          onSuccess: () => toast({ title: 'Turni aggiornati' }),
+                          onError: (err) => toast({ title: 'Errore', description: err.message, variant: 'destructive' }),
+                        }
+                      );
+                    }}
+                  />
+                  <Label htmlFor={`turno-${t}`} className="text-sm font-medium cursor-pointer">
+                    {t}
+                  </Label>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
