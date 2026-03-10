@@ -1,43 +1,22 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Gestione turni preiscrizione dalle Impostazioni
 
-### Cosa cambia
+### Obiettivo
+Permettere all'admin di abilitare/disabilitare i singoli turni nel modulo di preiscrizione dalla pagina Impostazioni. I turni disabilitati non appariranno come opzione nel form pubblico.
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Implementazione
 
-### Layout finale
+**1. Impostazioni (`src/pages/Impostazioni.tsx`)**
+- Aggiungere una nuova Card "Turni Preiscrizione" con checkbox per ciascun turno: `4^ Elementare`, `5^ Elementare`, `1^ Media`, `2^ Media`, `3^ Media`
+- Il valore viene salvato in `site_settings` con chiave `preiscrizione_turni_attivi` come JSON array (es. `["4^ Elementare","1^ Media"]`)
+- Di default tutti i turni sono attivi (se la setting non esiste)
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+**2. Modulo Preiscrizione (`src/pages/public/PreiscrizioneCupav.tsx`)**
+- Leggere la setting `preiscrizione_turni_attivi` da `useSiteSettings()` (già importato)
+- Filtrare la costante `TURNI` mostrando solo quelli presenti nella setting (o tutti se la setting non esiste)
+- Se il turno selezionato viene disabilitato, il campo si resetta
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
-
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
-
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+### Nessuna modifica al database
+Si usa la tabella `site_settings` già esistente con una nuova chiave.
 
