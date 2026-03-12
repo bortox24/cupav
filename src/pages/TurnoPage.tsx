@@ -775,7 +775,7 @@ export default function TurnoPage() {
         return nameA.localeCompare(nameB);
       });
       const staffRows = sortedStaff.map((a: AnimatoreCompleto) => [
-        a.full_name + (a.cognome ? ` ${a.cognome}` : ''),
+        (a.cognome ? `${a.cognome} ` : '') + a.full_name,
         RUOLO_LABELS[a.ruolo] || a.ruolo,
         a.telefono || '',
         a.email || '',
