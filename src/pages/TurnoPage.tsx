@@ -770,8 +770,8 @@ export default function TurnoPage() {
       const sortedStaff = [...animatoriTurno].sort((a, b) => {
         const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
         if (r !== 0) return r;
-        const nameA = `${a.full_name} ${a.cognome || ''}`.trim().toLowerCase();
-        const nameB = `${b.full_name} ${b.cognome || ''}`.trim().toLowerCase();
+        const nameA = `${a.cognome || ''} ${a.full_name}`.trim().toLowerCase();
+        const nameB = `${b.cognome || ''} ${b.full_name}`.trim().toLowerCase();
         return nameA.localeCompare(nameB);
       });
       const staffRows = sortedStaff.map((a: AnimatoreCompleto) => [
