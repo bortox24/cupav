@@ -155,8 +155,7 @@ function TendaDrawer({
   // For staff tents: filter available staff not already assigned (check with § prefix)
   const assignedStaffNames = assegnati.filter(n => n.startsWith('§')).map(n => n.slice(1));
   const selectableStaff = availableStaff.filter(s => {
-    const displayName = s.cognome ? `${s.cognome} ${s.full_name}` : s.full_name;
-    return !assignedStaffNames.includes(displayName);
+    return !assignedStaffNames.includes(s.full_name);
   });
 
   const displayName = (nome: string) => nome.startsWith('§') ? nome.slice(1) : nome;
@@ -260,8 +259,7 @@ function TendaDrawer({
                 </SelectTrigger>
                 <SelectContent>
                   {selectableStaff.map(s => {
-                    const name = s.cognome ? `${s.cognome} ${s.full_name}` : s.full_name;
-                    return <SelectItem key={s.id} value={name}>{name}</SelectItem>;
+                    return <SelectItem key={s.id} value={s.full_name}>{s.full_name}</SelectItem>;
                   })}
                 </SelectContent>
               </Select>
@@ -770,12 +768,10 @@ export default function TurnoPage() {
       const sortedStaff = [...animatoriTurno].sort((a, b) => {
         const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
         if (r !== 0) return r;
-        const nameA = `${a.cognome || ''} ${a.full_name}`.trim().toLowerCase();
-        const nameB = `${b.cognome || ''} ${b.full_name}`.trim().toLowerCase();
-        return nameA.localeCompare(nameB);
+        return a.full_name.toLowerCase().localeCompare(b.full_name.toLowerCase());
       });
       const staffRows = sortedStaff.map((a: AnimatoreCompleto) => [
-        (a.cognome ? `${a.cognome} ` : '') + a.full_name,
+        a.full_name,
         RUOLO_LABELS[a.ruolo] || a.ruolo,
         a.telefono || '',
         a.email || '',
@@ -1034,15 +1030,15 @@ export default function TurnoPage() {
                   {[...animatoriTurno].sort((a, b) => {
                     const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
                     if (r !== 0) return r;
-                    const nameA = `${a.cognome || ''} ${a.full_name}`.trim().toLowerCase();
-                    const nameB = `${b.cognome || ''} ${b.full_name}`.trim().toLowerCase();
+                    const nameA = a.full_name.toLowerCase();
+                    const nameB = b.full_name.toLowerCase();
                     return nameA.localeCompare(nameB);
                   }).map((a: AnimatoreCompleto) => (
                     <Card key={a.id} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden">
                       <div className="h-1 bg-gradient-to-r from-primary to-primary/60" />
                       <CardContent className="p-4 space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-bold text-base">{a.cognome ? `${a.cognome} ${a.full_name}` : a.full_name}</p>
+                          <p className="font-bold text-base">{a.full_name}</p>
                           <Badge className={`text-[11px] border-0 rounded-full px-2.5 py-0.5 pointer-events-none ${RUOLO_COLORS[a.ruolo] || 'bg-muted text-muted-foreground'}`}>
                             {RUOLO_LABELS[a.ruolo] || a.ruolo}
                           </Badge>
