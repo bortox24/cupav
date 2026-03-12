@@ -361,7 +361,7 @@ function InfoRow({ icon, label, value, isLink }: { icon: React.ReactNode; label:
 
 function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean; onOpenChange: (v: boolean) => void }) {
   if (!r) return null;
-  const initials = `${(r.ragazzo_nome?.[0] || '').toUpperCase()}${(r.ragazzo_cognome?.[0] || '').toUpperCase()}`;
+  const initials = `${(r.ragazzo_cognome?.[0] || '').toUpperCase()}${(r.ragazzo_nome?.[0] || '').toUpperCase()}`;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
