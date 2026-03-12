@@ -1,17 +1,43 @@
 
 
-## Piano: Fix nome staff nel PDF — Cognome + Nome
+## Piano: Sezioni distinte nella card ragazzo
 
-### Problema
-Nel PDF, lo staff mostra il nome nel formato errato (possibile duplicazione del cognome). Serve il formato **"Cognome Nome"** coerente con i ragazzi.
+### Cosa cambia
 
-### Modifiche in `src/pages/TurnoPage.tsx`
+Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
 
-1. **PDF export (riga 778)**: Cambiare da `a.full_name + cognome` a `${a.cognome || ''} ${a.full_name}`.trim()
-2. **Sorting staff nel PDF (righe 773-774)**: Invertire a `cognome + full_name` per ordinamento coerente
-3. **Sorting staff nella tab Staff (righe 1037-1038)**: Stesso fix
-4. **Display staff card (riga 1045)**: Mostrare `{a.cognome} {a.full_name}` invece di solo `{a.full_name}`
-5. **Tende dialog (righe 158, 263)**: Invertire a `cognome + full_name`
+### Layout finale
 
-Tutti i punti dove si visualizza o ordina lo staff verranno allineati al formato "Cognome Nome".
+```text
+──────────────────────────
+📋 Gestione iscrizioni
+  ┌──────────────────────┐
+  │ Conferma Preiscrizione│  (full width, h-11, emerald)
+  └──────────────────────┘
+  ┌──────────────────────┐
+  │ Invia Iscrizione      │  (full width, h-11, blue)
+  └──────────────────────┘
+──────────────────────────
+✏️ Modifica dati
+  [Modifica dati]          (full width)
+  [Arricchisci dati]       (full width)
+  [Archivia] [Elimina]     (flex row 50/50)
+──────────────────────────
+📋 Log invii
+  (log entries invariati)
+──────────────────────────
+```
+
+### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+
+1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+
+2. **Separator** tra le due sezioni.
+
+3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+
+4. **Log**: restano sotto come sono, invariati.
+
+### File modificato
+- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
 
