@@ -259,8 +259,7 @@ function TendaDrawer({
                 </SelectTrigger>
                 <SelectContent>
                   {selectableStaff.map(s => {
-                    const name = s.cognome ? `${s.cognome} ${s.full_name}` : s.full_name;
-                    return <SelectItem key={s.id} value={name}>{name}</SelectItem>;
+                    return <SelectItem key={s.id} value={s.full_name}>{s.full_name}</SelectItem>;
                   })}
                 </SelectContent>
               </Select>
