@@ -1042,7 +1042,7 @@ export default function TurnoPage() {
                       <div className="h-1 bg-gradient-to-r from-primary to-primary/60" />
                       <CardContent className="p-4 space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-bold text-base">{a.full_name}</p>
+                          <p className="font-bold text-base">{a.cognome ? `${a.cognome} ${a.full_name}` : a.full_name}</p>
                           <Badge className={`text-[11px] border-0 rounded-full px-2.5 py-0.5 pointer-events-none ${RUOLO_COLORS[a.ruolo] || 'bg-muted text-muted-foreground'}`}>
                             {RUOLO_LABELS[a.ruolo] || a.ruolo}
                           </Badge>
