@@ -282,7 +282,7 @@ function TendaDrawer({
 // ─── Detail card (existing) ────────────────────────────
 
 function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
-  const initials = `${(r.ragazzo_nome?.[0] || '').toUpperCase()}${(r.ragazzo_cognome?.[0] || '').toUpperCase()}`;
+  const initials = `${(r.ragazzo_cognome?.[0] || '').toUpperCase()}${(r.ragazzo_nome?.[0] || '').toUpperCase()}`;
   const phoneNumber = r.recapiti_telefonici?.replace(/[^0-9+]/g, '') || '';
 
   return (
@@ -297,7 +297,7 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
           </div>
           <div className="min-w-0">
             <h4 className="font-bold text-[15px] leading-tight truncate text-foreground">
-              {r.ragazzo_nome} {r.ragazzo_cognome}
+              {r.ragazzo_cognome} {r.ragazzo_nome}
             </h4>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
               {r.genitore_nome} {r.genitore_cognome}
@@ -361,7 +361,7 @@ function InfoRow({ icon, label, value, isLink }: { icon: React.ReactNode; label:
 
 function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean; onOpenChange: (v: boolean) => void }) {
   if (!r) return null;
-  const initials = `${(r.ragazzo_nome?.[0] || '').toUpperCase()}${(r.ragazzo_cognome?.[0] || '').toUpperCase()}`;
+  const initials = `${(r.ragazzo_cognome?.[0] || '').toUpperCase()}${(r.ragazzo_nome?.[0] || '').toUpperCase()}`;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -373,7 +373,7 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
                 {initials}
               </div>
               <div>
-                <DrawerTitle className="text-xl text-left">{r.ragazzo_nome} {r.ragazzo_cognome}</DrawerTitle>
+                <DrawerTitle className="text-xl text-left">{r.ragazzo_cognome} {r.ragazzo_nome}</DrawerTitle>
                 <p className="text-sm text-muted-foreground mt-0.5">{r.genitore_qualita} — {r.genitore_nome} {r.genitore_cognome}</p>
               </div>
             </div>
@@ -448,7 +448,7 @@ function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; o
     >
       <CardContent className="p-5 flex items-center justify-center min-h-[80px]">
         <p className={`text-lg font-bold text-center ${isPresent ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
-          {r.ragazzo_nome} {r.ragazzo_cognome}
+          {r.ragazzo_cognome} {r.ragazzo_nome}
         </p>
       </CardContent>
     </Card>
@@ -632,7 +632,7 @@ export default function TurnoPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((r: any) =>
-        `${r.ragazzo_nome} ${r.ragazzo_cognome}`.toLowerCase().includes(q)
+        `${r.ragazzo_cognome} ${r.ragazzo_nome}`.toLowerCase().includes(q)
       );
     }
     if (filterAllergie !== null) {
@@ -642,8 +642,8 @@ export default function TurnoPage() {
       result = result.filter((r: any) => r.liberatoria_foto === filterFoto);
     }
     result.sort((a: any, b: any) => {
-      const cmp = (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
-      return cmp !== 0 ? cmp : (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
+      const cmp = (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
+      return cmp !== 0 ? cmp : (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
     });
     return result;
   }, [iscrizioni, searchQuery, filterAllergie, filterFoto]);
@@ -651,8 +651,8 @@ export default function TurnoPage() {
   // Sorted iscrizioni for appello (by name)
   const sortedIscrizioni = useMemo(() => {
     return [...iscrizioni].sort((a: any, b: any) => {
-      const cmp = (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
-      return cmp !== 0 ? cmp : (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
+      const cmp = (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
+      return cmp !== 0 ? cmp : (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
     });
   }, [iscrizioni]);
 
@@ -742,7 +742,7 @@ export default function TurnoPage() {
       doc.text(`Ragazzi — ${turnoLabel}`, 14, currentY);
 
       const rows = sortedIscrizioni.map((r: any) => [
-        `${r.ragazzo_nome} ${r.ragazzo_cognome}`,
+        `${r.ragazzo_cognome} ${r.ragazzo_nome}`,
         `${r.genitore_nome} ${r.genitore_cognome}`,
         r.recapiti_telefonici || '',
       ]);
