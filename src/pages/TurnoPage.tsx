@@ -282,7 +282,7 @@ function TendaDrawer({
 // ─── Detail card (existing) ────────────────────────────
 
 function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
-  const initials = `${(r.ragazzo_nome?.[0] || '').toUpperCase()}${(r.ragazzo_cognome?.[0] || '').toUpperCase()}`;
+  const initials = `${(r.ragazzo_cognome?.[0] || '').toUpperCase()}${(r.ragazzo_nome?.[0] || '').toUpperCase()}`;
   const phoneNumber = r.recapiti_telefonici?.replace(/[^0-9+]/g, '') || '';
 
   return (
