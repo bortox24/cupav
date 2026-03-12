@@ -632,7 +632,7 @@ export default function TurnoPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((r: any) =>
-        `${r.ragazzo_nome} ${r.ragazzo_cognome}`.toLowerCase().includes(q)
+        `${r.ragazzo_cognome} ${r.ragazzo_nome}`.toLowerCase().includes(q)
       );
     }
     if (filterAllergie !== null) {
