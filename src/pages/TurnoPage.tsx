@@ -373,7 +373,7 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
                 {initials}
               </div>
               <div>
-                <DrawerTitle className="text-xl text-left">{r.ragazzo_nome} {r.ragazzo_cognome}</DrawerTitle>
+                <DrawerTitle className="text-xl text-left">{r.ragazzo_cognome} {r.ragazzo_nome}</DrawerTitle>
                 <p className="text-sm text-muted-foreground mt-0.5">{r.genitore_qualita} — {r.genitore_nome} {r.genitore_cognome}</p>
               </div>
             </div>
