@@ -155,8 +155,7 @@ function TendaDrawer({
   // For staff tents: filter available staff not already assigned (check with § prefix)
   const assignedStaffNames = assegnati.filter(n => n.startsWith('§')).map(n => n.slice(1));
   const selectableStaff = availableStaff.filter(s => {
-    const displayName = s.cognome ? `${s.cognome} ${s.full_name}` : s.full_name;
-    return !assignedStaffNames.includes(displayName);
+    return !assignedStaffNames.includes(s.full_name);
   });
 
   const displayName = (nome: string) => nome.startsWith('§') ? nome.slice(1) : nome;
