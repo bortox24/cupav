@@ -1,43 +1,25 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Fix duplicazione cognome staff
 
-### Cosa cambia
+### Problema
+Il campo `full_name` nella tabella `animatori` contiene già il nome completo (es. "Bortolamai Marco"), e il campo `cognome` contiene solo il cognome (es. "Bortolamai"). Il codice attuale concatena `cognome + full_name`, producendo "Bortolamai Bortolamai Marco".
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Soluzione
+In tutti i punti di `TurnoPage.tsx` dove si costruisce il nome staff, usare solo `full_name` quando `cognome` è già incluso in esso, oppure (meglio) invertire l'ordine dentro `full_name` se serve "Cognome Nome".
 
-### Layout finale
+Dato che `full_name` è già "Bortolamai Marco" (cognome + nome), basta usare **solo `full_name`** ovunque, senza prefissare `cognome`.
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+### Modifiche in `src/pages/TurnoPage.tsx`
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+Rimuovere tutte le concatenazioni `cognome + full_name` e usare solo `full_name`:
 
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+1. **Riga 158**: `s.cognome ? \`${s.cognome} ${s.full_name}\` : s.full_name` → `s.full_name`
+2. **Riga 263**: stesso fix
+3. **Righe 773-774**: sorting → usare solo `a.full_name` / `b.full_name`
+4. **Riga 778**: PDF export → usare solo `a.full_name`
+5. **Righe 1037-1038**: sorting tab Staff → solo `a.full_name` / `b.full_name`
+6. **Riga 1045**: display card → solo `a.full_name`
 
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+Circa 10 punti da semplificare, tutti nello stesso file.
 
