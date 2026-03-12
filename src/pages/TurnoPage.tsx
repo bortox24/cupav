@@ -742,7 +742,7 @@ export default function TurnoPage() {
       doc.text(`Ragazzi — ${turnoLabel}`, 14, currentY);
 
       const rows = sortedIscrizioni.map((r: any) => [
-        `${r.ragazzo_nome} ${r.ragazzo_cognome}`,
+        `${r.ragazzo_cognome} ${r.ragazzo_nome}`,
         `${r.genitore_nome} ${r.genitore_cognome}`,
         r.recapiti_telefonici || '',
       ]);
