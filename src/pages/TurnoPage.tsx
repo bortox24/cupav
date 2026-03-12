@@ -1030,8 +1030,8 @@ export default function TurnoPage() {
                   {[...animatoriTurno].sort((a, b) => {
                     const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
                     if (r !== 0) return r;
-                    const nameA = `${a.cognome || ''} ${a.full_name}`.trim().toLowerCase();
-                    const nameB = `${b.cognome || ''} ${b.full_name}`.trim().toLowerCase();
+                    const nameA = a.full_name.toLowerCase();
+                    const nameB = b.full_name.toLowerCase();
                     return nameA.localeCompare(nameB);
                   }).map((a: AnimatoreCompleto) => (
                     <Card key={a.id} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden">
