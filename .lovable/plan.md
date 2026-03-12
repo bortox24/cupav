@@ -1,43 +1,20 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Cognome + Nome nelle card ragazzi in /turno/...
 
-### Cosa cambia
+### Problema
+Attualmente le card mostrano "Nome Cognome" (es. "Celeste Gaianigo"). Deve diventare "Cognome Nome" (es. "Gaianigo Celeste").
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+### Modifiche in `src/pages/TurnoPage.tsx`
 
-### Layout finale
+Tutte le occorrenze di `ragazzo_nome ragazzo_cognome` vanno invertite in `ragazzo_cognome ragazzo_nome`:
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+1. **RagazzoCompactCard** (righe 285, 300, 303): iniziali e nome visualizzato
+2. **RagazzoDetailDrawer** (righe 364, 376): iniziali e titolo drawer
+3. **AppelloCard** (riga 451): nome nell'appello
+4. **Sorting** (righe 644-646, 653-655): ordinamento per cognome prima, poi nome
+5. **PDF export** (riga 745): ordine nel PDF
+6. **Search filter** (riga 635): ricerca con cognome+nome
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
-
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
-
-2. **Separator** tra le due sezioni.
-
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
-
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+In totale circa 12 punti da invertire, tutti nello stesso file.
 
