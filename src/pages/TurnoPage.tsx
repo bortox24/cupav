@@ -651,8 +651,8 @@ export default function TurnoPage() {
   // Sorted iscrizioni for appello (by name)
   const sortedIscrizioni = useMemo(() => {
     return [...iscrizioni].sort((a: any, b: any) => {
-      const cmp = (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
-      return cmp !== 0 ? cmp : (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
+      const cmp = (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
+      return cmp !== 0 ? cmp : (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
     });
   }, [iscrizioni]);
 
