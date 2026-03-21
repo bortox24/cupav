@@ -403,7 +403,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                     <Trash2 className="h-3.5 w-3.5" /> Elimina
                   </Button>
                   {canCreateAccount && (
-                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAccountConfirm(true)}>
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setAccountError(null); setShowAccountConfirm(true); }}>
                       <UserPlus className="h-3.5 w-3.5" /> Crea account
                     </Button>
                   )}
