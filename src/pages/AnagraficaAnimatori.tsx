@@ -258,7 +258,22 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
           turni: assignedTurni.map((t) => t.turno),
         },
       });
-      if (error) throw error;
+      if (error) {
+        // Extract the actual error message from the response body
+        let msg = 'Errore nella creazione account';
+        try {
+          const context = (error as any).context;
+          if (context && typeof context.json === 'function') {
+            const body = await context.json();
+            if (body?.error) msg = body.error;
+          } else if (error.message) {
+            msg = error.message;
+          }
+        } catch {
+          if (error.message) msg = error.message;
+        }
+        throw new Error(msg);
+      }
       if (data?.error) throw new Error(data.error);
       setGeneratedPassword(data.password);
       setShowAccountConfirm(false);
