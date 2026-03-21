@@ -277,7 +277,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
       }
       // Also check if data itself contains an error (edge fn returned 2xx with error body)
       if (res.data?.error) throw new Error(res.data.error);
-      setGeneratedPassword(data.password);
+      setGeneratedPassword(res.data.password);
       setShowAccountConfirm(false);
       setShowAccountResult(true);
       setAccountError(null);
