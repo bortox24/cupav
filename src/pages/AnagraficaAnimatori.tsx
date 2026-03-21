@@ -251,30 +251,32 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
     setCreatingAccount(true);
     setAccountError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('create-staff-account', {
+      const res = await supabase.functions.invoke('create-staff-account', {
         body: {
           email: animatore.email,
           fullName: animatore.full_name,
           turni: assignedTurni.map((t) => t.turno),
         },
       });
-      if (error) {
-        // Extract the actual error message from the response body
+      // Handle error from edge function (non-2xx or network error)
+      if (res.error) {
         let msg = 'Errore nella creazione account';
+        // Try to get message from response context
         try {
-          const context = (error as any).context;
-          if (context && typeof context.json === 'function') {
-            const body = await context.json();
+          const ctx = (res.error as any)?.context;
+          if (ctx instanceof Response) {
+            const body = await ctx.json();
             if (body?.error) msg = body.error;
-          } else if (error.message) {
-            msg = error.message;
+          } else if (res.error.message) {
+            msg = res.error.message;
           }
         } catch {
-          if (error.message) msg = error.message;
+          if (res.error.message) msg = res.error.message;
         }
         throw new Error(msg);
       }
-      if (data?.error) throw new Error(data.error);
+      // Also check if data itself contains an error (edge fn returned 2xx with error body)
+      if (res.data?.error) throw new Error(res.data.error);
       setGeneratedPassword(data.password);
       setShowAccountConfirm(false);
       setShowAccountResult(true);
