@@ -123,6 +123,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [accountError, setAccountError] = useState<string | null>(null);
 
   const updateMutation = useUpdateAnimatore();
   const archiveMutation = useArchiveAnimatore();
