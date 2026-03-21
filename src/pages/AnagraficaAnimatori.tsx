@@ -46,6 +46,7 @@ const LOG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
   ruolo_cambiato: { label: 'Ruolo cambiato', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
   dati_modificati: { label: 'Dati modificati', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
   account_creato: { label: 'Account creato', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+  account_errore: { label: 'Errore Account', className: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
   archiviato: { label: 'Archiviato', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
   ripristinato: { label: 'Ripristinato', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
 };
@@ -287,6 +288,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
       const msg = err?.message || 'Errore nella creazione account';
       setAccountError(msg);
       toast.error(msg);
+      insertLog('account_errore', `Email: ${animatore.email} — ${msg}`);
     } finally {
       setCreatingAccount(false);
     }
