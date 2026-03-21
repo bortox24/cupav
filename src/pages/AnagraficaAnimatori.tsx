@@ -249,6 +249,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
 
   const handleCreateAccount = async () => {
     setCreatingAccount(true);
+    setAccountError(null);
     try {
       const { data, error } = await supabase.functions.invoke('create-staff-account', {
         body: {
@@ -262,10 +263,13 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
       setGeneratedPassword(data.password);
       setShowAccountConfirm(false);
       setShowAccountResult(true);
+      setAccountError(null);
       toast.success('Account creato con successo');
       insertLog('account_creato', `Email: ${animatore.email}`);
     } catch (err: any) {
-      toast.error(err?.message || 'Errore nella creazione account');
+      const msg = err?.message || 'Errore nella creazione account';
+      setAccountError(msg);
+      toast.error(msg);
     } finally {
       setCreatingAccount(false);
     }
