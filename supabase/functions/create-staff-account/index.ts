@@ -67,12 +67,10 @@ serve(async (req) => {
     const existingUser = existingUsers?.users?.find(u => u.email === email);
 
     if (existingUser) {
-      // Clean up existing user first (re-creation scenario)
-      await adminClient.from('user_roles').delete().eq('user_id', existingUser.id);
-      await adminClient.from('turno_permessi').delete().eq('user_id', existingUser.id);
-      await adminClient.from('user_page_permissions').delete().eq('user_id', existingUser.id);
-      await adminClient.from('profiles').delete().eq('id', existingUser.id);
-      await adminClient.auth.admin.deleteUser(existingUser.id);
+      return new Response(
+        JSON.stringify({ error: `Un account con l'email ${email} esiste già. Non è possibile ricrearlo da qui.` }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Create user
