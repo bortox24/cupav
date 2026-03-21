@@ -28,6 +28,7 @@ import {
   Archive, ArchiveRestore, GraduationCap, StickyNote, AlertTriangle, UserPlus, Copy, Check,
   History,
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -122,6 +123,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [accountError, setAccountError] = useState<string | null>(null);
 
   const updateMutation = useUpdateAnimatore();
   const archiveMutation = useArchiveAnimatore();
@@ -247,6 +249,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
 
   const handleCreateAccount = async () => {
     setCreatingAccount(true);
+    setAccountError(null);
     try {
       const { data, error } = await supabase.functions.invoke('create-staff-account', {
         body: {
@@ -260,10 +263,13 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
       setGeneratedPassword(data.password);
       setShowAccountConfirm(false);
       setShowAccountResult(true);
+      setAccountError(null);
       toast.success('Account creato con successo');
       insertLog('account_creato', `Email: ${animatore.email}`);
     } catch (err: any) {
-      toast.error(err?.message || 'Errore nella creazione account');
+      const msg = err?.message || 'Errore nella creazione account';
+      setAccountError(msg);
+      toast.error(msg);
     } finally {
       setCreatingAccount(false);
     }
@@ -397,7 +403,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                     <Trash2 className="h-3.5 w-3.5" /> Elimina
                   </Button>
                   {canCreateAccount && (
-                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAccountConfirm(true)}>
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setAccountError(null); setShowAccountConfirm(true); }}>
                       <UserPlus className="h-3.5 w-3.5" /> Crea account
                     </Button>
                   )}
@@ -531,6 +537,12 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                   {assignedTurni.map((t) => <li key={t.id}>{t.turno}</li>)}
                 </ul>
                 <p className="text-xs text-muted-foreground">L'utente potrà accedere solo ai turni sopra elencati.</p>
+                {accountError && (
+                  <Alert variant="destructive" className="mt-3">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="font-medium">{accountError}</AlertDescription>
+                  </Alert>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
