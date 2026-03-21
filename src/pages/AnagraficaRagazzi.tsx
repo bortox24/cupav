@@ -731,6 +731,23 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={confirmConferma} onOpenChange={setConfirmConferma}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma preiscrizione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler confermare la preiscrizione di <strong>{ragazzo.full_name}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmConferma(false); handleConfermaPreiscrizione(); }} className="bg-emerald-600 hover:bg-emerald-700">
+              Conferma
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={confirmInvio} onOpenChange={setConfirmInvio}>
         <AlertDialogContent>
           <AlertDialogHeader>
