@@ -288,6 +288,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
       const msg = err?.message || 'Errore nella creazione account';
       setAccountError(msg);
       toast.error(msg);
+      insertLog('account_errore', `Email: ${animatore.email} — ${msg}`);
     } finally {
       setCreatingAccount(false);
     }
