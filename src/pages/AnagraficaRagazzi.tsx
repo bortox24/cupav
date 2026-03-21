@@ -312,6 +312,66 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
     setSendingWebhook(false);
   };
 
+  const handleConfermaPreiscrizione = async () => {
+    if (!user || !profile) { toast.error('Utente non autenticato'); return; }
+    setSendingConferma(true);
+    let successo = false;
+    try {
+      const { data: webhookRows } = await supabase
+        .from('webhook_config')
+        .select('webhook_url')
+        .ilike('descrizione', '%conferma preiscrizione%')
+        .limit(1);
+      
+      const webhookUrl = webhookRows?.[0]?.webhook_url;
+      if (!webhookUrl) {
+        toast.error('Nessun webhook configurato con descrizione "conferma preiscrizione"');
+        setSendingConferma(false);
+        return;
+      }
+
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ragazzo_id: ragazzo.id,
+          full_name: ragazzo.full_name,
+          data_nascita: ragazzo.data_nascita,
+          residente_altavilla: ragazzo.residente_altavilla,
+          ha_allergie: ragazzo.ha_allergie,
+          allergie_dettaglio: ragazzo.allergie_dettaglio,
+          patologie_dettaglio: ragazzo.patologie_dettaglio,
+          genitori: ragazzo.genitori,
+          iscrizioni: ragazzo.iscrizioni,
+          farmaco_1_nome: ragazzo.farmaco_1_nome,
+          farmaco_1_posologia: ragazzo.farmaco_1_posologia,
+          farmaco_2_nome: ragazzo.farmaco_2_nome,
+          farmaco_2_posologia: ragazzo.farmaco_2_posologia,
+          farmaco_3_nome: ragazzo.farmaco_3_nome,
+          farmaco_3_posologia: ragazzo.farmaco_3_posologia,
+        }),
+      });
+      successo = res.ok;
+      if (successo) {
+        toast.success('Conferma preiscrizione inviata!');
+      } else {
+        toast.error('Errore nell\'invio della conferma');
+      }
+    } catch {
+      toast.error('Errore di rete nell\'invio');
+    }
+
+    await supabase.from('anagrafica_invio_logs' as any).insert({
+      ragazzo_id: ragazzo.id,
+      inviato_da: user.id,
+      inviato_da_nome: profile.full_name || profile.email,
+      successo,
+      tipo: 'conferma_preiscrizione',
+    });
+    queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs', ragazzo.id] });
+    setSendingConferma(false);
+  };
+
   const updateGenitore = (idx: number, field: string, value: string) => {
     setEditData((prev) => {
       const genitori = [...prev.genitori];
