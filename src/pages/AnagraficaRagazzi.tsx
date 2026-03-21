@@ -146,6 +146,8 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [sendingWebhook, setSendingWebhook] = useState(false);
   const [confirmInvio, setConfirmInvio] = useState(false);
+  const [sendingConferma, setSendingConferma] = useState(false);
+  const [confirmConferma, setConfirmConferma] = useState(false);
 
   const updateMutation = useUpdateRagazzo();
   const addIscrizioneMutation = useAddIscrizione();
@@ -310,6 +312,66 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
     setSendingWebhook(false);
   };
 
+  const handleConfermaPreiscrizione = async () => {
+    if (!user || !profile) { toast.error('Utente non autenticato'); return; }
+    setSendingConferma(true);
+    let successo = false;
+    try {
+      const { data: webhookRows } = await supabase
+        .from('webhook_config')
+        .select('webhook_url')
+        .ilike('descrizione', '%conferma preiscrizione%')
+        .limit(1);
+      
+      const webhookUrl = webhookRows?.[0]?.webhook_url;
+      if (!webhookUrl) {
+        toast.error('Nessun webhook configurato con descrizione "conferma preiscrizione"');
+        setSendingConferma(false);
+        return;
+      }
+
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ragazzo_id: ragazzo.id,
+          full_name: ragazzo.full_name,
+          data_nascita: ragazzo.data_nascita,
+          residente_altavilla: ragazzo.residente_altavilla,
+          ha_allergie: ragazzo.ha_allergie,
+          allergie_dettaglio: ragazzo.allergie_dettaglio,
+          patologie_dettaglio: ragazzo.patologie_dettaglio,
+          genitori: ragazzo.genitori,
+          iscrizioni: ragazzo.iscrizioni,
+          farmaco_1_nome: ragazzo.farmaco_1_nome,
+          farmaco_1_posologia: ragazzo.farmaco_1_posologia,
+          farmaco_2_nome: ragazzo.farmaco_2_nome,
+          farmaco_2_posologia: ragazzo.farmaco_2_posologia,
+          farmaco_3_nome: ragazzo.farmaco_3_nome,
+          farmaco_3_posologia: ragazzo.farmaco_3_posologia,
+        }),
+      });
+      successo = res.ok;
+      if (successo) {
+        toast.success('Conferma preiscrizione inviata!');
+      } else {
+        toast.error('Errore nell\'invio della conferma');
+      }
+    } catch {
+      toast.error('Errore di rete nell\'invio');
+    }
+
+    await supabase.from('anagrafica_invio_logs' as any).insert({
+      ragazzo_id: ragazzo.id,
+      inviato_da: user.id,
+      inviato_da_nome: profile.full_name || profile.email,
+      successo,
+      tipo: 'conferma_preiscrizione',
+    });
+    queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs', ragazzo.id] });
+    setSendingConferma(false);
+  };
+
   const updateGenitore = (idx: number, field: string, value: string) => {
     setEditData((prev) => {
       const genitori = [...prev.genitori];
@@ -412,6 +474,15 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                     📋 Gestione iscrizioni
                   </p>
                   <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={() => setConfirmConferma(true)}
+                      disabled={sendingConferma}
+                      variant="default"
+                      className="w-full h-11 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white text-sm"
+                    >
+                      {sendingConferma ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                      Conferma Preiscrizione
+                    </Button>
                     <Button
                       onClick={() => setConfirmInvio(true)}
                       disabled={sendingWebhook}
@@ -655,6 +726,23 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
             <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Elimina definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmConferma} onOpenChange={setConfirmConferma}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma preiscrizione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler confermare la preiscrizione di <strong>{ragazzo.full_name}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmConferma(false); handleConfermaPreiscrizione(); }} className="bg-emerald-600 hover:bg-emerald-700">
+              Conferma
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
