@@ -537,6 +537,12 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                   {assignedTurni.map((t) => <li key={t.id}>{t.turno}</li>)}
                 </ul>
                 <p className="text-xs text-muted-foreground">L'utente potrà accedere solo ai turni sopra elencati.</p>
+                {accountError && (
+                  <Alert variant="destructive" className="mt-3">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="font-medium">{accountError}</AlertDescription>
+                  </Alert>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
