@@ -1,43 +1,30 @@
 
 
-## Piano: Sezioni distinte nella card ragazzo
+## Piano: Ripristinare pulsante "Conferma Preiscrizione" nelle card ragazzi
 
-### Cosa cambia
+### Cosa fare
 
-Riorganizzare i pulsanti nella card ragazzo (righe 380-430) in due sezioni visivamente distinte con titolo, più i log sotto.
+Aggiungere un pulsante "Conferma Preiscrizione" nella sezione "Gestione iscrizioni" del Drawer ragazzo, sopra il pulsante "Invia Iscrizione". Il pulsante chiama un webhook con descrizione "conferma preiscrizione" dalla tabella `webhook_config` e registra un log di tipo `conferma_preiscrizione`.
 
-### Layout finale
+### Modifiche in `src/pages/AnagraficaRagazzi.tsx`
 
-```text
-──────────────────────────
-📋 Gestione iscrizioni
-  ┌──────────────────────┐
-  │ Conferma Preiscrizione│  (full width, h-11, emerald)
-  └──────────────────────┘
-  ┌──────────────────────┐
-  │ Invia Iscrizione      │  (full width, h-11, blue)
-  └──────────────────────┘
-──────────────────────────
-✏️ Modifica dati
-  [Modifica dati]          (full width)
-  [Arricchisci dati]       (full width)
-  [Archivia] [Elimina]     (flex row 50/50)
-──────────────────────────
-📋 Log invii
-  (log entries invariati)
-──────────────────────────
-```
+1. **Nuovo stato**: aggiungere `sendingConferma` (boolean) e `confirmConferma` (boolean per AlertDialog)
 
-### Dettagli implementazione (`src/pages/AnagraficaRagazzi.tsx`, righe 380-430)
+2. **Nuova funzione `handleConfermaPreiscrizione`**: stessa struttura di `handleInviaIscrizione` ma:
+   - Cerca webhook con `descrizione ilike '%conferma preiscrizione%'`
+   - Invia lo stesso payload del ragazzo
+   - Inserisce log con `tipo: 'conferma_preiscrizione'`
+   - Toast di successo/errore
 
-1. **Sezione "Gestione iscrizioni"**: wrap con div + titoletto `p` con icona. I due pulsanti diventano full-width (`w-full`) uno sopra l'altro, con altezza maggiore (`h-11`) e testo `text-sm` invece di `text-xs` per migliorare la leggibilità mobile.
+3. **UI — Pulsante** (riga ~414, prima di "Invia Iscrizione"):
+   - Pulsante verde con icona Check e testo "Conferma Preiscrizione"
+   - Disabilitato durante `sendingConferma`
+   - Click apre AlertDialog di conferma
 
-2. **Separator** tra le due sezioni.
+4. **AlertDialog di conferma**: simile a quello di "Invia Iscrizione", chiede conferma prima di procedere
 
-3. **Sezione "Modifica dati"**: wrap con div + titoletto. Contiene Modifica dati, Arricchisci dati, e la riga Archivia/Elimina — stessi pulsanti di ora, solo raggruppati sotto il titolo.
+5. **Log rendering** (già presente): il badge `conferma_preiscrizione` è già gestito nel rendering dei log (badge verde "Conferma")
 
-4. **Log**: restano sotto come sono, invariati.
-
-### File modificato
-- `src/pages/AnagraficaRagazzi.tsx` (righe 380-430)
+### Nessuna modifica al database
+La tabella `anagrafica_invio_logs` supporta già il tipo `conferma_preiscrizione`. Il webhook va configurato nella tabella `webhook_config` con descrizione contenente "conferma preiscrizione".
 
