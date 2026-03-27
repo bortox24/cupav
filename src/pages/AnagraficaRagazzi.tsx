@@ -14,13 +14,14 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles, AlertTriangle, Pill, Send, Check, XCircle, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { Loader2, Search, MapPin, Calendar, Users, GraduationCap, Phone, Mail, Pencil, Plus, Trash2, X, Save, Archive, ChevronDown, ArchiveRestore, Sparkles, AlertTriangle, Pill, Send, Check, XCircle, Download, FileText, FileSpreadsheet, Megaphone } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { InvioMassivoDialog } from '@/components/InvioMassivoDialog';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -777,6 +778,7 @@ export default function AnagraficaRagazzi() {
   const [archiviatiOpen, setArchiviatiOpen] = useState(false);
   const [enrichingAll, setEnrichingAll] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [invioMassivoOpen, setInvioMassivoOpen] = useState(false);
 
   const getGroupedData = () => {
     if (!ragazzi) return [];
@@ -966,6 +968,10 @@ export default function AnagraficaRagazzi() {
           {enrichingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           Arricchisci tutti
         </Button>
+        <Button variant="outline" className="gap-2" onClick={() => setInvioMassivoOpen(true)}>
+          <Megaphone className="h-4 w-4" />
+          Invio Massivo
+        </Button>
         <Popover open={exportOpen} onOpenChange={setExportOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="gap-2">
@@ -1033,6 +1039,12 @@ export default function AnagraficaRagazzi() {
       {dialogRagazzo && (
         <RagazzoDrawer ragazzo={dialogRagazzo} open={!!selectedRagazzo} onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }} />
       )}
+
+      <InvioMassivoDialog
+        open={invioMassivoOpen}
+        onOpenChange={setInvioMassivoOpen}
+        ragazzi={ragazzi || []}
+      />
     </MainLayout>
   );
 }
