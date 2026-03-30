@@ -157,6 +157,22 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     }
   }, [userPrompt, generatedHtml, modifications]);
 
+  // --- Placeholder replacement ---
+  const replaceePlaceholders = (html: string, ragazzo: RagazzoCompleto): string => {
+    const nomeCompleto = ragazzo.full_name || '';
+    const nomeBreve = nomeCompleto.split(' ')[0] || '';
+    const nomeGenitore = ragazzo.genitori?.[0]?.nome_cognome || '';
+    const turno = ragazzo.iscrizioni.find(i => i.anno === CURRENT_YEAR)?.turno || '';
+    const numero = ragazzo.numero != null ? String(ragazzo.numero) : '';
+
+    return html
+      .replace(/\{\{nome_ragazzo\}\}/g, nomeCompleto)
+      .replace(/\{\{nome_ragazzo_breve\}\}/g, nomeBreve)
+      .replace(/\{\{nome_genitore\}\}/g, nomeGenitore)
+      .replace(/\{\{turno\}\}/g, turno)
+      .replace(/\{\{numero\}\}/g, numero);
+  };
+
   // --- Sending ---
   const buildPayload = (ragazzo: RagazzoCompleto) => ({
     ragazzo_id: ragazzo.id,
@@ -175,7 +191,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     farmaco_3_nome: ragazzo.farmaco_3_nome,
     farmaco_3_posologia: ragazzo.farmaco_3_posologia,
     numero: ragazzo.numero,
-    html_content: generatedHtml,
+    html_content: replaceePlaceholders(generatedHtml, ragazzo),
   });
 
   const startSending = useCallback(async () => {
