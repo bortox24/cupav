@@ -15,21 +15,33 @@ REGOLE TECNICHE:
 - Font: Arial, Helvetica, sans-serif
 - Rispondi SOLO con il codice HTML completo, senza spiegazioni, senza markdown, senza backtick
 - L'HTML deve iniziare con <!DOCTYPE html> e finire con </html>
-- NON usare immagini esterne
+- NON usare immagini esterne tranne il logo CUPAV indicato sotto
 - Ogni rigenerazione deve produrre l'HTML completo, non parziale
 
-STILE CUPAV (da seguire sempre):
-- Sfondo pagina: #f0fdf4 (verde chiaro)
-- Container email: #ffffff con border-radius: 16px e box-shadow
-- Header: sfondo gradiente verde (#166534 → #15803d) con testo bianco, titolo "Campeggio Unità Pastorale Altavilla Valmarana" e sottotitolo "CUPAV"
-- Titoli sezioni: colore #166534 (verde scuro), font-size 22px, font-weight bold
-- Testo normale: colore #374151, font-size 15px, line-height 1.7
-- Box informativi: sfondo #f0fdf4, bordo sinistro 4px solid #22c55e, border-radius 12px, padding 20px
-- Tabelle riepilogo: sfondo header #166534 con testo bianco, righe alternate #f9fafb e bianco
-- Box avviso/attenzione: sfondo #fffbeb, bordo sinistro 4px solid #f59e0b
-- Footer: sfondo #f9fafb, testo #6b7280, font-size 12px
-- Email di contatto: cupavdirettivo@gmail.com, colore link #1a5c2e
-- Chiusura con messaggio positivo e emoji (⛺🌿)
+STILE CUPAV (da seguire ESATTAMENTE):
+- Sfondo pagina: #f4f4f4 (grigio chiaro)
+- Container email: #ffffff con border-radius: 10px e box-shadow: 0 4px 15px rgba(0,0,0,0.1)
+- Header: sfondo #f2c10f (giallo ambra), padding 30px, text-align center, border-radius 10px 10px 0 0
+  - Logo: <img src="https://lymuvosryafhpeaiqcba.supabase.co/storage/v1/object/public/site-assets/cupav-logo.png" alt="CUPAV Logo" style="width:160px; margin-bottom:15px;">
+  - Titolo: "Campeggio Unità Pastorale Altavilla Valmarana" — color #000000, font-size 22px, font-weight bold
+  - Sottotitolo: "CUPAV" — color #1a5c2e, font-size 28px, font-weight bold, letter-spacing 3px
+- Titoli sezioni: color #1a5c2e (verde scuro), font-size 22px, font-weight bold, border-bottom 2px solid #f2c10f, padding-bottom 10px
+- Testo normale: color #444444, font-size 15px, line-height 1.6
+- Box informativi (attenzione/info): sfondo #fff8e1, bordo sinistro 4px solid #f2c10f, border-radius 8px, padding 15px 20px
+- Box "prossimi passi" o azioni: sfondo #e8f5e9, bordo sinistro 4px solid #1a5c2e, border-radius 8px, padding 15px 20px
+- Tabelle riepilogo: width 100%, border-collapse collapse
+  - Header tabella: sfondo #1a5c2e, testo bianco, font-size 14px, padding 12px 15px
+  - Righe pari: sfondo #f9f9f9
+  - Righe dispari: sfondo #eeeeee
+  - Celle: padding 10px 15px, bordo 1px solid #e0e0e0, font-size 14px, color #333333
+- Sezione contatti: text-align center, padding 25px
+  - Testo: "Per qualsiasi informazione contattaci a"
+  - Link email: cupavdirettivo@gmail.com con color #1a5c2e, font-weight bold
+- Chiusura: messaggio positivo centrato con emoji (⛺🌿)
+- Footer: sfondo #1a5c2e (verde scuro), padding 25px, text-align center, border-radius 0 0 10px 10px
+  - Titolo footer: color #ffffff, font-size 14px, font-weight bold
+  - Testo footer: color #c8e6c9, font-size 11px
+  - Link footer: color #a5d6a7
 
 CAMPI DINAMICI - FONDAMENTALE:
 L'email DEVE contenere segnaposto dinamici per personalizzare ogni messaggio. Usa ESATTAMENTE questi segnaposto:
@@ -40,16 +52,16 @@ L'email DEVE contenere segnaposto dinamici per personalizzare ogni messaggio. Us
 - {{numero}} — il numero assegnato al ragazzo (es: "42")
 
 Usa questi segnaposto nel testo dove ha senso per rendere l'email personale e non generica.
-Ad esempio: "Gentile {{nome_genitore}}, ..." oppure "...la preiscrizione di {{nome_ragazzo}}..."
 NON tutti i campi devono essere usati per forza, usa quelli che hanno senso nel contesto del messaggio.
 
 STRUTTURA EMAIL DI RIFERIMENTO:
-1. Header con logo testuale CUPAV (sfondo verde gradiente)
-2. Sezione principale con titolo e corpo del messaggio
-3. Eventuali box riepilogo con tabella (se applicabile)
-4. Eventuali box informativi con icone emoji
-5. Sezione contatti
-6. Footer con nota "email automatica"
+1. Header con logo CUPAV (sfondo giallo #f2c10f)
+2. Sezione principale con titolo (verde #1a5c2e con bordo inferiore giallo) e corpo del messaggio
+3. Eventuali box riepilogo con tabella (header verde, righe alternate grigie)
+4. Eventuali box informativi (sfondo giallo chiaro con bordo giallo, oppure sfondo verde chiaro con bordo verde)
+5. Sezione contatti centrata con link email
+6. Messaggio di chiusura positivo con emoji
+7. Footer verde scuro con "CUPAV — Campeggio Unità Pastorale Altavilla Valmarana" e nota "email automatica"
 
 Adatta la struttura in base al tipo di comunicazione richiesta dall'utente.`;
 
