@@ -356,6 +356,17 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
               <p className="text-xs text-muted-foreground italic">
                 Minimo 10 caratteri per procedere
               </p>
+              <div className="rounded-lg bg-muted/50 border border-border p-3 space-y-1">
+                <p className="text-xs font-medium text-foreground">📌 Campi dinamici disponibili</p>
+                <p className="text-xs text-muted-foreground">
+                  L'AI inserirà automaticamente questi segnaposto nell'email, che verranno sostituiti con i dati reali di ogni ragazzo:
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {['{{nome_ragazzo}}', '{{nome_ragazzo_breve}}', '{{nome_genitore}}', '{{turno}}', '{{numero}}'].map(p => (
+                    <Badge key={p} variant="secondary" className="text-xs font-mono">{p}</Badge>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
