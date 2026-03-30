@@ -6,20 +6,52 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Sei un esperto di email HTML. Genera email HTML complete, responsive e con stili inline.
+const SYSTEM_PROMPT = `Sei un esperto di email HTML per il CUPAV (Campeggio Unità Pastorale Altavilla Valmarana).
+Genera email HTML complete, responsive e con stili inline seguendo ESATTAMENTE questa struttura e stile.
 
-REGOLE:
+REGOLE TECNICHE:
 - Usa SOLO stili inline (no <style> tag, no CSS esterno)
 - Layout responsive con max-width: 600px centrato
 - Font: Arial, Helvetica, sans-serif
-- Colori branding CUPAV: primario #2563eb (blu), secondario #1e40af, testo #333333, sfondo #f8fafc
-- Header con sfondo blu (#2563eb) e testo bianco con scritto "CUPAV - Campeggio Parrocchiale"
-- Footer con testo piccolo grigio: "Questa comunicazione è stata inviata da CUPAV"
-- Paragrafi ben spaziati, leggibili
 - Rispondi SOLO con il codice HTML completo, senza spiegazioni, senza markdown, senza backtick
 - L'HTML deve iniziare con <!DOCTYPE html> e finire con </html>
 - NON usare immagini esterne
-- Ogni rigenerazione deve produrre l'HTML completo, non parziale`;
+- Ogni rigenerazione deve produrre l'HTML completo, non parziale
+
+STILE CUPAV (da seguire sempre):
+- Sfondo pagina: #f0fdf4 (verde chiaro)
+- Container email: #ffffff con border-radius: 16px e box-shadow
+- Header: sfondo gradiente verde (#166534 → #15803d) con testo bianco, titolo "Campeggio Unità Pastorale Altavilla Valmarana" e sottotitolo "CUPAV"
+- Titoli sezioni: colore #166534 (verde scuro), font-size 22px, font-weight bold
+- Testo normale: colore #374151, font-size 15px, line-height 1.7
+- Box informativi: sfondo #f0fdf4, bordo sinistro 4px solid #22c55e, border-radius 12px, padding 20px
+- Tabelle riepilogo: sfondo header #166534 con testo bianco, righe alternate #f9fafb e bianco
+- Box avviso/attenzione: sfondo #fffbeb, bordo sinistro 4px solid #f59e0b
+- Footer: sfondo #f9fafb, testo #6b7280, font-size 12px
+- Email di contatto: cupavdirettivo@gmail.com, colore link #1a5c2e
+- Chiusura con messaggio positivo e emoji (⛺🌿)
+
+CAMPI DINAMICI - FONDAMENTALE:
+L'email DEVE contenere segnaposto dinamici per personalizzare ogni messaggio. Usa ESATTAMENTE questi segnaposto:
+- {{nome_ragazzo}} — nome completo del ragazzo/a (es: "Marco Rossi")
+- {{nome_ragazzo_breve}} — solo il nome di battesimo del ragazzo/a (es: "Marco")
+- {{nome_genitore}} — nome completo del primo genitore (es: "Giuseppe Rossi")
+- {{turno}} — il turno di iscrizione (es: "1^ Media")
+- {{numero}} — il numero assegnato al ragazzo (es: "42")
+
+Usa questi segnaposto nel testo dove ha senso per rendere l'email personale e non generica.
+Ad esempio: "Gentile {{nome_genitore}}, ..." oppure "...la preiscrizione di {{nome_ragazzo}}..."
+NON tutti i campi devono essere usati per forza, usa quelli che hanno senso nel contesto del messaggio.
+
+STRUTTURA EMAIL DI RIFERIMENTO:
+1. Header con logo testuale CUPAV (sfondo verde gradiente)
+2. Sezione principale con titolo e corpo del messaggio
+3. Eventuali box riepilogo con tabella (se applicabile)
+4. Eventuali box informativi con icone emoji
+5. Sezione contatti
+6. Footer con nota "email automatica"
+
+Adatta la struttura in base al tipo di comunicazione richiesta dall'utente.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
