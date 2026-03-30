@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.delete-user]
 verify_jwt = false
+
+[functions.generate-email-html]
+verify_jwt = false
