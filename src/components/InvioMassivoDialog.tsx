@@ -157,6 +157,22 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     }
   }, [userPrompt, generatedHtml, modifications]);
 
+  // --- Placeholder replacement ---
+  const replaceePlaceholders = (html: string, ragazzo: RagazzoCompleto): string => {
+    const nomeCompleto = ragazzo.full_name || '';
+    const nomeBreve = nomeCompleto.split(' ')[0] || '';
+    const nomeGenitore = ragazzo.genitori?.[0]?.nome_cognome || '';
+    const turno = ragazzo.iscrizioni.find(i => i.anno === CURRENT_YEAR)?.turno || '';
+    const numero = ragazzo.numero != null ? String(ragazzo.numero) : '';
+
+    return html
+      .replace(/\{\{nome_ragazzo\}\}/g, nomeCompleto)
+      .replace(/\{\{nome_ragazzo_breve\}\}/g, nomeBreve)
+      .replace(/\{\{nome_genitore\}\}/g, nomeGenitore)
+      .replace(/\{\{turno\}\}/g, turno)
+      .replace(/\{\{numero\}\}/g, numero);
+  };
+
   // --- Sending ---
   const buildPayload = (ragazzo: RagazzoCompleto) => ({
     ragazzo_id: ragazzo.id,
@@ -175,7 +191,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     farmaco_3_nome: ragazzo.farmaco_3_nome,
     farmaco_3_posologia: ragazzo.farmaco_3_posologia,
     numero: ragazzo.numero,
-    html_content: generatedHtml,
+    html_content: replaceePlaceholders(generatedHtml, ragazzo),
   });
 
   const startSending = useCallback(async () => {
@@ -340,6 +356,17 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
               <p className="text-xs text-muted-foreground italic">
                 Minimo 10 caratteri per procedere
               </p>
+              <div className="rounded-lg bg-muted/50 border border-border p-3 space-y-1">
+                <p className="text-xs font-medium text-foreground">📌 Campi dinamici disponibili</p>
+                <p className="text-xs text-muted-foreground">
+                  L'AI inserirà automaticamente questi segnaposto nell'email, che verranno sostituiti con i dati reali di ogni ragazzo:
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {['{{nome_ragazzo}}', '{{nome_ragazzo_breve}}', '{{nome_genitore}}', '{{turno}}', '{{numero}}'].map(p => (
+                    <Badge key={p} variant="secondary" className="text-xs font-mono">{p}</Badge>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
