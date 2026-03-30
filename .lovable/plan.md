@@ -1,47 +1,47 @@
 
 
-## Piano: Wizard Invio Massivo con generazione email via AI
+## Piano: Aggiornare il system prompt con il template HTML reale
 
-### Panoramica
-Ristrutturare `InvioMassivoDialog` come wizard a 4 step con generazione email HTML tramite Lovable AI.
+### Problema
+Il system prompt nella edge function `generate-email-html` descrive uno stile CUPAV approssimativo. Il PDF fornito contiene l'HTML esatto del template reale con colori, struttura e stili diversi.
 
-### Step del Wizard
+### Differenze principali tra il prompt attuale e il template reale
 
-**Step 1 — Composizione messaggio**
-- Textarea dove l'utente scrive cosa vuole comunicare, cosa non includere, indicazioni generali
-- Campo libero, nessun vincolo
+| Aspetto | Prompt attuale | Template reale |
+|---------|---------------|----------------|
+| Sfondo pagina | `#f0fdf4` (verde chiaro) | `#f4f4f4` (grigio chiaro) |
+| Header | Gradiente verde `#166534 → #15803d` | Colore piatto `#f2c10f` (giallo/ambra) con logo CUPAV |
+| Titolo header | Testo bianco | Testo nero `#000000` |
+| Container | border-radius 16px | border-radius 10px, box-shadow rgba |
+| Titoli sezioni | `#166534` verde | `#1a5c2e` verde scuro |
+| Testo normale | `#374151` | `#444444` |
+| Tabella riepilogo header | `#166534` verde | `#1a5c2e` verde |
+| Tabella righe | Alternate `#f9fafb` | Alternate con sfondo `#f9f9f9` e `#eeeeee` |
+| Box informativi | Bordo verde `#22c55e` | Bordo `#f2c10f` (giallo) e sfondo `#fff8e1` |
+| Box "cosa succede" | - | Sfondo `#e8f5e9`, bordo `#1a5c2e` |
+| Footer | Sfondo `#f9fafb` | Sfondo `#1a5c2e` (verde scuro), testo chiaro |
+| Logo | Nessuno | Logo da Supabase storage (160px) |
 
-**Step 2 — Generazione email HTML con AI**
-- Chiamata a una nuova edge function `generate-email-html` che riceve il testo dello Step 1 e genera HTML email completo
-- Anteprima HTML renderizzata con `dangerouslySetInnerHTML` in un contenitore stilizzato
-- Pulsanti: "Conferma", "Rigenera", campo testo per modifiche aggiuntive da passare all'AI
-- Ogni rigenerazione invia l'HTML precedente + le nuove istruzioni per ottenere una versione aggiornata completa
+### Modifica
 
-**Step 3 — Filtri e anteprima destinatari**
-- Filtri turni (multi-select checkbox), filtro numero (tutti/con/senza), filtro tipo iscrizione (iscrizione effettiva vs preiscrizione)
-- Lista scrollabile dei ragazzi filtrati con contatore
-- Selezione webhook da `webhook_config`
+**File**: `supabase/functions/generate-email-html/index.ts`
 
-**Step 4 — Invio con coda e monitoraggio**
-- Stesso meccanismo attuale: invio ogni 30 secondi via webhook
-- Il payload includerà anche l'HTML generato nello Step 2
-- Progress bar, countdown, stato per ragazzo, pulsante interrompi
-- Log in `anagrafica_invio_logs`
+Aggiornare la sezione `STILE CUPAV` nel `SYSTEM_PROMPT` con i valori esatti estratti dal template reale:
 
-### Modifiche tecniche
+- Sfondo pagina: `#f4f4f4`
+- Header: sfondo `#f2c10f` (giallo ambra), testo nero, logo CUPAV dal storage
+- Container: `#ffffff`, border-radius 10px, box-shadow `rgba(0,0,0,0.1)`
+- Titoli: `#1a5c2e`, font-size 22px
+- Testo: `#444444`, font-size 15px, line-height 1.6
+- Tabelle: header `#1a5c2e` testo bianco, righe `#f9f9f9`/`#eeeeee`, bordi `#e0e0e0`
+- Box informativi: sfondo `#fff8e1`, bordo sinistro `#f2c10f`
+- Box "prossimi passi": sfondo `#e8f5e9`, bordo sinistro `#1a5c2e`
+- Footer: sfondo `#1a5c2e`, testo `#c8e6c9` e `#a5d6a7`
+- Includere il tag `<img>` per il logo CUPAV dallo storage
+- Contatti centrati, colore link `#1a5c2e`
 
-| File | Modifica |
-|------|----------|
-| `src/components/InvioMassivoDialog.tsx` | Riscrittura completa come wizard a 4 step |
-| `supabase/functions/generate-email-html/index.ts` | Nuova edge function che chiama Lovable AI per generare HTML email |
+Includere anche un blocco di HTML di esempio completo nel prompt per dare un riferimento concreto all'AI.
 
-### Edge function `generate-email-html`
-- Riceve: `{ prompt: string, previousHtml?: string, modifications?: string }`
-- System prompt con template HTML email base (stile inline, responsive, branding CUPAV)
-- Usa `LOVABLE_API_KEY` (già presente) con modello `google/gemini-3-flash-preview`
-- Restituisce: `{ html: string }`
-- Non streaming, chiamata singola con `response_format` via tool calling per estrarre l'HTML
-
-### Nessuna modifica al database
-Usa tabelle e colonne esistenti. L'HTML generato viene inviato come parte del payload webhook.
+### Nessuna altra modifica
+Il componente `InvioMassivoDialog.tsx` e i segnaposto dinamici restano invariati.
 
