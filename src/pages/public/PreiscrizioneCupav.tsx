@@ -64,27 +64,32 @@ export default function PreiscrizioneCupav() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      // Check if already registered for 2026
       const trimmedName = nomeCognome.trim();
-      const { data: existing } = await supabase
-        .from('ragazzi')
-        .select('id, ragazzi_iscrizioni!inner(anno)')
-        .ilike('full_name', trimmedName)
-        .eq('ragazzi_iscrizioni.anno', 2026);
 
-      if (existing && existing.length > 0) {
+      // Check duplicate via edge function
+      const { data: dupData, error: dupErr } = await supabase.functions.invoke('handle-preiscrizione', {
+        body: { action: 'check-duplicate', full_name: trimmedName, anno: 2026 },
+      });
+      if (dupErr) throw dupErr;
+      if (dupData?.exists) {
         setAlreadyRegistered(true);
         return;
       }
 
-      await submitPreiscrizione({
-        fullName: trimmedName,
-        dataNascita,
-        turno,
-        residenteAltavilla: residente === 'si',
-        genitore1: { nomeCognome: g1Nome, ruolo: g1Ruolo, email: g1Email, telefono: g1Telefono },
-        genitore2: g2Nome ? { nomeCognome: g2Nome, ruolo: g2Ruolo, email: g2Email, telefono: g2Telefono } : undefined,
+      // Submit via edge function
+      const { data: submitData, error: submitErr } = await supabase.functions.invoke('handle-preiscrizione', {
+        body: {
+          action: 'submit',
+          fullName: trimmedName,
+          dataNascita,
+          turno,
+          residenteAltavilla: residente === 'si',
+          genitore1: { nomeCognome: g1Nome, ruolo: g1Ruolo, email: g1Email, telefono: g1Telefono },
+          genitore2: g2Nome ? { nomeCognome: g2Nome, ruolo: g2Ruolo, email: g2Email, telefono: g2Telefono } : undefined,
+        },
       });
+      if (submitErr) throw submitErr;
+      if (submitData?.error) throw new Error(submitData.error);
       setSubmitted(true);
     } catch (err) {
       console.error(err);
