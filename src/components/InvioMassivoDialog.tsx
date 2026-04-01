@@ -153,6 +153,14 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
         body.prompt = userPrompt;
       }
 
+      // Add enabled dynamic fields info
+      if (selectedDynamicFields.length > 0) {
+        const enabledTags = selectedDynamicFields.join(', ');
+        body.prompt += `\n\nCAMPI DINAMICI ABILITATI: ${enabledTags}. Usa SOLO questi segnaposti nell'email, NON usare altri segnaposti.`;
+      } else {
+        body.prompt += `\n\nNON usare nessun segnaposto dinamico (come {{nome_ragazzo}}, {{turno}}, ecc.). Scrivi un messaggio generico senza personalizzazione.`;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-email-html', { body });
 
       if (error) throw new Error(error.message || 'Errore generazione');
