@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { submitPreiscrizione } from '@/hooks/useRagazzi';
+// submitPreiscrizione moved to handle-preiscrizione edge function
 import { useCustomLogo } from '@/hooks/useCustomLogo';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
