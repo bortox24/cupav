@@ -62,6 +62,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   // Step 1 — message
   const [userPrompt, setUserPrompt] = useState('');
 
+  const [selectedDynamicFields, setSelectedDynamicFields] = useState<string[]>([]);
+
   // Step 2 — AI generation
   const [generatedHtml, setGeneratedHtml] = useState('');
   const [generating, setGenerating] = useState(false);
