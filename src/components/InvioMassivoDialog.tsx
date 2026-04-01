@@ -44,6 +44,14 @@ interface Props {
   ragazzi: RagazzoCompleto[];
 }
 
+const DYNAMIC_FIELDS = [
+  { label: 'Nome Ragazzo', tag: '{{nome_ragazzo}}', example: 'Marco Rossi' },
+  { label: 'Nome Breve', tag: '{{nome_ragazzo_breve}}', example: 'Marco' },
+  { label: 'Nome Genitore', tag: '{{nome_genitore}}', example: 'Giuseppe Rossi' },
+  { label: 'Turno', tag: '{{turno}}', example: '1^ Media' },
+  { label: 'Numero', tag: '{{numero}}', example: '42' },
+];
+
 export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
