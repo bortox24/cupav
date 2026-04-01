@@ -111,6 +111,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
       setUserPrompt('');
       setGeneratedHtml('');
       setModifications('');
+      setSelectedDynamicFields([]);
       setSelectedTurni([]);
       setFiltroNumero('tutti');
       setSelectedWebhookId('');
