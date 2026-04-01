@@ -341,34 +341,69 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
         <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
           {/* STEP 1: Message */}
-          {step === 'message' && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold">Descrivi il messaggio da inviare</h3>
-              <p className="text-xs text-muted-foreground">
-                Scrivi cosa vuoi comunicare, eventuali dettagli da includere o escludere. L'AI genererà l'email HTML.
-              </p>
-              <Textarea
-                value={userPrompt}
-                onChange={e => setUserPrompt(e.target.value)}
-                placeholder="Es: Comunicare ai genitori che il campeggio inizia il 15 luglio, portare sacco a pelo e crema solare. Non menzionare i costi..."
-                className="min-h-[200px]"
-              />
-              <p className="text-xs text-muted-foreground italic">
-                Minimo 10 caratteri per procedere
-              </p>
-              <div className="rounded-lg bg-muted/50 border border-border p-3 space-y-1">
-                <p className="text-xs font-medium text-foreground">📌 Campi dinamici disponibili</p>
+          {step === 'message' && (() => {
+            const dynamicFields = [
+              { label: 'Nome Ragazzo', tag: '{{nome_ragazzo}}', example: 'Marco Rossi' },
+              { label: 'Nome Breve', tag: '{{nome_ragazzo_breve}}', example: 'Marco' },
+              { label: 'Nome Genitore', tag: '{{nome_genitore}}', example: 'Giuseppe Rossi' },
+              { label: 'Turno', tag: '{{turno}}', example: '1^ Media' },
+              { label: 'Numero', tag: '{{numero}}', example: '42' },
+            ];
+
+            const textareaRef = document.getElementById('invio-massivo-textarea') as HTMLTextAreaElement | null;
+
+            const insertTag = (tag: string) => {
+              const el = document.getElementById('invio-massivo-textarea') as HTMLTextAreaElement | null;
+              if (!el) return;
+              const start = el.selectionStart ?? userPrompt.length;
+              const end = el.selectionEnd ?? start;
+              const newValue = userPrompt.slice(0, start) + tag + userPrompt.slice(end);
+              setUserPrompt(newValue);
+              requestAnimationFrame(() => {
+                el.focus();
+                const pos = start + tag.length;
+                el.setSelectionRange(pos, pos);
+              });
+            };
+
+            return (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold">Descrivi il messaggio da inviare</h3>
                 <p className="text-xs text-muted-foreground">
-                  L'AI inserirà automaticamente questi segnaposto nell'email, che verranno sostituiti con i dati reali di ogni ragazzo:
+                  Scrivi cosa vuoi comunicare, eventuali dettagli da includere o escludere. L'AI genererà l'email HTML.
                 </p>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {['{{nome_ragazzo}}', '{{nome_ragazzo_breve}}', '{{nome_genitore}}', '{{turno}}', '{{numero}}'].map(p => (
-                    <Badge key={p} variant="secondary" className="text-xs font-mono">{p}</Badge>
-                  ))}
+                <Textarea
+                  id="invio-massivo-textarea"
+                  value={userPrompt}
+                  onChange={e => setUserPrompt(e.target.value)}
+                  placeholder="Es: Comunicare ai genitori che il campeggio inizia il 15 luglio, portare sacco a pelo e crema solare. Non menzionare i costi..."
+                  className="min-h-[200px]"
+                />
+                <p className="text-xs text-muted-foreground italic">
+                  Minimo 10 caratteri per procedere
+                </p>
+                <div className="rounded-lg bg-muted/50 border border-border p-3 space-y-2">
+                  <p className="text-xs font-medium text-foreground">📌 Campi dinamici — clicca per inserire nel messaggio</p>
+                  <p className="text-xs text-muted-foreground">
+                    Puoi menzionarli nel testo e l'AI li userà nell'email. Verranno sostituiti con i dati reali di ogni ragazzo.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {dynamicFields.map(f => (
+                      <button
+                        key={f.tag}
+                        type="button"
+                        onClick={() => insertTag(f.tag)}
+                        className="flex flex-col items-start rounded-md border border-border bg-background px-3 py-1.5 text-left hover:bg-accent hover:border-primary/40 transition-colors cursor-pointer"
+                      >
+                        <span className="text-xs font-semibold text-foreground">{f.label}</span>
+                        <span className="text-[10px] text-muted-foreground">es: {f.example}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* STEP 2: AI Generation */}
           {step === 'ai_generation' && (
