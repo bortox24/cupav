@@ -174,7 +174,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     } finally {
       setGenerating(false);
     }
-  }, [userPrompt, generatedHtml, modifications]);
+  }, [userPrompt, generatedHtml, modifications, selectedDynamicFields]);
 
   // --- Placeholder replacement ---
   const replaceePlaceholders = (html: string, ragazzo: RagazzoCompleto): string => {
