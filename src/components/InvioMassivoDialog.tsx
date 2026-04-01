@@ -44,6 +44,14 @@ interface Props {
   ragazzi: RagazzoCompleto[];
 }
 
+const DYNAMIC_FIELDS = [
+  { label: 'Nome Ragazzo', tag: '{{nome_ragazzo}}', example: 'Marco Rossi' },
+  { label: 'Nome Breve', tag: '{{nome_ragazzo_breve}}', example: 'Marco' },
+  { label: 'Nome Genitore', tag: '{{nome_genitore}}', example: 'Giuseppe Rossi' },
+  { label: 'Turno', tag: '{{turno}}', example: '1^ Media' },
+  { label: 'Numero', tag: '{{numero}}', example: '42' },
+];
+
 export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -53,6 +61,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
   // Step 1 — message
   const [userPrompt, setUserPrompt] = useState('');
+
+  const [selectedDynamicFields, setSelectedDynamicFields] = useState<string[]>([]);
 
   // Step 2 — AI generation
   const [generatedHtml, setGeneratedHtml] = useState('');
@@ -101,6 +111,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
       setUserPrompt('');
       setGeneratedHtml('');
       setModifications('');
+      setSelectedDynamicFields([]);
       setSelectedTurni([]);
       setFiltroNumero('tutti');
       setSelectedWebhookId('');
@@ -142,6 +153,14 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
         body.prompt = userPrompt;
       }
 
+      // Add enabled dynamic fields info
+      if (selectedDynamicFields.length > 0) {
+        const enabledTags = selectedDynamicFields.join(', ');
+        body.prompt += `\n\nCAMPI DINAMICI ABILITATI: ${enabledTags}. Usa SOLO questi segnaposti nell'email, NON usare altri segnaposti.`;
+      } else {
+        body.prompt += `\n\nNON usare nessun segnaposto dinamico (come {{nome_ragazzo}}, {{turno}}, ecc.). Scrivi un messaggio generico senza personalizzazione.`;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-email-html', { body });
 
       if (error) throw new Error(error.message || 'Errore generazione');
@@ -155,7 +174,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     } finally {
       setGenerating(false);
     }
-  }, [userPrompt, generatedHtml, modifications]);
+  }, [userPrompt, generatedHtml, modifications, selectedDynamicFields]);
 
   // --- Placeholder replacement ---
   const replaceePlaceholders = (html: string, ragazzo: RagazzoCompleto): string => {
@@ -341,32 +360,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
         <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
           {/* STEP 1: Message */}
-          {step === 'message' && (() => {
-            const dynamicFields = [
-              { label: 'Nome Ragazzo', tag: '{{nome_ragazzo}}', example: 'Marco Rossi' },
-              { label: 'Nome Breve', tag: '{{nome_ragazzo_breve}}', example: 'Marco' },
-              { label: 'Nome Genitore', tag: '{{nome_genitore}}', example: 'Giuseppe Rossi' },
-              { label: 'Turno', tag: '{{turno}}', example: '1^ Media' },
-              { label: 'Numero', tag: '{{numero}}', example: '42' },
-            ];
-
-            const textareaRef = document.getElementById('invio-massivo-textarea') as HTMLTextAreaElement | null;
-
-            const insertTag = (tag: string) => {
-              const el = document.getElementById('invio-massivo-textarea') as HTMLTextAreaElement | null;
-              if (!el) return;
-              const start = el.selectionStart ?? userPrompt.length;
-              const end = el.selectionEnd ?? start;
-              const newValue = userPrompt.slice(0, start) + tag + userPrompt.slice(end);
-              setUserPrompt(newValue);
-              requestAnimationFrame(() => {
-                el.focus();
-                const pos = start + tag.length;
-                el.setSelectionRange(pos, pos);
-              });
-            };
-
-            return (
+          {step === 'message' && (
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold">Descrivi il messaggio da inviare</h3>
                 <p className="text-xs text-muted-foreground">
@@ -383,27 +377,42 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
                   Minimo 10 caratteri per procedere
                 </p>
                 <div className="rounded-lg bg-muted/50 border border-border p-3 space-y-2">
-                  <p className="text-xs font-medium text-foreground">📌 Campi dinamici — clicca per inserire nel messaggio</p>
+                  <p className="text-xs font-medium text-foreground">📌 Campi dinamici — seleziona quelli che l'AI potrà usare nell'email</p>
                   <p className="text-xs text-muted-foreground">
-                    Puoi menzionarli nel testo e l'AI li userà nell'email. Verranno sostituiti con i dati reali di ogni ragazzo.
+                    I campi attivi verranno inseriti automaticamente dall'AI nel messaggio. Verranno sostituiti con i dati reali di ogni ragazzo al momento dell'invio.
                   </p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {dynamicFields.map(f => (
-                      <button
-                        key={f.tag}
-                        type="button"
-                        onClick={() => insertTag(f.tag)}
-                        className="flex flex-col items-start rounded-md border border-border bg-background px-3 py-1.5 text-left hover:bg-accent hover:border-primary/40 transition-colors cursor-pointer"
-                      >
-                        <span className="text-xs font-semibold text-foreground">{f.label}</span>
-                        <span className="text-[10px] text-muted-foreground">es: {f.example}</span>
-                      </button>
-                    ))}
+                    {DYNAMIC_FIELDS.map(f => {
+                      const isActive = selectedDynamicFields.includes(f.tag);
+                      return (
+                        <button
+                          key={f.tag}
+                          type="button"
+                          onClick={() => setSelectedDynamicFields(prev =>
+                            isActive ? prev.filter(t => t !== f.tag) : [...prev, f.tag]
+                          )}
+                          className={`flex flex-col items-start rounded-md border px-3 py-1.5 text-left transition-colors cursor-pointer ${
+                            isActive
+                              ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
+                              : 'border-border bg-background hover:bg-accent hover:border-primary/40'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <div className={`h-3 w-3 rounded-sm border flex items-center justify-center ${
+                              isActive ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                            }`}>
+                              {isActive && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                            </div>
+                            <span className="text-xs font-semibold text-foreground">{f.label}</span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground ml-[18px]">es: {f.example}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
-            );
-          })()}
+          )}
 
           {/* STEP 2: AI Generation */}
           {step === 'ai_generation' && (
