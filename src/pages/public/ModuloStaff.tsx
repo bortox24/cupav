@@ -17,7 +17,12 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send, AlertTriangle, Download, FileText } from "lucide-react";
+import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send, AlertTriangle, Download, Loader2 } from "lucide-react";
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
