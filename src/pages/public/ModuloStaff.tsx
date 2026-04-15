@@ -587,41 +587,20 @@ export default function ModuloStaff() {
         {/* STEP REGOLAMENTO (final) */}
         {currentStep === regolamentoStep && (
           <div className="space-y-6">
-            {/* Regole specifiche per ruolo */}
+            {/* Viewer PDF */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">📜 Regolamento — {regolamentoRuolo.titolo}</CardTitle>
+                <CardTitle className="text-base">📜 Regolamento del Campeggio</CardTitle>
                 <CardDescription>
-                  Leggi attentamente le regole previste per il tuo ruolo nel campeggio.
+                  Leggi attentamente il regolamento completo prima di procedere con la firma.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  {regolamentoRuolo.regole.map((regola, i) => (
-                    <div key={i} className="flex gap-3 text-sm">
-                      <span className="text-primary font-bold mt-0.5 shrink-0">{i + 1}.</span>
-                      <p className="text-muted-foreground leading-relaxed">{regola}</p>
-                    </div>
-                  ))}
+                <div className="w-full rounded-lg border border-border overflow-hidden bg-muted p-2 sm:p-4">
+                  <PdfViewer url={PDF_URL} />
                 </div>
-
-                <div className="pt-3 border-t">
-                  <p className="text-sm font-medium italic text-foreground">{REGOLA_COMUNE}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Download documento completo */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">📄 Documento completo</CardTitle>
-                <CardDescription>
-                  Scarica il regolamento completo con tutte le figure del campeggio.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
                 <Button variant="outline" className="gap-2" asChild>
-                  <a href="/regolamento-staff.pdf" target="_blank" rel="noopener noreferrer" download>
+                  <a href={PDF_URL} target="_blank" rel="noopener noreferrer" download>
                     <Download className="h-4 w-4" />
                     Scarica regolamento (PDF)
                   </a>
