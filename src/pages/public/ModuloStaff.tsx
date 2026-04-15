@@ -44,43 +44,41 @@ const RUOLI = [
   { value: "responsabile_campo", label: "Responsabile di campo" },
 ];
 
-const REGOLE_PER_RUOLO: Record<string, { titolo: string; regole: string[] }> = {
-  responsabile_campo: {
-    titolo: "Responsabile del Campo",
-    regole: [
-      "DEVE avere una visione complessiva del campo sia dal punto di vista tecnico (tende, strutture, cucina, bagni, impianto elettrico, impianto idraulico, raccolta differenziata ecc.) che dal punto di vista educativo/formativo e partecipare attivamente alla vita del campeggio.",
-      "DEVE essere consapevole di svolgere un servizio educativo in linea con la morale cattolica.",
-      "DEVE possedere buone capacità comunicative e di relazione per confrontarsi con Responsabile animazione e Responsabile cucina, cercando di valorizzare ogni componente.",
-      "DEVE avere buone capacità organizzative e gestionali. È richiesto un minimo di conoscenza di come si affrontano le camminate in montagna.",
-      "DEVE verificare lo stato delle attrezzature sia mobili che fisse ed intervenire in caso di problemi sulle strutture.",
-      "È responsabile del materiale del campeggio, del funzionamento di tutti i servizi (cucina, bagni, caldaia ecc.) e di tutte le spese necessarie durante il campo.",
-      "Cura e mantiene i contatti con il Direttivo e con le autorità locali, comunicando ogni episodio che possa turbare il normale andamento del campeggio.",
-      "Alla fine di ogni turno presenta un rendiconto di tutte le spese sostenute.",
-      "DEVE consegnare il campeggio pulito ed in ordine al turno successivo.",
-    ],
-  },
-  animatore: {
-    titolo: "Animatore",
-    regole: [
-      "È responsabile dei ragazzi affidati all'inizio di ogni turno, organizzandoli ed assistendoli durante il giorno in tutte le attività programmate e durante la notte.",
-      "È richiesta una particolare attenzione nei rapporti con i ragazzi: nessuno deve essere escluso dall'attività, instaurando un clima proficuo e costruttivo.",
-      "DEVE essere responsabile del materiale in dotazione al proprio gruppo.",
-      "DEVE far osservare ai ragazzi le regole della vita del campo, il rispetto degli orari, le norme di igiene individuale e collettiva e le regole di convivenza.",
-      "DEVE interessarsi della salute fisica e morale dei ragazzi, promuovendo spirito di amicizia, comprensione e collaborazione tramite giochi, canti, scenette, piccole gare, ecc.",
-      "DEVE parlare ai ragazzi, cercando di ottenere la loro fiducia e confidenza, facendo loro apprezzare la vita all'aria aperta.",
-    ],
-  },
-  cuoco: {
-    titolo: "Responsabile Cucina / Cuoco",
-    regole: [
-      "È responsabile della cucina e della preparazione dei pasti.",
-      "In collaborazione con il Responsabile del campo provvede alla spesa settimanale.",
-      "Coordina i ragazzi di servizio mensa nel preparare i tavoli, allo sbarazzo e lavaggio delle stoviglie.",
-    ],
-  },
-};
+const PDF_URL = "/regolamento-staff.pdf";
 
-const REGOLA_COMUNE = "Quel che accomuna tutte le figure è la disponibilità ai rapporti con i ragazzi.";
+function PdfViewer({ url }: { url: string }) {
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const updateWidth = useCallback(() => {
+    if (containerRef.current) setContainerWidth(containerRef.current.clientWidth);
+  }, []);
+
+  useEffect(() => {
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [updateWidth]);
+
+  return (
+    <div ref={containerRef} className="w-full">
+      <Document
+        file={url}
+        onLoadSuccess={({ numPages: n }) => setNumPages(n)}
+        loading={<div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
+        error={<div className="text-center py-10 text-destructive">Errore nel caricamento del PDF</div>}
+      >
+        {numPages && containerWidth > 0 && Array.from({ length: numPages }, (_, i) => (
+          <div key={i} className={i < numPages - 1 ? 'mb-4' : ''}>
+            <Page pageNumber={i + 1} width={containerWidth} renderTextLayer renderAnnotationLayer />
+          </div>
+        ))}
+      </Document>
+    </div>
+  );
+}
 
 function DatePickerField({
   value,
