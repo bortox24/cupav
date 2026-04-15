@@ -154,6 +154,22 @@ serve(async (req) => {
       // Non-critical, don't rollback
     }
 
+    // Save credentials to staff_accounts for admin retrieval
+    const { error: staffAccError } = await adminClient
+      .from('staff_accounts')
+      .insert({
+        animatore_id: '', // Will be empty when created from edge function directly
+        user_id: userId,
+        email,
+        full_name: fullName,
+        generated_password: password,
+      });
+
+    if (staffAccError) {
+      console.error('Error saving to staff_accounts:', staffAccError);
+      // Non-critical, don't rollback
+    }
+
     return new Response(
       JSON.stringify({ userId, password }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
