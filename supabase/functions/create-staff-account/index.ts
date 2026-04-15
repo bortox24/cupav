@@ -52,7 +52,7 @@ serve(async (req) => {
       );
     }
 
-    const { email, fullName, turni }: CreateStaffRequest = await req.json();
+    const { email, fullName, turni, animatoreId }: CreateStaffRequest = await req.json();
 
     if (!email || !fullName || !turni || turni.length === 0) {
       return new Response(
