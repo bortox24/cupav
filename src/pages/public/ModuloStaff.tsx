@@ -217,8 +217,6 @@ export default function ModuloStaff() {
   };
 
   const validateRegolamento = () => {
-    if (!firmaNome.trim()) { toast({ title: "Inserisci il nome per la firma", variant: "destructive" }); return false; }
-    if (!firmaData) { toast({ title: "Inserisci la data della firma", variant: "destructive" }); return false; }
     if (!accettaRegolamento) { toast({ title: "Devi accettare il regolamento per procedere", variant: "destructive" }); return false; }
     return true;
   };
@@ -290,7 +288,7 @@ export default function ModuloStaff() {
       await supabase.from("staff_activity_logs" as any).insert({
         animatore_id: animatoreId,
         azione: "registrazione_modulo",
-        dettaglio: `Registrazione dal modulo staff pubblico. Turni selezionati: ${turniLabel}. Regolamento accettato e firmato da: ${firmaNome} in data ${firmaData ? format(firmaData, "dd/MM/yyyy") : ""}`,
+        dettaglio: `Registrazione dal modulo staff pubblico. Turni selezionati: ${turniLabel}. Regolamento accettato e firmato da: ${fullName} in data ${format(new Date(), "dd-MM-yyyy")}`,
         eseguito_da: animatoreId,
         eseguito_da_nome: fullName,
       } as any);
@@ -618,9 +616,7 @@ export default function ModuloStaff() {
                 <div>
                   <Label>Nome e Cognome (firma) *</Label>
                   <Input
-                    value={firmaNome || `${cognome} ${nome}`.trim()}
-                    onChange={(e) => setFirmaNome(capitalize(e.target.value))}
-                    placeholder="Cognome Nome"
+                    value={`${cognome} ${nome}`.trim()}
                     readOnly
                     className="bg-muted"
                   />
@@ -673,7 +669,7 @@ export default function ModuloStaff() {
                   Turno/i selezionato/i: <strong>{selectedTurni.map(t => TURNI.find(tt => tt.value === t)?.label).join(", ")}</strong>
                 </p>
                 <p>
-                  Regolamento firmato da: <strong>{firmaNome}</strong> in data <strong>{firmaData ? format(firmaData, "dd/MM/yyyy") : ""}</strong>
+                  Regolamento firmato da: <strong>{cognome} {nome}</strong> in data <strong>{format(new Date(), "dd-MM-yyyy")}</strong>
                 </p>
                 <p>Vuoi procedere?</p>
               </div>
