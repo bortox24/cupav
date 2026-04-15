@@ -132,14 +132,18 @@ serve(async (req) => {
       try {
         const parsed = JSON.parse(settingRow.value);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          defaultPages = parsed.includes('/home') ? parsed : ['/home', ...parsed];
+          defaultPages = ['/home', ...parsed.filter((p: string) => p !== '/home')];
         }
       } catch {
         // Keep default ['/home']
       }
     }
 
-    // Grant access to all default pages
+    // Always include /regolamento
+    if (!defaultPages.includes('/regolamento')) {
+      defaultPages.push('/regolamento');
+    }
+
     const pagePermRows = defaultPages.map((pagePath: string) => ({
       user_id: userId,
       page_path: pagePath,
