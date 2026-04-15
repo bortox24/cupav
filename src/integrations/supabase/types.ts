@@ -698,6 +698,39 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_accounts: {
+        Row: {
+          animatore_id: string
+          created_at: string
+          email: string
+          full_name: string
+          generated_password: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          animatore_id: string
+          created_at?: string
+          email: string
+          full_name: string
+          generated_password: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          animatore_id?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          generated_password?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       staff_activity_logs: {
         Row: {
           animatore_id: string
