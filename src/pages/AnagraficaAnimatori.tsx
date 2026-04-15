@@ -49,6 +49,7 @@ const LOG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
   account_errore: { label: 'Errore Account', className: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
   archiviato: { label: 'Archiviato', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
   ripristinato: { label: 'Ripristinato', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+  registrazione_modulo: { label: 'Registrazione', className: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300' },
 };
 
 function RuoloBadge({ ruolo }: { ruolo: string }) {
