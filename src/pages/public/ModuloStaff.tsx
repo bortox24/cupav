@@ -236,6 +236,16 @@ export default function ModuloStaff() {
         console.error("Errore inserimento turni:", turniError);
       }
 
+      // Log registrazione modulo staff
+      const turniLabel = selectedTurni.join(", ");
+      await supabase.from("staff_activity_logs" as any).insert({
+        animatore_id: animatoreId,
+        azione: "registrazione_modulo",
+        dettaglio: `Registrazione dal modulo staff pubblico. Turni selezionati: ${turniLabel}`,
+        eseguito_da: animatoreId,
+        eseguito_da_nome: fullName,
+      } as any);
+
       setSubmitted(true);
       scrollToTop();
     } catch (err: any) {
