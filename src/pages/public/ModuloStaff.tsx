@@ -342,7 +342,7 @@ export default function ModuloStaff() {
     );
   }
 
-  const regolamentoRuolo = REGOLE_PER_RUOLO[ruolo] || REGOLE_PER_RUOLO["animatore"];
+  
 
   const stepLabels = [
     "1. Dati personali",
@@ -641,17 +641,19 @@ export default function ModuloStaff() {
                 <div>
                   <Label>Nome e Cognome (firma) *</Label>
                   <Input
-                    value={firmaNome}
+                    value={firmaNome || `${cognome} ${nome}`.trim()}
                     onChange={(e) => setFirmaNome(capitalize(e.target.value))}
-                    placeholder="Nome Cognome"
+                    placeholder="Cognome Nome"
+                    readOnly
+                    className="bg-muted"
                   />
                 </div>
                 <div>
                   <Label>Data *</Label>
-                  <DatePickerField
-                    value={firmaData}
-                    onChange={setFirmaData}
-                    label="Seleziona data firma"
+                  <Input
+                    value={format(new Date(), "dd-MM-yyyy")}
+                    readOnly
+                    className="bg-muted"
                   />
                 </div>
 
