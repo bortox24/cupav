@@ -17,6 +17,7 @@ interface CreateStaffRequest {
   email: string;
   fullName: string;
   turni: string[];
+  animatoreId?: string;
 }
 
 serve(async (req) => {
