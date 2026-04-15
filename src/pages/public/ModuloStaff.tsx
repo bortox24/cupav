@@ -614,7 +614,7 @@ export default function ModuloStaff() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Nome e Cognome (firma) *</Label>
+                  <Label>Cognome e Nome (firma) *</Label>
                   <Input
                     value={`${cognome} ${nome}`.trim()}
                     readOnly
