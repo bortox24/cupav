@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -26,7 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Loader2, Search, Phone, Mail, Pencil, Plus, Trash2, X, Save,
   Archive, ArchiveRestore, GraduationCap, StickyNote, AlertTriangle, UserPlus, Copy, Check,
-  History,
+  History, ChevronDown,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -461,28 +462,35 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
                 {activityLogs.length > 0 && (
                   <>
                     <Separator />
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium flex items-center gap-1.5">
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center gap-1.5 text-sm font-medium w-full hover:text-primary transition-colors">
                         <History className="h-4 w-4" /> Log attività
-                      </p>
-                      <div className="space-y-1.5">
-                        {activityLogs.map((log: any) => {
-                          const config = LOG_BADGE_CONFIG[log.azione] || { label: log.azione, className: 'bg-muted text-muted-foreground' };
-                          return (
-                            <div key={log.id} className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                              <Badge className={`text-[10px] border-0 rounded-full px-2 py-0.5 pointer-events-none ${config.className}`}>
-                                {config.label}
-                              </Badge>
-                              {log.dettaglio && <span className="font-medium text-foreground/70">{log.dettaglio}</span>}
-                              <span>— {log.eseguito_da_nome}</span>
-                              <span className="text-muted-foreground/60">
-                                {format(new Date(log.created_at), 'dd-MM-yyyy HH:mm')}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                        <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2">
+                        <div className="space-y-1.5">
+                          {activityLogs.map((log: any) => {
+                            const config = LOG_BADGE_CONFIG[log.azione] || { label: log.azione, className: 'bg-muted text-muted-foreground' };
+                            return (
+                              <div key={log.id} className="space-y-0.5">
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                                  <Badge className={`text-[10px] border-0 rounded-full px-2 py-0.5 pointer-events-none ${config.className}`}>
+                                    {config.label}
+                                  </Badge>
+                                  <span>— {log.eseguito_da_nome}</span>
+                                  <span className="text-muted-foreground/60">
+                                    {format(new Date(log.created_at), 'dd-MM-yyyy HH:mm')}
+                                  </span>
+                                </div>
+                                {log.dettaglio && (
+                                  <p className="text-[10px] text-muted-foreground/70 ml-2 whitespace-pre-line">{log.dettaglio}</p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </>
                 )}
               </div>
