@@ -178,8 +178,6 @@ export default function ModuloStaff() {
   const [checkCompleto, setCheckCompleto] = useState(false);
 
   // Step regolamento (final)
-  const [firmaNome, setFirmaNome] = useState("");
-  const [firmaData, setFirmaData] = useState<Date>();
   const [accettaRegolamento, setAccettaRegolamento] = useState(false);
 
   const showStep3 = haAllergie === "si";
