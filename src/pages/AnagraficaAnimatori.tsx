@@ -177,6 +177,31 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
   const saveEdit = () => {
     const oldRuolo = animatore.ruolo;
     const newRuolo = editData.ruolo;
+
+    // Build diff details
+    const fieldLabels: Record<string, string> = {
+      full_name: 'Nome completo',
+      email: 'Email',
+      telefono: 'Telefono',
+      data_nascita: 'Data di nascita',
+      note: 'Note',
+      ruolo: 'Ruolo',
+    };
+    const changes: string[] = [];
+    const fieldsToCheck = ['full_name', 'email', 'telefono', 'data_nascita', 'note', 'ruolo'] as const;
+    for (const field of fieldsToCheck) {
+      const oldVal = (animatore as any)[field] || '';
+      const newVal = field === 'ruolo' ? editData.ruolo : ((editData as any)[field] || '');
+      if (oldVal !== newVal) {
+        const label = fieldLabels[field] || field;
+        if (field === 'ruolo') {
+          changes.push(`${label}: ${RUOLO_LABELS[oldVal] || oldVal || '(vuoto)'} → ${RUOLO_LABELS[newVal] || newVal || '(vuoto)'}`);
+        } else {
+          changes.push(`${label}: ${oldVal || '(vuoto)'} → ${newVal || '(vuoto)'}`);
+        }
+      }
+    }
+
     updateMutation.mutate({
       id: animatore.id,
       full_name: editData.full_name,
@@ -189,10 +214,13 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
       onSuccess: () => {
         toast.success('Dati aggiornati');
         setEditing(false);
-        if (oldRuolo !== newRuolo) {
-          insertLog('ruolo_cambiato', `Da ${RUOLO_LABELS[oldRuolo] || oldRuolo} a ${RUOLO_LABELS[newRuolo] || newRuolo}`);
-        } else {
-          insertLog('dati_modificati');
+        if (changes.length > 0) {
+          const dettaglio = changes.join('\n');
+          if (oldRuolo !== newRuolo) {
+            insertLog('ruolo_cambiato', dettaglio);
+          } else {
+            insertLog('dati_modificati', dettaglio);
+          }
         }
       },
       onError: () => toast.error('Errore durante il salvataggio'),
