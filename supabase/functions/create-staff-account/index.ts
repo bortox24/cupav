@@ -159,7 +159,7 @@ serve(async (req) => {
     const { error: staffAccError } = await adminClient
       .from('staff_accounts')
       .insert({
-        animatore_id: '', // Will be empty when created from edge function directly
+        animatore_id: animatoreId || userId,
         user_id: userId,
         email,
         full_name: fullName,
