@@ -14,13 +14,15 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { TURNI } from "@/hooks/useTurnoPermissions";
 import { XCircle } from "lucide-react";
 
 const capitalize = (s: string) =>
@@ -118,7 +120,11 @@ export default function ModuloStaff() {
   const [telefono, setTelefono] = useState("");
   const [ruolo, setRuolo] = useState("");
 
-  // Step 2 - allergie
+  // Step 2 - turno selection
+  const [selectedTurni, setSelectedTurni] = useState<string[]>([]);
+  const [confermaResponsabilita, setConfermaResponsabilita] = useState(false);
+
+  // Step 3 - allergie
   const [haAllergie, setHaAllergie] = useState<string>("");
   const [allergieDettaglio, setAllergieDettaglio] = useState("");
   const [patologieDettaglio, setPatologieDettaglio] = useState("");
@@ -130,9 +136,17 @@ export default function ModuloStaff() {
   const [farmaco3Posologia, setFarmaco3Posologia] = useState("");
   const [checkCompleto, setCheckCompleto] = useState(false);
 
-  const showStep2 = haAllergie === "si";
-  const totalSteps = showStep2 ? 2 : 1;
+  const showStep3 = haAllergie === "si";
+  const totalSteps = showStep3 ? 3 : 2;
   const progressPercent = (currentStep / totalSteps) * 100;
+
+  const toggleTurno = (turnoValue: string) => {
+    setSelectedTurni((prev) =>
+      prev.includes(turnoValue)
+        ? prev.filter((t) => t !== turnoValue)
+        : [...prev, turnoValue]
+    );
+  };
 
   const validateStep1 = () => {
     if (!nome.trim()) { toast({ title: "Inserisci il nome", variant: "destructive" }); return false; }
@@ -146,6 +160,12 @@ export default function ModuloStaff() {
   };
 
   const validateStep2 = () => {
+    if (selectedTurni.length === 0) { toast({ title: "Seleziona almeno un turno", variant: "destructive" }); return false; }
+    if (!confermaResponsabilita) { toast({ title: "Conferma la responsabilità della selezione turno", variant: "destructive" }); return false; }
+    return true;
+  };
+
+  const validateStep3 = () => {
     if (!checkCompleto) { toast({ title: "Conferma la completezza dei dati", variant: "destructive" }); return false; }
     return true;
   };
@@ -154,17 +174,24 @@ export default function ModuloStaff() {
 
   const nextStep = () => {
     if (currentStep === 1 && !validateStep1()) return;
-    if (!showStep2) {
-      // go directly to confirm
+    if (currentStep === 2 && !validateStep2()) return;
+
+    if (currentStep === 2 && !showStep3) {
       setShowConfirm(true);
       return;
     }
-    setCurrentStep(2);
+
+    setCurrentStep((s) => s + 1);
+    scrollToTop();
+  };
+
+  const prevStep = () => {
+    setCurrentStep((s) => s - 1);
     scrollToTop();
   };
 
   const handleSubmit = async () => {
-    if (showStep2 && !validateStep2()) return;
+    if (showStep3 && !validateStep3()) return;
     setSubmitting(true);
     setShowConfirm(false);
     try {
@@ -187,8 +214,27 @@ export default function ModuloStaff() {
         farmaco_3_posologia: farmaco3Posologia || null,
       };
 
-      const { error } = await supabase.from("animatori" as any).insert(payload as any);
+      const { data: animatore, error } = await supabase
+        .from("animatori" as any)
+        .insert(payload as any)
+        .select("id")
+        .single();
       if (error) throw error;
+
+      const animatoreId = (animatore as any).id;
+      const currentYear = new Date().getFullYear();
+      const turniRows = selectedTurni.map((turno) => ({
+        animatore_id: animatoreId,
+        turno,
+        anno: currentYear,
+      }));
+
+      const { error: turniError } = await supabase
+        .from("animatori_turni" as any)
+        .insert(turniRows as any);
+      if (turniError) {
+        console.error("Errore inserimento turni:", turniError);
+      }
 
       setSubmitted(true);
       scrollToTop();
@@ -235,6 +281,12 @@ export default function ModuloStaff() {
     );
   }
 
+  const stepLabels = [
+    "1. Dati personali",
+    "2. Selezione turno",
+    ...(showStep3 ? ["3. Allergie/Patologie"] : []),
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 via-background to-background">
       {/* Header */}
@@ -251,20 +303,25 @@ export default function ModuloStaff() {
       {/* Progress */}
       <div className="max-w-2xl mx-auto px-4 pt-6">
         <div className="flex justify-between mb-2">
-          <span className={cn("text-xs font-medium", currentStep === 1 ? "text-primary font-bold" : "text-green-600")}>
-            1. Dati personali
-          </span>
-          {showStep2 && (
-            <span className={cn("text-xs font-medium", currentStep === 2 ? "text-primary font-bold" : "text-muted-foreground")}>
-              2. Allergie/Patologie
+          {stepLabels.map((label, i) => (
+            <span
+              key={i}
+              className={cn(
+                "text-xs font-medium",
+                currentStep === i + 1 ? "text-primary font-bold" :
+                currentStep > i + 1 ? "text-green-600" : "text-muted-foreground"
+              )}
+            >
+              {label}
             </span>
-          )}
+          ))}
         </div>
         <Progress value={progressPercent} className="h-2" />
       </div>
 
       {/* Form */}
       <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* STEP 1 — Dati personali */}
         {currentStep === 1 && (
           <div className="space-y-6">
             <Card>
@@ -275,45 +332,24 @@ export default function ModuloStaff() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Nome *</Label>
-                    <Input
-                      value={nome}
-                      onChange={(e) => setNome(capitalize(e.target.value))}
-                      placeholder="Mario"
-                    />
+                    <Input value={nome} onChange={(e) => setNome(capitalize(e.target.value))} placeholder="Mario" />
                   </div>
                   <div>
                     <Label>Cognome *</Label>
-                    <Input
-                      value={cognome}
-                      onChange={(e) => setCognome(capitalize(e.target.value))}
-                      placeholder="Rossi"
-                    />
+                    <Input value={cognome} onChange={(e) => setCognome(capitalize(e.target.value))} placeholder="Rossi" />
                   </div>
                 </div>
                 <div>
                   <Label>Data di nascita *</Label>
-                  <DatePickerField
-                    value={dataNascita}
-                    onChange={setDataNascita}
-                    label="Seleziona data (dd-mm-yyyy)"
-                  />
+                  <DatePickerField value={dataNascita} onChange={setDataNascita} label="Seleziona data (dd-mm-yyyy)" />
                 </div>
                 <div>
                   <Label>Email *</Label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@esempio.it"
-                  />
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@esempio.it" />
                 </div>
                 <div>
                   <Label>Telefono *</Label>
-                  <Input
-                    value={telefono}
-                    onChange={(e) => setTelefono(e.target.value)}
-                    placeholder="+39 ..."
-                  />
+                  <Input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+39 ..." />
                 </div>
                 <div>
                   <Label>Ruolo *</Label>
@@ -323,9 +359,7 @@ export default function ModuloStaff() {
                     </SelectTrigger>
                     <SelectContent>
                       {RUOLI.map((r) => (
-                        <SelectItem key={r.value} value={r.value}>
-                          {r.label}
-                        </SelectItem>
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -333,7 +367,6 @@ export default function ModuloStaff() {
               </CardContent>
             </Card>
 
-            {/* Allergie section */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">🏥 Allergie o Patologie</CardTitle>
@@ -356,7 +389,78 @@ export default function ModuloStaff() {
 
             <div className="flex justify-end">
               <Button onClick={nextStep} className="gap-2">
-                {showStep2 ? (
+                Avanti <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2 — Selezione Turno */}
+        {currentStep === 2 && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">🏕️ Selezione Turno</CardTitle>
+                <CardDescription>
+                  Seleziona il turno (o i turni) che ti è stato comunicato dallo staff animatori.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <Alert className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800 dark:text-amber-300 text-sm">
+                    <strong>Attenzione:</strong> La selezione del turno è <strong>definitiva e non modificabile</strong> dopo l'invio.
+                    Seleziona esclusivamente il turno che ti è stato comunicato dallo staff animatori.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="space-y-3">
+                  {TURNI.map((turno) => (
+                    <div
+                      key={turno.value}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors",
+                        selectedTurni.includes(turno.value)
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40"
+                      )}
+                      onClick={() => toggleTurno(turno.value)}
+                    >
+                      <Checkbox
+                        checked={selectedTurni.includes(turno.value)}
+                        onCheckedChange={() => toggleTurno(turno.value)}
+                      />
+                      <span className="font-medium">{turno.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-start gap-2 pt-3 border-t">
+                  <Checkbox
+                    id="conferma-responsabilita"
+                    checked={confermaResponsabilita}
+                    onCheckedChange={(v) => setConfermaResponsabilita(v === true)}
+                  />
+                  <Label htmlFor="conferma-responsabilita" className="text-sm font-normal leading-tight cursor-pointer">
+                    Confermo che il/i turno/i selezionato/i corrisponde/ono a quanto comunicato dallo staff animatori. Sono consapevole che questa scelta non è modificabile. *
+                  </Label>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={prevStep} className="gap-2">
+                <ChevronLeft className="h-4 w-4" /> Indietro
+              </Button>
+              <Button onClick={() => {
+                if (!validateStep2()) return;
+                if (!showStep3) {
+                  setShowConfirm(true);
+                } else {
+                  nextStep();
+                }
+              }} className="gap-2">
+                {showStep3 ? (
                   <>Avanti <ChevronRight className="h-4 w-4" /></>
                 ) : (
                   <>Invia <Send className="h-4 w-4" /></>
@@ -366,7 +470,8 @@ export default function ModuloStaff() {
           </div>
         )}
 
-        {currentStep === 2 && showStep2 && (
+        {/* STEP 3 — Allergie/Patologie (solo se haAllergie === "si") */}
+        {currentStep === 3 && showStep3 && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -375,21 +480,11 @@ export default function ModuloStaff() {
               <CardContent className="space-y-4">
                 <div>
                   <Label>Allergie (dettaglio)</Label>
-                  <Textarea
-                    value={allergieDettaglio}
-                    onChange={(e) => setAllergieDettaglio(e.target.value)}
-                    placeholder="Descrivi le allergie..."
-                    rows={3}
-                  />
+                  <Textarea value={allergieDettaglio} onChange={(e) => setAllergieDettaglio(e.target.value)} placeholder="Descrivi le allergie..." rows={3} />
                 </div>
                 <div>
                   <Label>Patologie (dettaglio)</Label>
-                  <Textarea
-                    value={patologieDettaglio}
-                    onChange={(e) => setPatologieDettaglio(e.target.value)}
-                    placeholder="Descrivi le patologie..."
-                    rows={3}
-                  />
+                  <Textarea value={patologieDettaglio} onChange={(e) => setPatologieDettaglio(e.target.value)} placeholder="Descrivi le patologie..." rows={3} />
                 </div>
               </CardContent>
             </Card>
@@ -426,10 +521,10 @@ export default function ModuloStaff() {
             </Card>
 
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => { setCurrentStep(1); scrollToTop(); }} className="gap-2">
+              <Button variant="outline" onClick={prevStep} className="gap-2">
                 <ChevronLeft className="h-4 w-4" /> Indietro
               </Button>
-              <Button onClick={() => { if (validateStep2()) setShowConfirm(true); }} className="gap-2">
+              <Button onClick={() => { if (validateStep3()) setShowConfirm(true); }} className="gap-2">
                 <Send className="h-4 w-4" /> Invia
               </Button>
             </div>
@@ -442,8 +537,16 @@ export default function ModuloStaff() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Conferma invio</AlertDialogTitle>
-            <AlertDialogDescription>
-              Stai per inviare la registrazione di <strong>{cognome} {nome}</strong> come <strong>{RUOLI.find(r => r.value === ruolo)?.label}</strong>. Vuoi procedere?
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Stai per inviare la registrazione di <strong>{cognome} {nome}</strong> come <strong>{RUOLI.find(r => r.value === ruolo)?.label}</strong>.
+                </p>
+                <p>
+                  Turno/i selezionato/i: <strong>{selectedTurni.map(t => TURNI.find(tt => tt.value === t)?.label).join(", ")}</strong>
+                </p>
+                <p>Vuoi procedere?</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
