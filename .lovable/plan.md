@@ -1,55 +1,53 @@
 
 
-## Piano: Selezione turno nel modulo staff con auto-assegnazione
+## Piano: Unificare Gestione Utenti + Permessi + Account Staff
+
+### Situazione attuale
+- **AdminPermessi** (`/admin/permessi`): tabella utenti con creazione, toggle admin/attivo, eliminazione
+- **AdminPermessiPagine** (`/admin/permessi-pagine`): matrice checkbox pagine/turni per utente
+- Gli account staff creati da Anagrafica Animatori generano password monouso (mostrate una volta e mai salvate)
 
 ### Cosa cambia
 
-Il modulo staff pubblico (`/modulo-staff`) viene esteso con uno step dedicato alla **selezione del turno**. L'animatore sceglie uno o più turni (multi-select con checkbox). Alla submission, il sistema inserisce automaticamente le righe in `animatori_turni`, eliminando il lavoro manuale dello staff admin.
+Una sola pagina `/admin/permessi` con **3 tab**:
 
-### Struttura del form aggiornata
+1. **Gestione Utenti** — contenuto attuale di AdminPermessi (lista, creazione, toggle admin/attivo, elimina)
+2. **Permessi Pagine** — contenuto attuale di AdminPermessiPagine (matrice checkbox pagine + turni)
+3. **Account Staff** — nuova sezione che mostra gli account creati dall'Anagrafica Staff con nome, email e password
+
+### Dettaglio "Account Staff"
+
+Per poter mostrare le password anche successivamente, serve salvarle al momento della creazione. Verrà creata una tabella `staff_accounts` con:
+- `animatore_id`, `user_id`, `email`, `full_name`, `generated_password`, `created_at`
+
+L'edge function `create-staff-account` verrà aggiornata per salvare la password generata in questa tabella.
+
+La tab mostrerà una tabella con: **Nome Staff**, **Email**, **Password** (con bottone copia), **Data creazione**. Solo gli admin potranno leggere questa tabella (RLS).
+
+Inoltre verrà aggiunta la possibilità di **resettare la password** generandone una nuova (via edge function) per i casi in cui la password sia stata persa.
+
+### Modifiche tecniche
+
+| Area | Dettaglio |
+|------|-----------|
+| **DB** | Nuova tabella `staff_accounts` con RLS solo admin SELECT |
+| **Edge Function** | `create-staff-account` salva anche in `staff_accounts` |
+| **Nuova pagina** | `AdminPermessi.tsx` riscritta con Tabs (3 tab) |
+| **Rimossa** | `AdminPermessiPagine.tsx` eliminata |
+| **Routing** | `/admin/permessi-pagine` redirect a `/admin/permessi`, route rimossa |
+| **Navigazione** | Home e `usePagePermissions` aggiornati: una sola voce "Gestione Utenti & Permessi" |
+| **Hook** | Nuovo `useStaffAccounts.ts` per fetch da `staff_accounts` |
+
+### Flusso password
 
 ```text
-Step 1: Dati personali + Ruolo + Allergie (sì/no)
-Step 2: Selezione turno/i (NUOVO)
-  - Checkbox per ogni turno (4° Elem, 5° Elem, 1° Media, 2° Media, 3° Media)
-  - Avviso di responsabilità: "La selezione del turno è definitiva e non modificabile. Seleziona il turno comunicato dallo staff animatori."
-  - Checkbox di conferma obbligatorio: "Confermo che il/i turno/i selezionato/i corrisponde/ono a quanto comunicato dallo staff"
-  - Almeno un turno obbligatorio
-Step 3: Allergie/Patologie (solo se haAllergie = "si", altrimenti si salta)
+Anagrafica Staff → "Crea Account" 
+  → Edge Function genera password
+  → Salva in staff_accounts (plaintext, solo admin)
+  → Mostra password all'utente
+  
+Admin → Tab "Account Staff"
+  → Vede lista account con password copiabili
+  → Può resettare password (nuova generazione + update)
 ```
-
-### Logica di submission
-
-1. Insert in `animatori` (come ora)
-2. Recuperare l'`id` dell'animatore appena creato (aggiungere `.select('id').single()` all'insert)
-3. Insert in `animatori_turni` una riga per ogni turno selezionato, con `anno = anno corrente`
-
-Attualmente la insert in `animatori` non restituisce l'id. Va modificata per usare `.select('id').single()`.
-
-### Policy RLS
-
-La tabella `animatori_turni` ha già una policy `Authenticated can read animatori_turni` ma serve anche una policy **anon INSERT** perché il form è pubblico (utente non autenticato). Stessa logica della tabella `animatori` che ha già `Anyone can insert animatori`.
-
-**Migrazione DB**: Aggiungere policy anon INSERT su `animatori_turni`.
-
-### Visibilità turno per lo staff (permessi)
-
-Questo punto riguarda il fatto che quando un animatore riceverà un account (tramite la funzione `create-staff-account`), avrà accesso solo ai turni assegnati. Questo è **già gestito** dal sistema `turno_permessi` esistente. Nessuna modifica necessaria qui — lo staff admin continua ad assegnare i permessi di visualizzazione tramite il sistema esistente.
-
-La modifica dei turni da parte dello staff admin resta invariata (tramite Anagrafica Staff).
-
-### File coinvolti
-
-| File | Modifica |
-|------|----------|
-| `src/pages/public/ModuloStaff.tsx` | Nuovo step 2 con multi-select turni, riorganizzazione step numbering |
-| **Migrazione DB** | Policy anon INSERT su `animatori_turni` |
-
-### Dettagli UI (Step 2 — Selezione Turno)
-
-- Card con titolo "🏕️ Selezione Turno"
-- Lista checkbox con i 5 turni (da `TURNI` in `useTurnoPermissions.ts`)
-- Alert box giallo con avviso: la scelta è definitiva, seleziona il turno comunicato dallo staff
-- Checkbox di conferma responsabilità (obbligatorio per procedere)
-- Validazione: almeno un turno selezionato + checkbox conferma
 
