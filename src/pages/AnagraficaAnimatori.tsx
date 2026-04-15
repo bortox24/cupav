@@ -27,7 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Loader2, Search, Phone, Mail, Pencil, Plus, Trash2, X, Save,
   Archive, ArchiveRestore, GraduationCap, StickyNote, AlertTriangle, UserPlus, Copy, Check,
-  History,
+  History, ChevronDown,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';

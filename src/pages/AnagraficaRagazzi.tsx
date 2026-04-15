@@ -539,46 +539,50 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 
                 {/* Log section */}
                 <Separator />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium flex items-center gap-1">📋 Log invii</p>
-                  {invioLogs.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nessun invio effettuato</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {(invioLogs as any[]).map((log: any) => (
-                        <div key={log.id} className="space-y-0.5">
-                          <div className="flex items-center gap-1.5 text-xs bg-muted/40 rounded-lg px-2 py-1.5 min-w-0">
-                            {log.successo ? (
-                              <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                            ) : (
-                              <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                <Collapsible>
+                  <CollapsibleTrigger className="flex items-center gap-1 text-sm font-medium w-full hover:text-primary transition-colors">
+                    📋 Log invii
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    {invioLogs.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nessun invio effettuato</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {(invioLogs as any[]).map((log: any) => (
+                          <div key={log.id} className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 text-xs bg-muted/40 rounded-lg px-2 py-1.5 min-w-0">
+                              {log.successo ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              ) : (
+                                <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                              )}
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0 ${
+                                log.tipo === 'conferma_preiscrizione' ? 'bg-emerald-500' :
+                                log.tipo === 'numero_assegnato' ? 'bg-violet-500' :
+                                log.tipo === 'numero_modificato' ? 'bg-amber-500' :
+                                log.tipo === 'numero_rimosso' ? 'bg-red-500' :
+                                'bg-blue-500'
+                              }`}>
+                                {log.tipo === 'conferma_preiscrizione' ? 'Conferma' :
+                                 log.tipo === 'numero_assegnato' ? 'N° assegnato' :
+                                 log.tipo === 'numero_modificato' ? 'N° modificato' :
+                                 log.tipo === 'numero_rimosso' ? 'N° rimosso' :
+                                 'Invio'}
+                              </span>
+                              <span className="font-medium truncate">{log.inviato_da_nome}</span>
+                              <span className="text-muted-foreground text-[10px] shrink-0 whitespace-nowrap">
+                                {format(new Date(log.created_at), 'dd-MM-yy, HH:mm')}
+                              </span>
+                            </div>
+                            {log.dettaglio && (
+                              <p className="text-[10px] text-muted-foreground ml-7">{log.dettaglio}</p>
                             )}
-                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0 ${
-                              log.tipo === 'conferma_preiscrizione' ? 'bg-emerald-500' :
-                              log.tipo === 'numero_assegnato' ? 'bg-violet-500' :
-                              log.tipo === 'numero_modificato' ? 'bg-amber-500' :
-                              log.tipo === 'numero_rimosso' ? 'bg-red-500' :
-                              'bg-blue-500'
-                            }`}>
-                              {log.tipo === 'conferma_preiscrizione' ? 'Conferma' :
-                               log.tipo === 'numero_assegnato' ? 'N° assegnato' :
-                               log.tipo === 'numero_modificato' ? 'N° modificato' :
-                               log.tipo === 'numero_rimosso' ? 'N° rimosso' :
-                               'Invio'}
-                            </span>
-                            <span className="font-medium truncate">{log.inviato_da_nome}</span>
-                            <span className="text-muted-foreground text-[10px] shrink-0 whitespace-nowrap">
-                              {format(new Date(log.created_at), 'dd-MM-yy, HH:mm')}
-                            </span>
                           </div>
-                          {log.dettaglio && (
-                            <p className="text-[10px] text-muted-foreground ml-7">{log.dettaglio}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        ))}
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             ) : (
               /* Edit mode */
