@@ -287,6 +287,7 @@ function AnimatoreDrawer({ animatore, open, onOpenChange }: { animatore: Animato
           email: animatore.email,
           fullName: animatore.full_name,
           turni: assignedTurni.map((t) => t.turno),
+          animatoreId: animatore.id,
         },
       });
       // Handle error from edge function (non-2xx or network error)
