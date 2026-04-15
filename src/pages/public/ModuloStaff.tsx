@@ -42,6 +42,7 @@ const RUOLI = [
   { value: "animatore", label: "Animatore" },
   { value: "cuoco", label: "Cuoco" },
   { value: "responsabile_campo", label: "Responsabile di campo" },
+  { value: "responsabile_animatori", label: "Responsabile animatori" },
 ];
 
 const PDF_URL = "/regolamento-staff.pdf";
