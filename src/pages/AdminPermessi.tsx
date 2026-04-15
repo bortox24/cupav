@@ -91,9 +91,12 @@ function GestioneUtentiTab() {
   });
 
   const onCreateUser = async (values: CreateUserFormValues) => {
-    await createUser.mutateAsync(values);
-    setIsCreateDialogOpen(false);
-    form.reset();
+    await createUser.mutateAsync({
+      email: values.email,
+      password: values.password,
+      fullName: values.fullName,
+      isAdmin: values.isAdmin,
+    });
   };
 
   return (
