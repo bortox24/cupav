@@ -17,6 +17,7 @@ interface CreateStaffRequest {
   email: string;
   fullName: string;
   turni: string[];
+  animatoreId?: string;
 }
 
 serve(async (req) => {
@@ -51,7 +52,7 @@ serve(async (req) => {
       );
     }
 
-    const { email, fullName, turni }: CreateStaffRequest = await req.json();
+    const { email, fullName, turni, animatoreId }: CreateStaffRequest = await req.json();
 
     if (!email || !fullName || !turni || turni.length === 0) {
       return new Response(
@@ -151,6 +152,22 @@ serve(async (req) => {
 
     if (pagePermError) {
       console.error('Error granting default page access:', pagePermError);
+      // Non-critical, don't rollback
+    }
+
+    // Save credentials to staff_accounts for admin retrieval
+    const { error: staffAccError } = await adminClient
+      .from('staff_accounts')
+      .insert({
+        animatore_id: animatoreId || userId,
+        user_id: userId,
+        email,
+        full_name: fullName,
+        generated_password: password,
+      });
+
+    if (staffAccError) {
+      console.error('Error saving to staff_accounts:', staffAccError);
       // Non-critical, don't rollback
     }
 

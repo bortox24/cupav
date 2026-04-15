@@ -9,7 +9,7 @@ import {
   PieChart, 
   Users, 
   FolderOpen,
-  FileKey,
+  
   FileText,
   Eye,
   Tent,
@@ -129,8 +129,8 @@ const allQuickAccessCards: QuickAccessCard[] = [
     iconColor: 'text-white',
   },
   {
-    title: 'Gestione Utenti',
-    description: 'Crea utenti e gestisci accessi',
+    title: 'Gestione Utenti & Permessi',
+    description: 'Utenti, permessi pagine e account staff',
     icon: <Users className="h-7 w-7" />,
     path: '/admin/permessi',
     gradient: 'bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-50 dark:from-orange-950/50 dark:via-amber-950/30 dark:to-yellow-950/30',
@@ -146,16 +146,6 @@ const allQuickAccessCards: QuickAccessCard[] = [
     gradient: 'bg-gradient-to-br from-purple-100 via-violet-50 to-fuchsia-50 dark:from-purple-950/50 dark:via-violet-950/30 dark:to-fuchsia-950/30',
     borderColor: 'border-purple-300 dark:border-purple-700',
     iconBg: 'bg-gradient-to-br from-purple-500 to-violet-600',
-    iconColor: 'text-white',
-  },
-  {
-    title: 'Permessi Pagine',
-    description: 'Configura accesso pagine per singolo utente',
-    icon: <FileKey className="h-7 w-7" />,
-    path: '/admin/permessi-pagine',
-    gradient: 'bg-gradient-to-br from-amber-100 via-yellow-50 to-lime-50 dark:from-amber-950/50 dark:via-yellow-950/30 dark:to-lime-950/30',
-    borderColor: 'border-amber-300 dark:border-amber-700',
-    iconBg: 'bg-gradient-to-br from-amber-500 to-yellow-600',
     iconColor: 'text-white',
   },
   {

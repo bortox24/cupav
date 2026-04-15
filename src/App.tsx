@@ -13,7 +13,7 @@ import RegistrazioneSpesePrelievi from "./pages/RegistrazioneSpesePrelievi";
 import ControlloSpese from "./pages/ControlloSpese";
 import AdminPermessi from "./pages/AdminPermessi";
 import AdminCategorie from "./pages/AdminCategorie";
-import AdminPermessiPagine from "./pages/AdminPermessiPagine";
+
 import AdminModuli from "./pages/AdminModuli";
 import AdminModuloRisposte from "./pages/AdminModuloRisposte";
 import VisualizzaModuli from "./pages/VisualizzaModuli";
@@ -114,11 +114,7 @@ function AppRoutes() {
       />
       <Route
         path="/admin/permessi-pagine"
-        element={
-          <ProtectedRoute>
-            <AdminPermessiPagine />
-          </ProtectedRoute>
-        }
+        element={<Navigate to="/admin/permessi" replace />}
       />
       <Route
         path="/admin/moduli"
