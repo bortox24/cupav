@@ -16,32 +16,30 @@ export function useUsers() {
   return useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      // Fetch profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, created_at, is_active')
-        .order('created_at', { ascending: false });
+      // Fetch profiles, admin roles, and staff accounts in parallel
+      const [profilesRes, rolesRes, staffRes] = await Promise.all([
+        supabase.from('profiles').select('id, email, full_name, created_at, is_active').order('created_at', { ascending: false }),
+        supabase.from('user_roles').select('user_id, role').eq('role', 'admin'),
+        supabase.from('staff_accounts').select('user_id'),
+      ]);
       
-      if (profilesError) throw profilesError;
+      if (profilesRes.error) throw profilesRes.error;
+      if (rolesRes.error) throw rolesRes.error;
+      // staff_accounts may fail for non-admins, ignore error
       
-      // Fetch all admin roles
-      const { data: adminRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .eq('role', 'admin');
+      const adminUserIds = new Set(rolesRes.data?.map(r => r.user_id) || []);
+      const staffUserIds = new Set(staffRes.data?.map(s => s.user_id) || []);
       
-      if (rolesError) throw rolesError;
-      
-      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
-      
-      return (profiles || []).map(profile => ({
-        id: profile.id,
-        email: profile.email,
-        full_name: profile.full_name,
-        created_at: profile.created_at,
-        is_active: profile.is_active,
-        is_admin: adminUserIds.has(profile.id),
-      })) as UserWithStatus[];
+      return (profilesRes.data || [])
+        .filter(profile => !staffUserIds.has(profile.id))
+        .map(profile => ({
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name,
+          created_at: profile.created_at,
+          is_active: profile.is_active,
+          is_admin: adminUserIds.has(profile.id),
+        })) as UserWithStatus[];
     },
   });
 }
