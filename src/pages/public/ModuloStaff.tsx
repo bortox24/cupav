@@ -17,7 +17,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send, AlertTriangle } from "lucide-react";
+import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send, AlertTriangle, Download, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
@@ -38,6 +38,44 @@ const RUOLI = [
   { value: "cuoco", label: "Cuoco" },
   { value: "responsabile_campo", label: "Responsabile di campo" },
 ];
+
+const REGOLE_PER_RUOLO: Record<string, { titolo: string; regole: string[] }> = {
+  responsabile_campo: {
+    titolo: "Responsabile del Campo",
+    regole: [
+      "DEVE avere una visione complessiva del campo sia dal punto di vista tecnico (tende, strutture, cucina, bagni, impianto elettrico, impianto idraulico, raccolta differenziata ecc.) che dal punto di vista educativo/formativo e partecipare attivamente alla vita del campeggio.",
+      "DEVE essere consapevole di svolgere un servizio educativo in linea con la morale cattolica.",
+      "DEVE possedere buone capacità comunicative e di relazione per confrontarsi con Responsabile animazione e Responsabile cucina, cercando di valorizzare ogni componente.",
+      "DEVE avere buone capacità organizzative e gestionali. È richiesto un minimo di conoscenza di come si affrontano le camminate in montagna.",
+      "DEVE verificare lo stato delle attrezzature sia mobili che fisse ed intervenire in caso di problemi sulle strutture.",
+      "È responsabile del materiale del campeggio, del funzionamento di tutti i servizi (cucina, bagni, caldaia ecc.) e di tutte le spese necessarie durante il campo.",
+      "Cura e mantiene i contatti con il Direttivo e con le autorità locali, comunicando ogni episodio che possa turbare il normale andamento del campeggio.",
+      "Alla fine di ogni turno presenta un rendiconto di tutte le spese sostenute.",
+      "DEVE consegnare il campeggio pulito ed in ordine al turno successivo.",
+    ],
+  },
+  animatore: {
+    titolo: "Animatore",
+    regole: [
+      "È responsabile dei ragazzi affidati all'inizio di ogni turno, organizzandoli ed assistendoli durante il giorno in tutte le attività programmate e durante la notte.",
+      "È richiesta una particolare attenzione nei rapporti con i ragazzi: nessuno deve essere escluso dall'attività, instaurando un clima proficuo e costruttivo.",
+      "DEVE essere responsabile del materiale in dotazione al proprio gruppo.",
+      "DEVE far osservare ai ragazzi le regole della vita del campo, il rispetto degli orari, le norme di igiene individuale e collettiva e le regole di convivenza.",
+      "DEVE interessarsi della salute fisica e morale dei ragazzi, promuovendo spirito di amicizia, comprensione e collaborazione tramite giochi, canti, scenette, piccole gare, ecc.",
+      "DEVE parlare ai ragazzi, cercando di ottenere la loro fiducia e confidenza, facendo loro apprezzare la vita all'aria aperta.",
+    ],
+  },
+  cuoco: {
+    titolo: "Responsabile Cucina / Cuoco",
+    regole: [
+      "È responsabile della cucina e della preparazione dei pasti.",
+      "In collaborazione con il Responsabile del campo provvede alla spesa settimanale.",
+      "Coordina i ragazzi di servizio mensa nel preparare i tavoli, allo sbarazzo e lavaggio delle stoviglie.",
+    ],
+  },
+};
+
+const REGOLA_COMUNE = "Quel che accomuna tutte le figure è la disponibilità ai rapporti con i ragazzi.";
 
 function DatePickerField({
   value,
@@ -136,8 +174,15 @@ export default function ModuloStaff() {
   const [farmaco3Posologia, setFarmaco3Posologia] = useState("");
   const [checkCompleto, setCheckCompleto] = useState(false);
 
+  // Step regolamento (final)
+  const [firmaNome, setFirmaNome] = useState("");
+  const [firmaData, setFirmaData] = useState<Date>();
+  const [accettaRegolamento, setAccettaRegolamento] = useState(false);
+
   const showStep3 = haAllergie === "si";
-  const totalSteps = showStep3 ? 3 : 2;
+  // Steps: 1=Dati, 2=Turno, (3=Allergie if needed), last=Regolamento
+  const regolamentoStep = showStep3 ? 4 : 3;
+  const totalSteps = regolamentoStep;
   const progressPercent = (currentStep / totalSteps) * 100;
 
   const toggleTurno = (turnoValue: string) => {
@@ -170,16 +215,19 @@ export default function ModuloStaff() {
     return true;
   };
 
+  const validateRegolamento = () => {
+    if (!firmaNome.trim()) { toast({ title: "Inserisci il nome per la firma", variant: "destructive" }); return false; }
+    if (!firmaData) { toast({ title: "Inserisci la data della firma", variant: "destructive" }); return false; }
+    if (!accettaRegolamento) { toast({ title: "Devi accettare il regolamento per procedere", variant: "destructive" }); return false; }
+    return true;
+  };
+
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   const nextStep = () => {
     if (currentStep === 1 && !validateStep1()) return;
     if (currentStep === 2 && !validateStep2()) return;
-
-    if (currentStep === 2 && !showStep3) {
-      setShowConfirm(true);
-      return;
-    }
+    if (currentStep === 3 && showStep3 && !validateStep3()) return;
 
     setCurrentStep((s) => s + 1);
     scrollToTop();
@@ -191,7 +239,7 @@ export default function ModuloStaff() {
   };
 
   const handleSubmit = async () => {
-    if (showStep3 && !validateStep3()) return;
+    if (!validateRegolamento()) return;
     setSubmitting(true);
     setShowConfirm(false);
     try {
@@ -241,7 +289,7 @@ export default function ModuloStaff() {
       await supabase.from("staff_activity_logs" as any).insert({
         animatore_id: animatoreId,
         azione: "registrazione_modulo",
-        dettaglio: `Registrazione dal modulo staff pubblico. Turni selezionati: ${turniLabel}`,
+        dettaglio: `Registrazione dal modulo staff pubblico. Turni selezionati: ${turniLabel}. Regolamento accettato e firmato da: ${firmaNome} in data ${firmaData ? format(firmaData, "dd/MM/yyyy") : ""}`,
         eseguito_da: animatoreId,
         eseguito_da_nome: fullName,
       } as any);
@@ -291,10 +339,13 @@ export default function ModuloStaff() {
     );
   }
 
+  const regolamentoRuolo = REGOLE_PER_RUOLO[ruolo] || REGOLE_PER_RUOLO["animatore"];
+
   const stepLabels = [
     "1. Dati personali",
     "2. Selezione turno",
     ...(showStep3 ? ["3. Allergie/Patologie"] : []),
+    `${showStep3 ? "4" : "3"}. Regolamento`,
   ];
 
   return (
@@ -462,19 +513,8 @@ export default function ModuloStaff() {
               <Button variant="outline" onClick={prevStep} className="gap-2">
                 <ChevronLeft className="h-4 w-4" /> Indietro
               </Button>
-              <Button onClick={() => {
-                if (!validateStep2()) return;
-                if (!showStep3) {
-                  setShowConfirm(true);
-                } else {
-                  nextStep();
-                }
-              }} className="gap-2">
-                {showStep3 ? (
-                  <>Avanti <ChevronRight className="h-4 w-4" /></>
-                ) : (
-                  <>Invia <Send className="h-4 w-4" /></>
-                )}
+              <Button onClick={nextStep} className="gap-2">
+                Avanti <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -534,7 +574,102 @@ export default function ModuloStaff() {
               <Button variant="outline" onClick={prevStep} className="gap-2">
                 <ChevronLeft className="h-4 w-4" /> Indietro
               </Button>
-              <Button onClick={() => { if (validateStep3()) setShowConfirm(true); }} className="gap-2">
+              <Button onClick={() => { if (validateStep3()) nextStep(); }} className="gap-2">
+                Avanti <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP REGOLAMENTO (final) */}
+        {currentStep === regolamentoStep && (
+          <div className="space-y-6">
+            {/* Regole specifiche per ruolo */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">📜 Regolamento — {regolamentoRuolo.titolo}</CardTitle>
+                <CardDescription>
+                  Leggi attentamente le regole previste per il tuo ruolo nel campeggio.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  {regolamentoRuolo.regole.map((regola, i) => (
+                    <div key={i} className="flex gap-3 text-sm">
+                      <span className="text-primary font-bold mt-0.5 shrink-0">{i + 1}.</span>
+                      <p className="text-muted-foreground leading-relaxed">{regola}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-3 border-t">
+                  <p className="text-sm font-medium italic text-foreground">{REGOLA_COMUNE}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Download documento completo */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">📄 Documento completo</CardTitle>
+                <CardDescription>
+                  Scarica il regolamento completo con tutte le figure del campeggio.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="gap-2" asChild>
+                  <a href="/regolamento-staff.pdf" target="_blank" rel="noopener noreferrer" download>
+                    <Download className="h-4 w-4" />
+                    Scarica regolamento (PDF)
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Firma e accettazione */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">✍️ Firma e Accettazione</CardTitle>
+                <CardDescription>
+                  Firmando, dichiari di aver letto e accettato il regolamento del campeggio.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Nome e Cognome (firma) *</Label>
+                  <Input
+                    value={firmaNome}
+                    onChange={(e) => setFirmaNome(capitalize(e.target.value))}
+                    placeholder="Nome Cognome"
+                  />
+                </div>
+                <div>
+                  <Label>Data *</Label>
+                  <DatePickerField
+                    value={firmaData}
+                    onChange={setFirmaData}
+                    label="Seleziona data firma"
+                  />
+                </div>
+
+                <div className="flex items-start gap-2 pt-3 border-t">
+                  <Checkbox
+                    id="accetta-regolamento"
+                    checked={accettaRegolamento}
+                    onCheckedChange={(v) => setAccettaRegolamento(v === true)}
+                  />
+                  <Label htmlFor="accetta-regolamento" className="text-sm font-normal leading-tight cursor-pointer">
+                    Dichiaro di aver letto, compreso e accettato integralmente il regolamento delle figure del Campeggio Unità Pastorale Altavilla Valmarana. Mi impegno a rispettare le regole e i doveri previsti per il mio ruolo. *
+                  </Label>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={prevStep} className="gap-2">
+                <ChevronLeft className="h-4 w-4" /> Indietro
+              </Button>
+              <Button onClick={() => { if (validateRegolamento()) setShowConfirm(true); }} className="gap-2">
                 <Send className="h-4 w-4" /> Invia
               </Button>
             </div>
@@ -554,6 +689,9 @@ export default function ModuloStaff() {
                 </p>
                 <p>
                   Turno/i selezionato/i: <strong>{selectedTurni.map(t => TURNI.find(tt => tt.value === t)?.label).join(", ")}</strong>
+                </p>
+                <p>
+                  Regolamento firmato da: <strong>{firmaNome}</strong> in data <strong>{firmaData ? format(firmaData, "dd/MM/yyyy") : ""}</strong>
                 </p>
                 <p>Vuoi procedere?</p>
               </div>
