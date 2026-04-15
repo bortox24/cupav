@@ -1,67 +1,55 @@
 
 
-## Piano: Correzione vulnerabilità di sicurezza RLS
+## Piano: Selezione turno nel modulo staff con auto-assegnazione
 
-### Problema
-Alcune tabelle espongono dati sensibili (minori, genitori) al ruolo `anon` tramite policy SELECT/UPDATE troppo permissive. Il form pubblico di preiscrizione necessita di accesso anon solo per il controllo duplicati e l'inserimento dati.
+### Cosa cambia
 
-### Approccio
-Sostituire le policy anon broad con una **funzione SECURITY DEFINER** per il controllo duplicati, e rimuovere tutte le policy anon SELECT/UPDATE non necessarie. Spostare la logica di duplicate-check nel backend.
+Il modulo staff pubblico (`/modulo-staff`) viene esteso con uno step dedicato alla **selezione del turno**. L'animatore sceglie uno o più turni (multi-select con checkbox). Alla submission, il sistema inserisce automaticamente le righe in `animatori_turni`, eliminando il lavoro manuale dello staff admin.
 
-### Modifiche
+### Struttura del form aggiornata
 
-**1. Nuova edge function `check-duplicate-ragazzo`**
-- Riceve `{ full_name: string, anno: number }`
-- Usa service role per fare la query su `ragazzi` + `ragazzi_iscrizioni`
-- Restituisce `{ exists: boolean }`
-- `verify_jwt = false` (accessibile da form pubblico)
+```text
+Step 1: Dati personali + Ruolo + Allergie (sì/no)
+Step 2: Selezione turno/i (NUOVO)
+  - Checkbox per ogni turno (4° Elem, 5° Elem, 1° Media, 2° Media, 3° Media)
+  - Avviso di responsabilità: "La selezione del turno è definitiva e non modificabile. Seleziona il turno comunicato dallo staff animatori."
+  - Checkbox di conferma obbligatorio: "Confermo che il/i turno/i selezionato/i corrisponde/ono a quanto comunicato dallo staff"
+  - Almeno un turno obbligatorio
+Step 3: Allergie/Patologie (solo se haAllergie = "si", altrimenti si salta)
+```
 
-**2. Migrazioni DB — rimozione policy anon pericolose**
+### Logica di submission
 
-| Tabella | Policy da rimuovere | Motivo |
-|---------|---------------------|--------|
-| `ragazzi` | `Anon can select ragazzi for duplicate check` | Espone tutti i dati dei minori |
-| `ragazzi_genitori` | `Anon can select genitori` | Espone contatti genitori |
-| `ragazzi_genitori` | `Anon can update genitori` | Permette modifica dati da chiunque |
-| `ragazzi_iscrizioni` | `Anon can select iscrizioni` | Espone iscrizioni |
-| `ragazzi_iscrizioni` | `Anyone can update iscrizioni` | Permette modifica iscrizioni da chiunque |
+1. Insert in `animatori` (come ora)
+2. Recuperare l'`id` dell'animatore appena creato (aggiungere `.select('id').single()` all'insert)
+3. Insert in `animatori_turni` una riga per ogni turno selezionato, con `anno = anno corrente`
 
-Le policy di INSERT anon restano (servono per il form pubblico).
+Attualmente la insert in `animatori` non restituisce l'id. Va modificata per usare `.select('id').single()`.
 
-**3. Tabella `tende` — restrizione DELETE/UPDATE ad admin**
-- Sostituire le policy `Authenticated can delete/update tende` con policy che richiedono `is_admin()`.
+### Policy RLS
 
-**4. Aggiornare `PreiscrizioneCupav.tsx`**
-- Sostituire la query diretta su `ragazzi` con una chiamata alla nuova edge function `check-duplicate-ragazzo`.
+La tabella `animatori_turni` ha già una policy `Authenticated can read animatori_turni` ma serve anche una policy **anon INSERT** perché il form è pubblico (utente non autenticato). Stessa logica della tabella `animatori` che ha già `Anyone can insert animatori`.
 
-**5. Aggiornare `useRagazzi.ts` — `submitPreiscrizione`**
-- La funzione fa query anon su `ragazzi` per trovare duplicati e update su `ragazzi_genitori`. Queste operazioni avvengono da form pubblico (utente non autenticato).
-- Creare una seconda edge function `submit-preiscrizione` che gestisce tutto server-side con service role: check duplicato, insert/update ragazzo, insert genitori, insert iscrizione.
-- Oppure: spostare la logica di update dentro la edge function `check-duplicate-ragazzo` ampliandola a `handle-preiscrizione`.
+**Migrazione DB**: Aggiungere policy anon INSERT su `animatori_turni`.
 
-**Scelta consigliata**: una singola edge function `handle-preiscrizione` che:
-1. Riceve tutti i dati del form
-2. Controlla duplicati con service role
-3. Inserisce/aggiorna ragazzo, genitori, iscrizione
-4. Restituisce successo/errore
+### Visibilità turno per lo staff (permessi)
 
-Questo elimina completamente la necessità di policy anon su SELECT/UPDATE.
+Questo punto riguarda il fatto che quando un animatore riceverà un account (tramite la funzione `create-staff-account`), avrà accesso solo ai turni assegnati. Questo è **già gestito** dal sistema `turno_permessi` esistente. Nessuna modifica necessaria qui — lo staff admin continua ad assegnare i permessi di visualizzazione tramite il sistema esistente.
 
-### Riepilogo impatto
-
-| Cosa | Prima | Dopo |
-|------|-------|------|
-| Dati minori (ragazzi) | Leggibili da chiunque | Solo utenti autenticati con permesso |
-| Contatti genitori | Leggibili/modificabili da chiunque | Solo utenti autenticati con permesso |
-| Iscrizioni | Leggibili/modificabili da chiunque | Solo utenti autenticati con permesso |
-| Form preiscrizione | Funziona con query dirette anon | Funziona tramite edge function server-side |
-| Tende DELETE/UPDATE | Qualsiasi utente autenticato | Solo admin |
-| Funzionalità per utenti loggati | Invariata | Invariata (stesse policy authenticated) |
+La modifica dei turni da parte dello staff admin resta invariata (tramite Anagrafica Staff).
 
 ### File coinvolti
-- **Nuovo**: `supabase/functions/handle-preiscrizione/index.ts`
-- **Modifica**: `src/pages/public/PreiscrizioneCupav.tsx` — usa edge function invece di query dirette
-- **Modifica**: `src/hooks/useRagazzi.ts` — `submitPreiscrizione` chiama edge function
-- **Modifica**: `supabase/config.toml` — aggiunta config per nuova function
-- **Migrazione DB**: rimozione 5 policy anon + sostituzione 2 policy tende
+
+| File | Modifica |
+|------|----------|
+| `src/pages/public/ModuloStaff.tsx` | Nuovo step 2 con multi-select turni, riorganizzazione step numbering |
+| **Migrazione DB** | Policy anon INSERT su `animatori_turni` |
+
+### Dettagli UI (Step 2 — Selezione Turno)
+
+- Card con titolo "🏕️ Selezione Turno"
+- Lista checkbox con i 5 turni (da `TURNI` in `useTurnoPermissions.ts`)
+- Alert box giallo con avviso: la scelta è definitiva, seleziona il turno comunicato dallo staff
+- Checkbox di conferma responsabilità (obbligatorio per procedere)
+- Validazione: almeno un turno selezionato + checkbox conferma
 
