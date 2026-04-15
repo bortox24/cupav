@@ -139,7 +139,11 @@ serve(async (req) => {
       }
     }
 
-    // Grant access to all default pages
+    // Always include /regolamento
+    if (!defaultPages.includes('/regolamento')) {
+      defaultPages.push('/regolamento');
+    }
+
     const pagePermRows = defaultPages.map((pagePath: string) => ({
       user_id: userId,
       page_path: pagePath,
