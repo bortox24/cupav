@@ -244,7 +244,9 @@ export default function ModuloStaff() {
     setShowConfirm(false);
     try {
       const fullName = `${cognome} ${nome}`.trim();
+      const animatoreId = crypto.randomUUID();
       const payload = {
+        id: animatoreId,
         full_name: fullName,
         cognome,
         email,
@@ -262,14 +264,10 @@ export default function ModuloStaff() {
         farmaco_3_posologia: farmaco3Posologia || null,
       };
 
-      const { data: animatore, error } = await supabase
+      const { error } = await supabase
         .from("animatori" as any)
-        .insert(payload as any)
-        .select("id")
-        .single();
+        .insert(payload as any);
       if (error) throw error;
-
-      const animatoreId = (animatore as any).id;
       const currentYear = new Date().getFullYear();
       const turniRows = selectedTurni.map((turno) => ({
         animatore_id: animatoreId,
