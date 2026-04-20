@@ -451,7 +451,7 @@ function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; o
     >
       <CardContent className="p-5 flex items-center justify-center min-h-[80px]">
         <p className={`text-lg font-bold text-center ${isPresent ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
-          {r.ragazzo_cognome} {r.ragazzo_nome}
+          {toTitleCase(r.ragazzo_cognome)} {toTitleCase(r.ragazzo_nome)}
         </p>
       </CardContent>
     </Card>
