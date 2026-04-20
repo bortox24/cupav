@@ -300,10 +300,10 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
           </div>
           <div className="min-w-0">
             <h4 className="font-bold text-[15px] leading-tight truncate text-foreground">
-              {r.ragazzo_cognome} {r.ragazzo_nome}
+              {toTitleCase(r.ragazzo_cognome)} {toTitleCase(r.ragazzo_nome)}
             </h4>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {r.genitore_nome} {r.genitore_cognome}
+              {toTitleCase(r.genitore_nome)} {toTitleCase(r.genitore_cognome)}
             </p>
           </div>
         </div>
