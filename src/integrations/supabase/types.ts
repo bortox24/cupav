@@ -951,6 +951,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_turno_access: {
+        Args: { _turno: string; _user_id: string }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_tesoriere: { Args: never; Returns: boolean }
       is_user_active: { Args: never; Returns: boolean }
