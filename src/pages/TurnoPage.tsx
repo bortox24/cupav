@@ -23,6 +23,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 // ─── Helpers ───────────────────────────────────────────
 
+const toTitleCase = (s?: string | null) =>
+  (s || '')
+    .toLowerCase()
+    .replace(/(^|[\s'’\-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase());
+
 function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: string | null }) {
   if (!nome) return null;
   return (
