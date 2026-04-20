@@ -23,6 +23,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 // ─── Helpers ───────────────────────────────────────────
 
+const toTitleCase = (s?: string | null) =>
+  (s || '')
+    .toLowerCase()
+    .replace(/(^|[\s'’\-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase());
+
 function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: string | null }) {
   if (!nome) return null;
   return (
@@ -295,10 +300,10 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
           </div>
           <div className="min-w-0">
             <h4 className="font-bold text-[15px] leading-tight truncate text-foreground">
-              {r.ragazzo_cognome} {r.ragazzo_nome}
+              {toTitleCase(r.ragazzo_cognome)} {toTitleCase(r.ragazzo_nome)}
             </h4>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {r.genitore_nome} {r.genitore_cognome}
+              {toTitleCase(r.genitore_nome)} {toTitleCase(r.genitore_cognome)}
             </p>
           </div>
         </div>
@@ -371,8 +376,8 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
                 {initials}
               </div>
               <div>
-                <DrawerTitle className="text-xl text-left">{r.ragazzo_cognome} {r.ragazzo_nome}</DrawerTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">{r.genitore_qualita} — {r.genitore_nome} {r.genitore_cognome}</p>
+                <DrawerTitle className="text-xl text-left">{toTitleCase(r.ragazzo_cognome)} {toTitleCase(r.ragazzo_nome)}</DrawerTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">{r.genitore_qualita} — {toTitleCase(r.genitore_nome)} {toTitleCase(r.genitore_cognome)}</p>
               </div>
             </div>
           </DrawerHeader>
@@ -446,7 +451,7 @@ function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; o
     >
       <CardContent className="p-5 flex items-center justify-center min-h-[80px]">
         <p className={`text-lg font-bold text-center ${isPresent ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
-          {r.ragazzo_cognome} {r.ragazzo_nome}
+          {toTitleCase(r.ragazzo_cognome)} {toTitleCase(r.ragazzo_nome)}
         </p>
       </CardContent>
     </Card>
