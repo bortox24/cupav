@@ -1,33 +1,53 @@
 
 
 ## Obiettivo
-Creare una **social cover (OG image) ben fatta** per CUPAV Hub, così quando il link viene condiviso su WhatsApp/Facebook/Telegram appare un'anteprima curata invece dell'immagine generica rotta attuale.
-
-Nota: l'immagine del progetto **dentro la dashboard Lovable** non è modificabile via codice — quella la cambi tu da Settings del progetto su Lovable (istruzioni sopra).
+Aggiungere un pulsante **arancione "Invia Lista d'Attesa"** nel drawer del ragazzo, sotto il pulsante "Invia Iscrizione". Al click apre un dialog di conferma e invia un webhook al nuovo endpoint, registrando il log come per gli altri invii.
 
 ## Cosa faccio
 
-### 1. Genero l'immagine OG (1200×630 px, formato standard social)
-Design coerente con il branding CUPAV:
-- Sfondo con gradiente verde (colore primario `#16a34a` definito nel manifest)
-- Logo CUPAV ufficiale a sinistra
-- Titolo grande **"CUPAV Hub"**
-- Sottotitolo **"Campeggio Unità Pastorale Altavilla Valmarana"**
-- Tagline piccola **"Estate 2026"**
-- Stile minimal, tipografia leggibile, ottimizzata per anteprima social
+### 1. DB — Aggiungo il webhook in `webhook_config`
+Inserisco una nuova riga:
+- `descrizione`: `"Invio lista attesa"`
+- `webhook_url`: `https://n8n.marcobortolamai.synology.me/webhook/invio_lista_attesa`
 
-Genero il PNG con uno script Node/canvas e lo salvo in `public/og-image.png`.
+### 2. `src/pages/AnagraficaRagazzi.tsx` — Aggiunte nel `RagazzoDrawer`
 
-### 2. Aggiorno `index.html`
-- `og:image` → `https://cupav.lovable.app/og-image.png` (già corretto, basta che il file esista)
-- Aggiungo `og:image:width=1200` e `og:image:height=630` per forzare il rendering corretto su tutti i social
-- Aggiungo `og:url` per canonical
-- Aggiorno `og:description` con un testo più descrittivo della web app (gestionale del campeggio) invece del semplice "CUPAV Hub"
+**Nuovi stati:**
+```ts
+const [sendingListaAttesa, setSendingListaAttesa] = useState(false);
+const [confirmListaAttesa, setConfirmListaAttesa] = useState(false);
+```
 
-### 3. QA
-Apro l'immagine generata, verifico che testo non sia tagliato, logo nitido, contrasto buono.
+**Nuovo handler `handleInviaListaAttesa`** — copia identica di `handleInviaIscrizione`, con:
+- Lookup webhook tramite `.ilike('descrizione', '%lista attesa%')`
+- Stesso payload (dati ragazzo + genitori + iscrizioni + farmaci)
+- Toast di successo: `"Lista d'attesa inviata!"`
+- Log in `anagrafica_invio_logs` con `tipo: 'invio_lista_attesa'`
+
+**Nuovo pulsante** (sotto "Invia Iscrizione", riga ~495):
+```tsx
+<Button
+  onClick={() => setConfirmListaAttesa(true)}
+  disabled={sendingListaAttesa}
+  className="w-full h-11 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white text-sm"
+>
+  {sendingListaAttesa ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+  Invia Lista d'Attesa
+</Button>
+```
+
+**Nuovo `<AlertDialog>` di conferma** (accanto agli altri, ~riga 756):
+- Titolo: "Conferma invio lista d'attesa"
+- Descrizione: "Vuoi davvero inviare i dati di {nome} alla lista d'attesa?"
+- Azione conferma → chiama `handleInviaListaAttesa()`
+
+### 3. Visualizzazione del log
+Il log apparirà automaticamente nella sezione "Storico invii" del drawer (già esistente), perché legge tutti i record di `anagrafica_invio_logs` per quel ragazzo. Il `tipo: 'invio_lista_attesa'` verrà mostrato come gli altri.
+
+Verifico anche se esiste un mapping di label per i `tipo` (es. icone/colori dedicati): se sì, aggiungo un'etichetta leggibile "Invio lista d'attesa" con icona arancione coerente.
 
 ## Note
-- Dopo il deploy potresti dover forzare il refresh della cache di WhatsApp/Facebook usando rispettivamente i loro debugger (Facebook Sharing Debugger / WhatsApp invia il link due volte).
-- Per la cover dentro la dashboard Lovable: usa le istruzioni in alto — è una funzione della piattaforma, non del codice.
+- Stesso pattern esatto degli altri due pulsanti (Invia Iscrizione, Conferma Preiscrizione) — zero rischi di regressione.
+- Il colore arancione è coerente col branding (gradiente `orange-500 → amber-600`, leggibile in dark mode).
+- Nessuna modifica RLS necessaria: `webhook_config` e `anagrafica_invio_logs` hanno già le policy giuste.
 
