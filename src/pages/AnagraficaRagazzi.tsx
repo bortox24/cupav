@@ -149,6 +149,8 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
   const [confirmInvio, setConfirmInvio] = useState(false);
   const [sendingConferma, setSendingConferma] = useState(false);
   const [confirmConferma, setConfirmConferma] = useState(false);
+  const [sendingListaAttesa, setSendingListaAttesa] = useState(false);
+  const [confirmListaAttesa, setConfirmListaAttesa] = useState(false);
 
   const updateMutation = useUpdateRagazzo();
   const addIscrizioneMutation = useAddIscrizione();
@@ -311,6 +313,66 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
     });
     queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs', ragazzo.id] });
     setSendingWebhook(false);
+  };
+
+  const handleInviaListaAttesa = async () => {
+    if (!user || !profile) { toast.error('Utente non autenticato'); return; }
+    setSendingListaAttesa(true);
+    let successo = false;
+    try {
+      const { data: webhookRows } = await supabase
+        .from('webhook_config')
+        .select('webhook_url')
+        .ilike('descrizione', '%lista attesa%')
+        .limit(1);
+
+      const webhookUrl = webhookRows?.[0]?.webhook_url;
+      if (!webhookUrl) {
+        toast.error('Nessun webhook configurato con descrizione "lista attesa"');
+        setSendingListaAttesa(false);
+        return;
+      }
+
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ragazzo_id: ragazzo.id,
+          full_name: ragazzo.full_name,
+          data_nascita: ragazzo.data_nascita,
+          residente_altavilla: ragazzo.residente_altavilla,
+          ha_allergie: ragazzo.ha_allergie,
+          allergie_dettaglio: ragazzo.allergie_dettaglio,
+          patologie_dettaglio: ragazzo.patologie_dettaglio,
+          genitori: ragazzo.genitori,
+          iscrizioni: ragazzo.iscrizioni,
+          farmaco_1_nome: ragazzo.farmaco_1_nome,
+          farmaco_1_posologia: ragazzo.farmaco_1_posologia,
+          farmaco_2_nome: ragazzo.farmaco_2_nome,
+          farmaco_2_posologia: ragazzo.farmaco_2_posologia,
+          farmaco_3_nome: ragazzo.farmaco_3_nome,
+          farmaco_3_posologia: ragazzo.farmaco_3_posologia,
+        }),
+      });
+      successo = res.ok;
+      if (successo) {
+        toast.success("Lista d'attesa inviata!");
+      } else {
+        toast.error("Errore nell'invio della lista d'attesa");
+      }
+    } catch {
+      toast.error('Errore di rete nell\'invio');
+    }
+
+    await supabase.from('anagrafica_invio_logs' as any).insert({
+      ragazzo_id: ragazzo.id,
+      inviato_da: user.id,
+      inviato_da_nome: profile.full_name || profile.email,
+      successo,
+      tipo: 'invio_lista_attesa',
+    });
+    queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs', ragazzo.id] });
+    setSendingListaAttesa(false);
   };
 
   const handleConfermaPreiscrizione = async () => {
@@ -493,6 +555,15 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                       {sendingWebhook ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                       Invia Iscrizione
                     </Button>
+                    <Button
+                      onClick={() => setConfirmListaAttesa(true)}
+                      disabled={sendingListaAttesa}
+                      variant="default"
+                      className="w-full h-11 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white text-sm"
+                    >
+                      {sendingListaAttesa ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                      Invia Lista d'Attesa
+                    </Button>
                   </div>
                 </div>
 
@@ -561,12 +632,14 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                                 log.tipo === 'numero_assegnato' ? 'bg-violet-500' :
                                 log.tipo === 'numero_modificato' ? 'bg-amber-500' :
                                 log.tipo === 'numero_rimosso' ? 'bg-red-500' :
+                                log.tipo === 'invio_lista_attesa' ? 'bg-orange-500' :
                                 'bg-blue-500'
                               }`}>
                                 {log.tipo === 'conferma_preiscrizione' ? 'Conferma' :
                                  log.tipo === 'numero_assegnato' ? 'N° assegnato' :
                                  log.tipo === 'numero_modificato' ? 'N° modificato' :
                                  log.tipo === 'numero_rimosso' ? 'N° rimosso' :
+                                 log.tipo === 'invio_lista_attesa' ? 'Lista attesa' :
                                  'Invio'}
                               </span>
                               <span className="font-medium truncate">{log.inviato_da_nome}</span>
@@ -764,6 +837,23 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
           <AlertDialogFooter>
             <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setConfirmInvio(false); handleInviaIscrizione(); }}>
+              Conferma invio
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmListaAttesa} onOpenChange={setConfirmListaAttesa}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma invio lista d'attesa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vuoi davvero inviare i dati di <strong>{ragazzo.full_name}</strong> alla lista d'attesa?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmListaAttesa(false); handleInviaListaAttesa(); }}>
               Conferma invio
             </AlertDialogAction>
           </AlertDialogFooter>
