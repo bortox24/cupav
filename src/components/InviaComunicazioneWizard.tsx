@@ -37,13 +37,13 @@ const buildEmailHtml = (titolo: string, testo: string, genitoreNome: string) => 
         </td>
       </tr>
       <tr>
-        <td style="padding: 36px 40px 20px 40px;">
-          <h2 style="color:#1a5c2e; margin:0 0 12px 0; font-size:22px; font-family: Arial, sans-serif;">${titoloSafe}</h2>
-          <p style="color:#444444; font-size:15px; line-height:1.6; margin:0 0 12px 0; font-family: Arial, sans-serif;">Gentile <strong>${genitoreSafe}</strong>,</p>
+        <td style="padding: 36px 40px 0 40px;">
+          <h2 style="color:#1a5c2e; margin:0 0 28px 0; font-size:22px; font-family: Arial, sans-serif;">${titoloSafe}</h2>
+          <p style="color:#444444; font-size:15px; line-height:1.6; margin:0; font-family: Arial, sans-serif;">Gentile <strong>${genitoreSafe}</strong>,</p>
         </td>
       </tr>
       <tr>
-        <td style="padding: 0 40px 32px 40px;">
+        <td style="padding: 4px 40px 32px 40px;">
           <p style="color:#444444; font-size:15px; line-height:1.8; margin:0; font-family: Arial, sans-serif;">${testoSafe}</p>
         </td>
       </tr>
