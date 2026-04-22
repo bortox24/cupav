@@ -1,53 +1,95 @@
 
 
 ## Obiettivo
-Aggiungere un pulsante **arancione "Invia Lista d'Attesa"** nel drawer del ragazzo, sotto il pulsante "Invia Iscrizione". Al click apre un dialog di conferma e invia un webhook al nuovo endpoint, registrando il log come per gli altri invii.
+Nelle card di `Anagrafica Ragazzi`, evidenziare in **verde** i ragazzi che hanno compilato il modulo di iscrizione (cioè quelli per cui esiste una riga in `iscrizioni` con nome+cognome combaciante, in qualsiasi ordine).
 
-## Cosa faccio
+## Logica di matching
 
-### 1. DB — Aggiungo il webhook in `webhook_config`
-Inserisco una nuova riga:
-- `descrizione`: `"Invio lista attesa"`
-- `webhook_url`: `https://n8n.marcobortolamai.synology.me/webhook/invio_lista_attesa`
+Il `ragazzo.full_name` è una stringa unica, mentre in `iscrizioni` ci sono `ragazzo_nome` e `ragazzo_cognome` separati. Per coprire tutti i casi (nome-cognome o cognome-nome, spazi multipli, maiuscole/minuscole, accenti):
 
-### 2. `src/pages/AnagraficaRagazzi.tsx` — Aggiunte nel `RagazzoDrawer`
-
-**Nuovi stati:**
 ```ts
-const [sendingListaAttesa, setSendingListaAttesa] = useState(false);
-const [confirmListaAttesa, setConfirmListaAttesa] = useState(false);
+const normalize = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+   .replace(/\s+/g, ' ').trim();
+
+// Per ogni iscrizione costruisco DUE chiavi possibili:
+const k1 = normalize(`${nome} ${cognome}`);
+const k2 = normalize(`${cognome} ${nome}`);
+// Il ragazzo è "iscritto" se normalize(full_name) === k1 || === k2
 ```
 
-**Nuovo handler `handleInviaListaAttesa`** — copia identica di `handleInviaIscrizione`, con:
-- Lookup webhook tramite `.ilike('descrizione', '%lista attesa%')`
-- Stesso payload (dati ragazzo + genitori + iscrizioni + farmaci)
-- Toast di successo: `"Lista d'attesa inviata!"`
-- Log in `anagrafica_invio_logs` con `tipo: 'invio_lista_attesa'`
+In più, per robustezza extra, confronto anche come **set di token** (ordino le parole alfabeticamente prima del confronto), così "Maria Rosa Bianchi" matcha "Bianchi Rosa Maria".
 
-**Nuovo pulsante** (sotto "Invia Iscrizione", riga ~495):
-```tsx
-<Button
-  onClick={() => setConfirmListaAttesa(true)}
-  disabled={sendingListaAttesa}
-  className="w-full h-11 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white text-sm"
->
-  {sendingListaAttesa ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-  Invia Lista d'Attesa
-</Button>
+## Implementazione
+
+### 1. `src/pages/AnagraficaRagazzi.tsx`
+
+**a)** Nuovo hook locale `useIscrizioniNames` che carica una sola volta da Supabase tutti i `ragazzo_nome + ragazzo_cognome` dalla tabella `iscrizioni` e restituisce un `Set<string>` di chiavi normalizzate (entrambi gli ordini + token-sorted).
+
+```ts
+function useIscrizioniNames() {
+  return useQuery({
+    queryKey: ['iscrizioni-names'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('iscrizioni')
+        .select('ragazzo_nome, ragazzo_cognome');
+      const set = new Set<string>();
+      (data || []).forEach((r) => {
+        const n = normalize(r.ragazzo_nome || '');
+        const c = normalize(r.ragazzo_cognome || '');
+        if (!n && !c) return;
+        set.add(`${n} ${c}`.trim());
+        set.add(`${c} ${n}`.trim());
+        set.add([...n.split(' '), ...c.split(' ')].filter(Boolean).sort().join(' '));
+      });
+      return set;
+    },
+  });
+}
 ```
 
-**Nuovo `<AlertDialog>` di conferma** (accanto agli altri, ~riga 756):
-- Titolo: "Conferma invio lista d'attesa"
-- Descrizione: "Vuoi davvero inviare i dati di {nome} alla lista d'attesa?"
-- Azione conferma → chiama `handleInviaListaAttesa()`
+**b)** Helper per controllare il match:
+```ts
+const isIscritto = (fullName: string, set: Set<string>) => {
+  const norm = normalize(fullName);
+  if (set.has(norm)) return true;
+  const sorted = norm.split(' ').sort().join(' ');
+  return set.has(sorted);
+};
+```
 
-### 3. Visualizzazione del log
-Il log apparirà automaticamente nella sezione "Storico invii" del drawer (già esistente), perché legge tutti i record di `anagrafica_invio_logs` per quel ragazzo. Il `tipo: 'invio_lista_attesa'` verrà mostrato come gli altri.
+**c)** Nel componente padre, chiamo `useIscrizioniNames()` una volta e passo il `Set` come prop a `RagazzoCard`.
 
-Verifico anche se esiste un mapping di label per i `tipo` (es. icone/colori dedicati): se sì, aggiungo un'etichetta leggibile "Invio lista d'attesa" con icona arancione coerente.
+**d)** In `RagazzoCard` (riga 82-127):
+- Calcolo `const compilato = isIscritto(ragazzo.full_name, iscrizioniSet)`
+- Se `compilato`:
+  - La `Card` riceve classi extra: `bg-green-50 dark:bg-green-950/30 ring-2 ring-green-500/40`
+  - La barretta in alto diventa verde: `bg-gradient-to-r from-green-500 to-emerald-500`
+  - Aggiungo un piccolo badge verde "✓ Modulo compilato" accanto agli altri badge
+
+### 2. Aggiornamento real-time
+
+Per coprire i nuovi inserimenti senza refresh manuale, uso Supabase Realtime sulla tabella `iscrizioni`:
+
+```ts
+useEffect(() => {
+  const channel = supabase
+    .channel('iscrizioni-changes')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'iscrizioni' },
+        () => queryClient.invalidateQueries({ queryKey: ['iscrizioni-names'] }))
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, []);
+```
+
+Verifico che `iscrizioni` sia già nella `supabase_realtime` publication; se non lo è, aggiungo una migration:
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.iscrizioni;
+```
 
 ## Note
-- Stesso pattern esatto degli altri due pulsanti (Invia Iscrizione, Conferma Preiscrizione) — zero rischi di regressione.
-- Il colore arancione è coerente col branding (gradiente `orange-500 → amber-600`, leggibile in dark mode).
-- Nessuna modifica RLS necessaria: `webhook_config` e `anagrafica_invio_logs` hanno già le policy giuste.
+- Modifica solo cosmetica + un fetch in più (leggero, una select di due colonne).
+- Non tocca la logica di archiviazione, numero, drawer.
+- Funziona anche in retroattivo per i ragazzi già esistenti in entrambe le tabelle.
 
