@@ -115,6 +115,7 @@ export function InviaComunicazioneWizard({ ragazzo, open, onOpenChange }: Props)
         body: JSON.stringify({
           titolo,
           testo,
+          html: previewHtml,
           ragazzo_id: ragazzo.id,
           full_name: ragazzo.full_name,
           data_nascita: ragazzo.data_nascita,
