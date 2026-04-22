@@ -907,12 +907,24 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 
 export default function AnagraficaRagazzi() {
   const { data: ragazzi, isLoading } = useRagazzi();
+  const { data: iscrizioniSet } = useIscrizioniNames();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterTurno, setFilterTurno] = useState<string>('all');
   const [selectedRagazzo, setSelectedRagazzo] = useState<RagazzoCompleto | null>(null);
   const [archiviatiOpen, setArchiviatiOpen] = useState(false);
   const [enrichingAll, setEnrichingAll] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('iscrizioni-names-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-names'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
   const [invioMassivoOpen, setInvioMassivoOpen] = useState(false);
 
   const getGroupedData = () => {
@@ -1144,7 +1156,7 @@ export default function AnagraficaRagazzi() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {attivi.map((r) => (
-            <RagazzoCard key={r.id} ragazzo={r} onClick={() => setSelectedRagazzo(r)} />
+            <RagazzoCard key={r.id} ragazzo={r} compilato={isIscritto(r.full_name, iscrizioniSet)} onClick={() => setSelectedRagazzo(r)} />
           ))}
         </div>
       )}
@@ -1164,7 +1176,7 @@ export default function AnagraficaRagazzi() {
           <CollapsibleContent className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {archiviati.map((r) => (
-                <RagazzoCard key={r.id} ragazzo={r} onClick={() => setSelectedRagazzo(r)} />
+                <RagazzoCard key={r.id} ragazzo={r} compilato={isIscritto(r.full_name, iscrizioniSet)} onClick={() => setSelectedRagazzo(r)} />
               ))}
             </div>
           </CollapsibleContent>
