@@ -913,6 +913,12 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
         </AlertDialogContent>
       </AlertDialog>
 
+      <InviaComunicazioneWizard
+        ragazzo={ragazzo}
+        open={comunicazioneOpen}
+        onOpenChange={setComunicazioneOpen}
+      />
+
     </>
   );
 }
