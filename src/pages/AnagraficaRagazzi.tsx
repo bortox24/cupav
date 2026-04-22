@@ -34,7 +34,7 @@ const TURNI_OPTIONS = [
 const YEAR_OPTIONS = Array.from({ length: 2040 - 2020 + 1 }, (_, i) => 2020 + i);
 
 const normalizeName = (s: string) =>
-  (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+  (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’`´.,]/g, '').replace(/\s+/g, ' ').trim();
 
 function useIscrizioniNames() {
   return useQuery({
