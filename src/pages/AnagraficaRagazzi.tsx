@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useRagazzi, useUpdateRagazzo, useAddIscrizione, useDeleteIscrizione, useArchiveRagazzo, useDeleteRagazzo, RagazzoCompleto, formatDataNascita } from '@/hooks/useRagazzi';
 import { useAuth } from '@/lib/auth';
@@ -33,7 +33,40 @@ const TURNI_OPTIONS = [
 
 const YEAR_OPTIONS = Array.from({ length: 2040 - 2020 + 1 }, (_, i) => 2020 + i);
 
-function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: () => void }) {
+const normalizeName = (s: string) =>
+  (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+
+function useIscrizioniNames() {
+  return useQuery({
+    queryKey: ['iscrizioni-names'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('iscrizioni')
+        .select('ragazzo_nome, ragazzo_cognome');
+      if (error) throw error;
+      const set = new Set<string>();
+      (data || []).forEach((r: any) => {
+        const n = normalizeName(r.ragazzo_nome || '');
+        const c = normalizeName(r.ragazzo_cognome || '');
+        if (!n && !c) return;
+        set.add(`${n} ${c}`.trim());
+        set.add(`${c} ${n}`.trim());
+        set.add([...n.split(' '), ...c.split(' ')].filter(Boolean).sort().join(' '));
+      });
+      return set;
+    },
+  });
+}
+
+const isIscritto = (fullName: string, set: Set<string> | undefined) => {
+  if (!set || set.size === 0) return false;
+  const norm = normalizeName(fullName);
+  if (set.has(norm)) return true;
+  const sorted = norm.split(' ').filter(Boolean).sort().join(' ');
+  return set.has(sorted);
+};
+
+function RagazzoCard({ ragazzo, onClick, compilato }: { ragazzo: RagazzoCompleto; onClick: () => void; compilato: boolean }) {
   const iscrizioneCorrente = ragazzo.iscrizioni.find((i) => i.anno === CURRENT_YEAR);
   const [localNumero, setLocalNumero] = useState<string>(ragazzo.numero != null ? String(ragazzo.numero) : '');
 
@@ -80,10 +113,18 @@ function RagazzoCard({ ragazzo, onClick }: { ragazzo: RagazzoCompleto; onClick: 
 
   return (
     <Card
-      className="h-full cursor-pointer group relative overflow-hidden border-0 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+      className={`h-full cursor-pointer group relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${
+        compilato
+          ? 'bg-green-50 dark:bg-green-950/30 ring-2 ring-green-500/40'
+          : 'bg-card'
+      }`}
       onClick={onClick}
     >
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary to-primary/60 opacity-80 group-hover:opacity-100 transition-opacity" />
+      <div className={`absolute inset-x-0 top-0 h-1 opacity-80 group-hover:opacity-100 transition-opacity ${
+        compilato
+          ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+          : 'bg-gradient-to-r from-primary to-primary/60'
+      }`} />
       <CardContent className="p-5 pt-5 space-y-3">
         <div className="flex items-start justify-between">
           <p className="font-bold text-lg tracking-tight leading-tight">{ragazzo.full_name}</p>
@@ -866,12 +907,24 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
 
 export default function AnagraficaRagazzi() {
   const { data: ragazzi, isLoading } = useRagazzi();
+  const { data: iscrizioniSet } = useIscrizioniNames();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterTurno, setFilterTurno] = useState<string>('all');
   const [selectedRagazzo, setSelectedRagazzo] = useState<RagazzoCompleto | null>(null);
   const [archiviatiOpen, setArchiviatiOpen] = useState(false);
   const [enrichingAll, setEnrichingAll] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('iscrizioni-names-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-names'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
   const [invioMassivoOpen, setInvioMassivoOpen] = useState(false);
 
   const getGroupedData = () => {
@@ -1103,7 +1156,7 @@ export default function AnagraficaRagazzi() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {attivi.map((r) => (
-            <RagazzoCard key={r.id} ragazzo={r} onClick={() => setSelectedRagazzo(r)} />
+            <RagazzoCard key={r.id} ragazzo={r} compilato={isIscritto(r.full_name, iscrizioniSet)} onClick={() => setSelectedRagazzo(r)} />
           ))}
         </div>
       )}
@@ -1123,7 +1176,7 @@ export default function AnagraficaRagazzi() {
           <CollapsibleContent className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {archiviati.map((r) => (
-                <RagazzoCard key={r.id} ragazzo={r} onClick={() => setSelectedRagazzo(r)} />
+                <RagazzoCard key={r.id} ragazzo={r} compilato={isIscritto(r.full_name, iscrizioniSet)} onClick={() => setSelectedRagazzo(r)} />
               ))}
             </div>
           </CollapsibleContent>
