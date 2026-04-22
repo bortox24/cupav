@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { InvioMassivoDialog } from '@/components/InvioMassivoDialog';
+import { InviaComunicazioneWizard } from '@/components/InviaComunicazioneWizard';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -192,6 +193,7 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
   const [confirmConferma, setConfirmConferma] = useState(false);
   const [sendingListaAttesa, setSendingListaAttesa] = useState(false);
   const [confirmListaAttesa, setConfirmListaAttesa] = useState(false);
+  const [comunicazioneOpen, setComunicazioneOpen] = useState(false);
 
   const updateMutation = useUpdateRagazzo();
   const addIscrizioneMutation = useAddIscrizione();
@@ -605,6 +607,14 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                       {sendingListaAttesa ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                       Invia Lista d'Attesa
                     </Button>
+                    <Button
+                      onClick={() => setComunicazioneOpen(true)}
+                      variant="default"
+                      className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Invia comunicazione
+                    </Button>
                   </div>
                 </div>
 
@@ -674,6 +684,7 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                                 log.tipo === 'numero_modificato' ? 'bg-amber-500' :
                                 log.tipo === 'numero_rimosso' ? 'bg-red-500' :
                                 log.tipo === 'invio_lista_attesa' ? 'bg-orange-500' :
+                                log.tipo === 'invio_comunicazione_custom' ? 'bg-red-500' :
                                 'bg-blue-500'
                               }`}>
                                 {log.tipo === 'conferma_preiscrizione' ? 'Conferma' :
@@ -681,6 +692,7 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
                                  log.tipo === 'numero_modificato' ? 'N° modificato' :
                                  log.tipo === 'numero_rimosso' ? 'N° rimosso' :
                                  log.tipo === 'invio_lista_attesa' ? 'Lista attesa' :
+                                 log.tipo === 'invio_comunicazione_custom' ? 'Comunicazione' :
                                  'Invio'}
                               </span>
                               <span className="font-medium truncate">{log.inviato_da_nome}</span>
@@ -900,6 +912,12 @@ function RagazzoDrawer({ ragazzo, open, onOpenChange }: { ragazzo: RagazzoComple
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <InviaComunicazioneWizard
+        ragazzo={ragazzo}
+        open={comunicazioneOpen}
+        onOpenChange={setComunicazioneOpen}
+      />
 
     </>
   );
