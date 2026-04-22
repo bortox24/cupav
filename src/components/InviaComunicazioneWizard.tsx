@@ -16,7 +16,7 @@ const escapeHtml = (s: string) =>
 
 const buildEmailHtml = (titolo: string, testo: string, genitoreNome: string) => {
   const titoloSafe = escapeHtml(titolo);
-  const testoSafe = escapeHtml(testo).replace(/\n/g, '<br/>');
+  const testoSafe = escapeHtml(testo).replace(/\\n/g, '<br/>').replace(/\r\n|\r|\n/g, '<br/>');
   const genitoreSafe = escapeHtml(genitoreNome || 'Genitore');
   return `<!DOCTYPE html>
 <html lang="it">
