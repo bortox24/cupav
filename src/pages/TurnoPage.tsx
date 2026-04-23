@@ -303,7 +303,7 @@ function TendaDrawer({
 
 // ─── Detail card (existing) ────────────────────────────
 
-function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
+function RagazzoCompactCard({ r, onClick, isDuplicate }: { r: any; onClick: () => void; isDuplicate?: boolean }) {
   const initials = `${(r.ragazzo_cognome?.[0] || '').toUpperCase()}${(r.ragazzo_nome?.[0] || '').toUpperCase()}`;
   const phoneNumber = r.recapiti_telefonici?.replace(/[^0-9+]/g, '') || '';
 
@@ -317,7 +317,7 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
           <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md ${r.ha_allergie ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-gradient-to-br from-primary to-blue-500'}`}>
             {initials}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h4 className="font-bold text-[15px] leading-tight truncate text-foreground">
               {toTitleCase(r.ragazzo_cognome)} {toTitleCase(r.ragazzo_nome)}
             </h4>
@@ -325,6 +325,7 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
               {toTitleCase(r.genitore_nome)} {toTitleCase(r.genitore_cognome)}
             </p>
           </div>
+          {isDuplicate && <DuplicateBadge className="shrink-0" />}
         </div>
         <div className="px-4 py-3.5 space-y-3">
           <div className="flex items-center gap-2 text-sm">
@@ -381,7 +382,7 @@ function InfoRow({ icon, label, value, isLink }: { icon: React.ReactNode; label:
   );
 }
 
-function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean; onOpenChange: (v: boolean) => void }) {
+function RagazzoDetailDrawer({ r, open, onOpenChange, isDuplicate }: { r: any; open: boolean; onOpenChange: (v: boolean) => void; isDuplicate?: boolean }) {
   if (!r) return null;
   const initials = `${(r.ragazzo_cognome?.[0] || '').toUpperCase()}${(r.ragazzo_nome?.[0] || '').toUpperCase()}`;
 
@@ -413,6 +414,7 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
             <Badge className={`gap-1 border-0 rounded-full px-3 py-1.5 text-xs pointer-events-none ${r.liberatoria_foto ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' : 'bg-muted text-muted-foreground'}`}>
               <Camera className="h-3.5 w-3.5" /> Foto {r.liberatoria_foto ? 'Sì' : 'No'}
             </Badge>
+            {isDuplicate && <DuplicateBadge />}
           </div>
           <div className="space-y-1">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Dati Ragazzo/a</h4>
@@ -458,7 +460,7 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
 
 // ─── Appello Card ──────────────────────────────────────
 
-function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; onToggle: () => void }) {
+function AppelloCard({ r, isPresent, onToggle, isDuplicate }: { r: any; isPresent: boolean; onToggle: () => void; isDuplicate?: boolean }) {
   return (
     <Card
       className={`cursor-pointer transition-all duration-200 active:scale-95 rounded-2xl border-2 [-webkit-tap-highlight-color:transparent] ${
@@ -468,10 +470,11 @@ function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; o
       }`}
       onClick={onToggle}
     >
-      <CardContent className="p-5 flex items-center justify-center min-h-[80px]">
+      <CardContent className="p-5 flex flex-col items-center justify-center gap-2 min-h-[92px]">
         <p className={`text-lg font-bold text-center ${isPresent ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
           {toTitleCase(r.ragazzo_cognome)} {toTitleCase(r.ragazzo_nome)}
         </p>
+        {isDuplicate && <DuplicateBadge />}
       </CardContent>
     </Card>
   );
