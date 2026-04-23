@@ -964,13 +964,14 @@ export default function TurnoPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {filteredIscrizioni.map((r: any) => (
-                  <RagazzoCompactCard key={r.id} r={r} onClick={() => setSelectedRagazzo(r)} />
+                  <RagazzoCompactCard key={r.id} r={r} isDuplicate={duplicateIscrizioneIds.has(r.id)} onClick={() => setSelectedRagazzo(r)} />
                 ))}
               </div>
             )}
 
             <RagazzoDetailDrawer
               r={selectedRagazzo}
+              isDuplicate={selectedRagazzo ? duplicateIscrizioneIds.has(selectedRagazzo.id) : false}
               open={!!selectedRagazzo}
               onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }}
             />
@@ -1184,6 +1185,7 @@ export default function TurnoPage() {
                       key={r.id}
                       r={r}
                       isPresent={presentSet.has(r.id)}
+                      isDuplicate={duplicateIscrizioneIds.has(r.id)}
                       onToggle={() => togglePresence(r.id)}
                     />
                   ))}
