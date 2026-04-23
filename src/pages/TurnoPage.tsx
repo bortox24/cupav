@@ -28,6 +28,25 @@ const toTitleCase = (s?: string | null) =>
     .toLowerCase()
     .replace(/(^|[\s'’\-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase());
 
+const normalizeDuplicateName = (name: string) =>
+  name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'it'))
+    .join(' ');
+
+function DuplicateBadge({ className }: { className?: string }) {
+  return (
+    <Badge className={`gap-1 bg-destructive text-destructive-foreground border-0 rounded-full px-2.5 py-1 text-[11px] pointer-events-none ${className ?? ''}`}>
+      <AlertTriangle className="h-3 w-3" /> DOPPIONE
+    </Badge>
+  );
+}
+
 function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: string | null }) {
   if (!nome) return null;
   return (
