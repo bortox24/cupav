@@ -523,6 +523,22 @@ export default function TurnoPage() {
     enabled: !!user && hasAccess && !!turnoValue,
   });
 
+  const duplicateIscrizioneIds = useMemo(() => {
+    const groups = new Map<string, string[]>();
+
+    iscrizioni.forEach((r: any) => {
+      const key = normalizeDuplicateName(`${r.ragazzo_nome ?? ''} ${r.ragazzo_cognome ?? ''}`);
+      if (!key) return;
+      groups.set(key, [...(groups.get(key) ?? []), r.id]);
+    });
+
+    const duplicates = new Set<string>();
+    groups.forEach((ids) => {
+      if (ids.length > 1) ids.forEach((id) => duplicates.add(id));
+    });
+    return duplicates;
+  }, [iscrizioni]);
+
   // Load animatori for this turno
   const { data: animatoriTurno = [], isLoading: animatoriLoading } = useAnimatoriByTurno(turnoValue);
 
@@ -770,11 +786,12 @@ export default function TurnoPage() {
         `${r.ragazzo_cognome} ${r.ragazzo_nome}`,
         `${r.genitore_nome} ${r.genitore_cognome}`,
         r.recapiti_telefonici || '',
+        duplicateIscrizioneIds.has(r.id) ? 'DOPPIONE' : '',
       ]);
 
       autoTable(doc, {
         startY: currentY + 10,
-        head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono']],
+        head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono', 'Segnalazione']],
         body: rows,
         styles: { fontSize: 10 },
         headStyles: { fillColor: [59, 130, 246] },
