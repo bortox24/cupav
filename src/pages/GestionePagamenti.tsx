@@ -194,16 +194,16 @@ function PagamentoCard({ item, onClick }: { item: IscrizioneConPagamento; onClic
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md bg-gradient-to-br from-primary to-blue-500">
             {initials}
           </div>
-          <div className="flex-1">
-            <h4 className="font-bold text-[15px] leading-tight text-foreground whitespace-nowrap">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-[15px] leading-tight text-foreground truncate">
               {item.ragazzo_nome} {item.ragazzo_cognome}
             </h4>
-            <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap">
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
               {item.genitore_nome} {item.genitore_cognome}
             </p>
           </div>
           {/* Importo dovuto dropdown */}
-          <div onClick={(e) => e.stopPropagation()}>
+          <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
             <Select value={String(item.importo_dovuto)} onValueChange={handleImportoDovutoChange}>
               <SelectTrigger className="w-[90px] h-7 text-xs rounded-full bg-background border-border">
                 <SelectValue />

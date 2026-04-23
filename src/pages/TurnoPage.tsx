@@ -28,6 +28,25 @@ const toTitleCase = (s?: string | null) =>
     .toLowerCase()
     .replace(/(^|[\s'’\-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase());
 
+const normalizeDuplicateName = (name: string) =>
+  name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'it'))
+    .join(' ');
+
+function DuplicateBadge({ className }: { className?: string }) {
+  return (
+    <Badge className={`gap-1 bg-destructive text-destructive-foreground border-0 rounded-full px-2.5 py-1 text-[11px] pointer-events-none ${className ?? ''}`}>
+      <AlertTriangle className="h-3 w-3" /> DOPPIONE
+    </Badge>
+  );
+}
+
 function FarmacoLine({ nome, posologia }: { nome?: string | null; posologia?: string | null }) {
   if (!nome) return null;
   return (
@@ -284,7 +303,7 @@ function TendaDrawer({
 
 // ─── Detail card (existing) ────────────────────────────
 
-function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
+function RagazzoCompactCard({ r, onClick, isDuplicate }: { r: any; onClick: () => void; isDuplicate?: boolean }) {
   const initials = `${(r.ragazzo_cognome?.[0] || '').toUpperCase()}${(r.ragazzo_nome?.[0] || '').toUpperCase()}`;
   const phoneNumber = r.recapiti_telefonici?.replace(/[^0-9+]/g, '') || '';
 
@@ -298,7 +317,7 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
           <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md ${r.ha_allergie ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-gradient-to-br from-primary to-blue-500'}`}>
             {initials}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h4 className="font-bold text-[15px] leading-tight truncate text-foreground">
               {toTitleCase(r.ragazzo_cognome)} {toTitleCase(r.ragazzo_nome)}
             </h4>
@@ -306,6 +325,7 @@ function RagazzoCompactCard({ r, onClick }: { r: any; onClick: () => void }) {
               {toTitleCase(r.genitore_nome)} {toTitleCase(r.genitore_cognome)}
             </p>
           </div>
+          {isDuplicate && <DuplicateBadge className="shrink-0" />}
         </div>
         <div className="px-4 py-3.5 space-y-3">
           <div className="flex items-center gap-2 text-sm">
@@ -362,7 +382,7 @@ function InfoRow({ icon, label, value, isLink }: { icon: React.ReactNode; label:
   );
 }
 
-function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean; onOpenChange: (v: boolean) => void }) {
+function RagazzoDetailDrawer({ r, open, onOpenChange, isDuplicate }: { r: any; open: boolean; onOpenChange: (v: boolean) => void; isDuplicate?: boolean }) {
   if (!r) return null;
   const initials = `${(r.ragazzo_cognome?.[0] || '').toUpperCase()}${(r.ragazzo_nome?.[0] || '').toUpperCase()}`;
 
@@ -394,6 +414,7 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
             <Badge className={`gap-1 border-0 rounded-full px-3 py-1.5 text-xs pointer-events-none ${r.liberatoria_foto ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' : 'bg-muted text-muted-foreground'}`}>
               <Camera className="h-3.5 w-3.5" /> Foto {r.liberatoria_foto ? 'Sì' : 'No'}
             </Badge>
+            {isDuplicate && <DuplicateBadge />}
           </div>
           <div className="space-y-1">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Dati Ragazzo/a</h4>
@@ -439,7 +460,7 @@ function RagazzoDetailDrawer({ r, open, onOpenChange }: { r: any; open: boolean;
 
 // ─── Appello Card ──────────────────────────────────────
 
-function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; onToggle: () => void }) {
+function AppelloCard({ r, isPresent, onToggle, isDuplicate }: { r: any; isPresent: boolean; onToggle: () => void; isDuplicate?: boolean }) {
   return (
     <Card
       className={`cursor-pointer transition-all duration-200 active:scale-95 rounded-2xl border-2 [-webkit-tap-highlight-color:transparent] ${
@@ -449,10 +470,11 @@ function AppelloCard({ r, isPresent, onToggle }: { r: any; isPresent: boolean; o
       }`}
       onClick={onToggle}
     >
-      <CardContent className="p-5 flex items-center justify-center min-h-[80px]">
+      <CardContent className="p-5 flex flex-col items-center justify-center gap-2 min-h-[92px]">
         <p className={`text-lg font-bold text-center ${isPresent ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
           {toTitleCase(r.ragazzo_cognome)} {toTitleCase(r.ragazzo_nome)}
         </p>
+        {isDuplicate && <DuplicateBadge />}
       </CardContent>
     </Card>
   );
@@ -500,6 +522,22 @@ export default function TurnoPage() {
     },
     enabled: !!user && hasAccess && !!turnoValue,
   });
+
+  const duplicateIscrizioneIds = useMemo(() => {
+    const groups = new Map<string, string[]>();
+
+    iscrizioni.forEach((r: any) => {
+      const key = normalizeDuplicateName(`${r.ragazzo_nome ?? ''} ${r.ragazzo_cognome ?? ''}`);
+      if (!key) return;
+      groups.set(key, [...(groups.get(key) ?? []), r.id]);
+    });
+
+    const duplicates = new Set<string>();
+    groups.forEach((ids) => {
+      if (ids.length > 1) ids.forEach((id) => duplicates.add(id));
+    });
+    return duplicates;
+  }, [iscrizioni]);
 
   // Load animatori for this turno
   const { data: animatoriTurno = [], isLoading: animatoriLoading } = useAnimatoriByTurno(turnoValue);
@@ -748,11 +786,12 @@ export default function TurnoPage() {
         `${r.ragazzo_cognome} ${r.ragazzo_nome}`,
         `${r.genitore_nome} ${r.genitore_cognome}`,
         r.recapiti_telefonici || '',
+        duplicateIscrizioneIds.has(r.id) ? 'DOPPIONE' : '',
       ]);
 
       autoTable(doc, {
         startY: currentY + 10,
-        head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono']],
+        head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono', 'Segnalazione']],
         body: rows,
         styles: { fontSize: 10 },
         headStyles: { fillColor: [59, 130, 246] },
@@ -925,13 +964,14 @@ export default function TurnoPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {filteredIscrizioni.map((r: any) => (
-                  <RagazzoCompactCard key={r.id} r={r} onClick={() => setSelectedRagazzo(r)} />
+                  <RagazzoCompactCard key={r.id} r={r} isDuplicate={duplicateIscrizioneIds.has(r.id)} onClick={() => setSelectedRagazzo(r)} />
                 ))}
               </div>
             )}
 
             <RagazzoDetailDrawer
               r={selectedRagazzo}
+              isDuplicate={selectedRagazzo ? duplicateIscrizioneIds.has(selectedRagazzo.id) : false}
               open={!!selectedRagazzo}
               onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }}
             />
@@ -1145,6 +1185,7 @@ export default function TurnoPage() {
                       key={r.id}
                       r={r}
                       isPresent={presentSet.has(r.id)}
+                      isDuplicate={duplicateIscrizioneIds.has(r.id)}
                       onToggle={() => togglePresence(r.id)}
                     />
                   ))}
