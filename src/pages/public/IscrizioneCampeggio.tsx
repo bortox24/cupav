@@ -726,7 +726,10 @@ export default function IscrizioneCampeggio() {
               </AlertDialogContent>
             </AlertDialog>
           ) : (
-            <Button onClick={nextStep}>Avanti <ChevronRight className="h-4 w-4 ml-1" /></Button>
+            <Button onClick={nextStep} disabled={checkingDuplicate}>
+              {checkingDuplicate ? "Controllo in corso..." : "Avanti"}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           )}
         </div>
       </div>
