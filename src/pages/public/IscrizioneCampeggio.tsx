@@ -82,6 +82,7 @@ export default function IscrizioneCampeggio() {
   const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   // Step 1 fields
@@ -186,8 +187,45 @@ export default function IscrizioneCampeggio() {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  const nextStep = () => {
-    if (currentStep === 1 && !validateStep1()) return;
+  const formatDuplicateDate = (createdAt: string) =>
+    format(new Date(createdAt), "dd/MM/yyyy", { locale: it });
+
+  const checkDuplicateIscrizione = async () => {
+    const { data, error } = await supabase.functions.invoke("check-iscrizione-duplicate", {
+      body: {
+        ragazzo_cognome: ragazzoCognome,
+        ragazzo_nome: ragazzoNome,
+        turno,
+      },
+    });
+
+    if (error) throw error;
+
+    if (data?.exists) {
+      toast({
+        title: "Iscrizione già presente",
+        description: `Suo figlio risulta già iscritto al turno ${data.turno} il giorno ${formatDuplicateDate(data.created_at)}.`,
+        variant: "destructive",
+      });
+      return true;
+    }
+
+    return false;
+  };
+
+  const nextStep = async () => {
+    if (currentStep === 1) {
+      if (!validateStep1()) return;
+      setCheckingDuplicate(true);
+      try {
+        if (await checkDuplicateIscrizione()) return;
+      } catch (err: any) {
+        toast({ title: "Errore durante il controllo", description: err.message, variant: "destructive" });
+        return;
+      } finally {
+        setCheckingDuplicate(false);
+      }
+    }
     if (currentStep === 2 && showStep2 && !validateStep2()) return;
     if (currentStep === (showStep2 ? 3 : 2) && !validateStep3()) return;
 
@@ -206,6 +244,8 @@ export default function IscrizioneCampeggio() {
     if (!validateStep4()) return;
     setSubmitting(true);
     try {
+      if (await checkDuplicateIscrizione()) return;
+
       const payload = {
         email,
         ragazzo_cognome: ragazzoCognome,
@@ -686,7 +726,10 @@ export default function IscrizioneCampeggio() {
               </AlertDialogContent>
             </AlertDialog>
           ) : (
-            <Button onClick={nextStep}>Avanti <ChevronRight className="h-4 w-4 ml-1" /></Button>
+            <Button onClick={nextStep} disabled={checkingDuplicate}>
+              {checkingDuplicate ? "Controllo in corso..." : "Avanti"}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           )}
         </div>
       </div>
