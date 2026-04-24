@@ -1,190 +1,109 @@
+## Sì, esatto
 
-## Obiettivo
-Sistemare due problemi:
+Il controllo va fatto **appena il genitore prova ad andare avanti dalla prima parte del modulo**, cioè dopo aver compilato la schermata che hai allegato.
 
-1. In **Gestione Pagamenti**, l’importo dovuto deve rimanere sempre visibile anche quando il nome del ragazzo è lungo, inclusi layout stretti e mobile.
-2. Nelle pagine **/turno**, evidenziare le iscrizioni duplicate con un badge/flag **“DOPPIONE”**.
+Non deve arrivare fino alla fine del modulo: se il ragazzo risulta già iscritto, viene bloccato subito prima di passare a Liberatoria/Regolamento.
 
-## Analisi duplicati attuale
+## Dati usati per il controllo
 
-Ho controllato le iscrizioni raggruppando per turno e nome/cognome normalizzati, ignorando maiuscole/minuscole e spazi extra. Al momento risultano questi doppioni:
+Il confronto userà questi dati della prima parte:
 
-| Turno | Nome |
-|---|---|
-| 1° Media | Francesco Nichele |
-| 3° Media | Cristian Garzon |
-| 4° Elementare | Aurora Febbrile |
-| 5° Elementare | Cristina Dallegno |
-| 5° Elementare | Lina Zoljami |
+- Cognome ragazzo
+- Nome ragazzo
+- Turno selezionato
 
-Questi sono casi in cui esistono più righe nella tabella iscrizioni con lo stesso ragazzo nello stesso turno.
+Il confronto sarà fatto ignorando:
 
-## Modifica 1 — Card Gestione Pagamenti
-
-Nel file `src/pages/GestionePagamenti.tsx`, modifico l’header della card pagamento per evitare che il nome lungo spinga fuori il selettore dell’importo.
-
-### Intervento tecnico
-
-Nel componente `PagamentoCard`:
-
-- Il contenitore del nome diventerà realmente comprimibile con `min-w-0`.
-- Nome ragazzo e nome genitore useranno `truncate`.
-- Il selettore importo resterà sempre visibile con `shrink-0`.
-- Il layout userà una struttura più robusta:
-  - avatar fisso
-  - colonna testo flessibile e troncata
-  - importo fisso a destra
-
-Esempio risultato:
-```text
-[AG] Alessandro Giovanni...     [250€ v]
-     Serena Tovo
-```
-
-Su mobile:
-```text
-[AG] Alessandro Giovanni...     [250€ v]
-     Serena Tovo
-```
-
-L’importo non verrà mai tagliato o coperto dal testo.
-
-## Modifica 2 — Rilevamento doppioni nei /turni
-
-Nel file `src/pages/TurnoPage.tsx`, aggiungo una logica client-side per rilevare i doppioni tra le iscrizioni del turno corrente.
-
-### Regola di confronto
-
-Per ogni iscrizione creo una chiave normalizzata partendo da:
-
-```text
-ragazzo_nome + ragazzo_cognome
-```
-
-La normalizzazione copre:
 - maiuscole/minuscole
-- spazi doppi o finali
-- punteggiatura semplice
-- ordine nome/cognome tramite token ordinati
+- spazi doppi
+- spazi iniziali/finali
+- accenti semplici
 
-Esempio:
-```text
-"Francesco Nichele"
-"FRANCESCO NICHELE"
-"Francesco  Nichele "
-"Nichele Francesco"
-```
-
-verranno considerati lo stesso ragazzo.
-
-### Dove appare il flag
-
-Aggiungo il badge **DOPPIONE**:
-
-1. Nelle card della tab **Dettagli ragazzi**
-2. Nelle card della tab **Appello**
-3. Nel drawer dettaglio ragazzo
-4. Nel PDF di download, aggiungendo una nota accanto al nome o una colonna “Segnalazione”
-
-## Aspetto visivo del badge
-
-Badge rosso ben visibile:
+Esempio: questi verranno considerati uguali:
 
 ```text
-DOPPIONE
+Rossi Mario
+rossi mario
+ROSSI MARIO
+Rossi  Mario
 ```
 
-Stile:
-- sfondo rosso
-- testo bianco o rosso scuro su rosso chiaro, coerente con il tema
-- icona `AlertTriangle`
-- non cliccabile
+## Avviso mostrato al genitore
 
-Nelle card:
+Se esiste già un’iscrizione con stesso ragazzo e stesso turno, il form non va avanti e mostra un messaggio del tipo:
+
 ```text
-Mario Rossi        [DOPPIONE]
-Genitore...
+Iscrizione già presente
+Suo figlio risulta già iscritto al turno 1° Media il giorno 23/04/2026.
+Per dubbi o correzioni contattare CUPAV.
 ```
 
-Nell’appello:
-```text
-Mario Rossi
-[DOPPIONE]
+La data sarà presa dal campo `created_at` dell’iscrizione già presente nel database.
+
+## Modifiche da fare
+
+### 1. Nuova funzione backend di controllo
+
+Creo una funzione backend dedicata, ad esempio `check-iscrizione-duplicate`, che riceve:
+
+```json
+{
+  "ragazzo_cognome": "Rossi",
+  "ragazzo_nome": "Mario",
+  "turno": "1° Media"
+}
 ```
 
-## Dettagli tecnici
+e restituisce:
 
-### In `TurnoPage.tsx`
-
-Aggiungo un `useMemo`:
-
-```ts
-const duplicateIscrizioneIds = useMemo(() => {
-  const groups = new Map<string, string[]>();
-
-  iscrizioni.forEach((r) => {
-    const key = normalizeDuplicateName(`${r.ragazzo_nome} ${r.ragazzo_cognome}`);
-    groups.set(key, [...(groups.get(key) ?? []), r.id]);
-  });
-
-  const duplicates = new Set<string>();
-  groups.forEach((ids) => {
-    if (ids.length > 1) ids.forEach((id) => duplicates.add(id));
-  });
-
-  return duplicates;
-}, [iscrizioni]);
+```json
+{
+  "exists": true,
+  "turno": "1° Media",
+  "created_at": "2026-04-23T..."
+}
 ```
 
-Poi passo il valore ai componenti:
+oppure:
 
-```tsx
-<RagazzoCompactCard
-  r={r}
-  isDuplicate={duplicateIscrizioneIds.has(r.id)}
-/>
+```json
+{
+  "exists": false
+}
 ```
 
-e:
+Questo evita di aprire in modo pubblico la lettura diretta della tabella iscrizioni.
 
-```tsx
-<AppelloCard
-  r={r}
-  isDuplicate={duplicateIscrizioneIds.has(r.id)}
-/>
-```
+### 2. Controllo quando si clicca “Avanti” nello step 1
 
-### In `RagazzoCompactCard`
+In `src/pages/public/IscrizioneCampeggio.tsx` modifico `nextStep` così:
 
-Aggiungo prop:
+1. valida tutti i campi obbligatori dello step 1
+2. se nome, cognome e turno sono presenti, chiama il controllo doppione
+3. se esiste già l’iscrizione, mostra l’avviso e resta nello step 1
+4. se non esiste, prosegue normalmente allo step successivo
 
-```ts
-isDuplicate?: boolean
-```
+Quindi il genitore non deve compilare tutto il modulo.
 
-e mostro il badge nell’header.
+### 3. Secondo controllo prima dell’invio finale
 
-### In `AppelloCard`
+Aggiungo anche lo stesso controllo dentro `handleSubmit`, subito prima dell’inserimento finale.
 
-Aggiungo prop:
+Serve come sicurezza nel caso raro in cui due genitori compilino il modulo contemporaneamente: uno potrebbe superare lo step 1, ma l’altro inviare prima. In quel caso il secondo viene bloccato comunque prima del salvataggio.
 
-```ts
-isDuplicate?: boolean
-```
+## Nota importante
 
-e mostro il badge sotto al nome.
+Il blocco avverrà per **stesso nome + stesso cognome + stesso turno**.
 
-### Nel drawer dettaglio
+Quindi:
 
-Quando `selectedRagazzo` è doppione, mostro il badge nella sezione superiore insieme ai badge allergie/foto.
+- stesso ragazzo nello stesso turno: bloccato
+- stesso ragazzo in un turno diverso: permesso
+- stesso cognome ma nome diverso: permesso
 
-## Nessuna modifica database
+## File coinvolti
 
-Non serve creare nuove tabelle o colonne:
-- i doppioni vengono calcolati al volo dai dati già presenti in `iscrizioni`
-- quando arriva una nuova iscrizione, la pagina `/turno` aggiorna già i dati tramite realtime/invalidation, quindi il flag comparirà automaticamente
+- `supabase/functions/check-iscrizione-duplicate/index.ts`
+- `src/pages/public/IscrizioneCampeggio.tsx`
 
-## File modificati
-
-- `src/pages/GestionePagamenti.tsx`
-- `src/pages/TurnoPage.tsx`
+Nessuna modifica grafica importante al modulo, solo il blocco e il messaggio di avviso.
