@@ -1,126 +1,87 @@
-## Doppioni trovati, divisi per turno
+## Risultato del controllo immediato
 
-Ho ricontrollato la tabella iscrizioni raggruppando per:
-- turno
-- cognome ragazzo normalizzato
-- nome ragazzo normalizzato
+Ho ricontrollato il database: i 4 doppioni rimossi non esistono più in `iscrizioni`, non hanno più record collegati in `pagamenti` e non hanno log di sollecito collegati.
 
-La regola proposta è: **tenere l'iscrizione più vecchia** e rimuovere le iscrizioni successive dello stesso ragazzo nello stesso turno.
+Ho anche rifatto il controllo generale dei doppioni per stesso turno + nome/cognome ragazzo: al momento il database restituisce **0 doppioni**.
 
-### 1° Media
-
-**Francesco Nichele** — 2 iscrizioni
-
-Da tenere:
-- 23/04/2026 08:25 — genitore: Antonella Zanetti — email: antonella_zanetti@hotmail.it
-
-Da rimuovere:
-- 23/04/2026 08:31 — genitore: Sergio Nichele — email: sergionichele79@gmail.com
-
-### 3° Media
-
-**Cristian Garzon** — 2 iscrizioni
-
-Da tenere:
-- 22/04/2026 21:25 — genitore: Alessia Fracaro — email: alessiafracaro@gmail.com
-
-Da rimuovere:
-- 23/04/2026 11:23 — genitore: Alessia Fracaro — email: alessiafracaro@gmail.com
-
-### 4° Elementare
-
-**Aurora Febbrile** — 2 iscrizioni
-
-Da tenere:
-- 15/04/2026 00:28 — genitore: Luigi Febbrile — email: luigifebbrile@live.it
-
-Da rimuovere:
-- 15/04/2026 07:05 — genitore: Luigi Febbrile — email: luigifebbrile@live.it
-
-### 5° Elementare
-
-**Cristina Dallegno** — 2 iscrizioni
-
-Da tenere:
-- 19/04/2026 17:46 — genitore: Tania Filì — email: taniadomfili@yahoo.it
-
-Da rimuovere:
-- 19/04/2026 17:53 — genitore: Jacopo Dallegno — email: jacopodallegno@yahoo.it
-
-## Nota importante
-
-Rispetto all'analisi precedente, in questo controllo attuale non risulta più il doppione di **Lina Zoljami** in 5° Elementare. Quindi al momento i gruppi doppi sono **4**, per un totale di **4 iscrizioni da rimuovere**.
-
-## Piano di rimozione
-
-### 1. Backup logico prima della cancellazione
-
-Prima di eliminare qualcosa, preparo una query di verifica con l'elenco completo degli ID che verranno rimossi.
-
-Gli ID da rimuovere sono:
+Situazione attuale iscrizioni per turno:
 
 ```text
-43439eb2-e393-44b8-8bb5-d3e3e48ac4a5  Francesco Nichele  1° Media
-42258a36-1a94-43a0-b288-d3ba30873379  Cristian Garzon    3° Media
-c0854b80-12ec-4626-b036-8e3139cc71e1  Aurora Febbrile    4° Elementare
-df802b37-300d-4fff-a7dc-73e5f040e22f  Cristina Dallegno  5° Elementare
+1° Media        21 iscrizioni
+2° Media        17 iscrizioni
+3° Media        13 iscrizioni
+4° Elementare   27 iscrizioni
+5° Elementare   37 iscrizioni
 ```
 
-### 2. Rimozione record collegati nei pagamenti
+Quindi se nell’Appello vedi ancora quei nomi doppi, molto probabilmente non sono più righe duplicate nella tabella `iscrizioni`: è la pagina che sta mostrando dati rimasti in cache nel browser/app, oppure una lista derivata non si è riallineata subito.
 
-Ho verificato che ci sono **4 record in `pagamenti`** collegati esattamente a queste iscrizioni doppie.
+## Perché può succedere
 
-Quindi la rimozione deve avvenire in questo ordine:
+La pagina `/turno` prende i ragazzi da `iscrizioni`, quindi sì: i dati principali arrivano dal database.
 
-1. eliminare i pagamenti collegati alle iscrizioni duplicate
-2. eliminare le iscrizioni duplicate
+Però la pagina usa anche una cache lato app tramite React Query. In più, il realtime è configurato nel codice, ma va reso più robusto per coprire bene questi casi:
 
-Questo evita pagamenti orfani o dati incoerenti.
+- quando una riga viene cancellata direttamente dal database
+- quando l’utente è già dentro la tab Appello
+- quando la lista dei presenti (`presentSet`) contiene ancora ID non più presenti
+- quando Realtime non notifica perché la tabella/pubblicazione o il filtro non si riallineano subito
+- quando si torna sulla finestra/app dopo una modifica fatta altrove
 
-Non risultano invece log di sollecito pagamento collegati a questi doppioni:
+Ho verificato che `iscrizioni` è già nella pubblicazione realtime; quindi non serve abilitarla da zero. Serve migliorare il comportamento della pagina.
 
-```text
-pagamento_reminder_logs: 0
-```
+## Piano di sistemazione
 
-### 3. Cancellazione delle iscrizioni duplicate
+### 1. Forzare il refresh dei dati entrando nei turni
 
-Dopo aver eliminato i pagamenti collegati, cancello dalla tabella `iscrizioni` solo le 4 righe duplicate successive, lasciando intatte le prime iscrizioni.
+In `src/pages/TurnoPage.tsx` imposto la query delle iscrizioni in modo più sicuro:
 
-### 4. Verifica finale
+- `staleTime: 0`, così i dati vengono considerati subito da ricaricare
+- `refetchOnMount: 'always'`, così entrando nella pagina o tornando al componente rilegge dal database
+- `refetchOnWindowFocus: true`, così se il database cambia mentre la pagina era aperta, tornando sulla finestra si aggiorna
+- `refetchOnReconnect: true`, così se la connessione cade e torna, rilegge i dati
 
-Dopo la cancellazione eseguo due controlli:
+### 2. Realtime più mirato sulla tabella `iscrizioni`
 
-1. controllo che non esistano più doppioni per stesso nome + cognome + turno
-2. controllo che le pagine `/turno` e `Gestione Pagamenti` non mostrino più i record rimossi
+Aggiorno la subscription realtime di `/turno` per ascoltare `INSERT`, `UPDATE` e `DELETE` su `iscrizioni` e invalidare/rileggere sempre:
 
-## Dettaglio tecnico
+- `['turno-iscrizioni', turnoValue]`
+- eventuali contatori legati ai turni
+- eventuali query pagamenti collegate quando cambia un’iscrizione
 
-La cancellazione prevista sarà equivalente a:
+Questo evita che la pagina Appello resti con una lista vecchia.
 
-```sql
-DELETE FROM pagamenti
-WHERE iscrizione_id IN (
-  '43439eb2-e393-44b8-8bb5-d3e3e48ac4a5',
-  '42258a36-1a94-43a0-b288-d3ba30873379',
-  'c0854b80-12ec-4626-b036-8e3139cc71e1',
-  'df802b37-300d-4fff-a7dc-73e5f040e22f'
-);
+### 3. Pulizia automatica dello stato Appello
 
-DELETE FROM iscrizioni
-WHERE id IN (
-  '43439eb2-e393-44b8-8bb5-d3e3e48ac4a5',
-  '42258a36-1a94-43a0-b288-d3ba30873379',
-  'c0854b80-12ec-4626-b036-8e3139cc71e1',
-  'df802b37-300d-4fff-a7dc-73e5f040e22f'
-);
-```
+Aggiungo una sincronizzazione tra `presentSet` e la lista reale `iscrizioni`.
+
+Se una iscrizione è stata rimossa dal database ma il suo ID era ancora presente nello stato locale dell’appello, viene tolta automaticamente da `presentSet`.
+
+Così anche il conteggio `Presenti X/Y` non può rimanere sporco.
+
+### 4. Controllo tende/lista assegnati
+
+Ho controllato la tabella `tende`: i nomi dei doppioni rimossi non risultano assegnati nelle tende.
+
+Non serve cancellare nulla lì adesso. Però posso aggiungere una protezione: quando si apre la lista tende, i ragazzi selezionabili arrivano solo dalle iscrizioni correnti; quindi, dopo il refresh, non potranno più comparire rimossi.
+
+### 5. Gestione Pagamenti
+
+`Gestione Pagamenti` legge da `iscrizioni` + `pagamenti`. I record dei doppioni rimossi sono già spariti dal database.
+
+Aggiungo/rafforzo il refresh automatico anche per la query pagamenti quando cambia `iscrizioni` o `pagamenti`, così la pagina non può mantenere card vecchie dopo una cancellazione.
+
+## File da modificare
+
+- `src/pages/TurnoPage.tsx`
+- probabilmente `src/hooks/usePagamenti.ts` oppure `src/pages/GestionePagamenti.tsx`, a seconda di dove conviene agganciare il refresh realtime dei pagamenti
 
 ## Risultato atteso
 
-Dopo l'intervento:
+Dopo la modifica:
 
-- ogni ragazzo risulterà iscritto una sola volta per turno
-- spariranno i badge **DOPPIONE** per questi casi nelle pagine `/turno`
-- in Gestione Pagamenti resterà una sola card per ciascun ragazzo
-- il nuovo controllo anti-doppione già implementato bloccherà nuovi casi futuri dal modulo pubblico
+- l’Appello mostra sempre solo le iscrizioni ancora presenti nel database
+- se una iscrizione viene cancellata dal database, sparisce automaticamente dalla pagina `/turno`
+- i conteggi dell’Appello si riallineano automaticamente
+- Gestione Pagamenti non mantiene card obsolete
+- il badge `DOPPIONE` continuerà a comparire solo se nel database esistono davvero due iscrizioni uguali nello stesso turno

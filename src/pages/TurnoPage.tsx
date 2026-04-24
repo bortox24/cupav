@@ -521,6 +521,10 @@ export default function TurnoPage() {
       return data ?? [];
     },
     enabled: !!user && hasAccess && !!turnoValue,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const duplicateIscrizioneIds = useMemo(() => {
@@ -694,6 +698,14 @@ export default function TurnoPage() {
     return [...iscrizioni].sort((a: any, b: any) => {
       const cmp = (a.ragazzo_cognome || '').localeCompare(b.ragazzo_cognome || '', 'it');
       return cmp !== 0 ? cmp : (a.ragazzo_nome || '').localeCompare(b.ragazzo_nome || '', 'it');
+    });
+  }, [iscrizioni]);
+
+  useEffect(() => {
+    const validIds = new Set(iscrizioni.map((r: any) => r.id));
+    setPresentSet(prev => {
+      const cleaned = new Set([...prev].filter(id => validIds.has(id)));
+      return cleaned.size === prev.size ? prev : cleaned;
     });
   }, [iscrizioni]);
 
