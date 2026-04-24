@@ -714,9 +714,11 @@ export default function TurnoPage() {
     if (!user || !turnoValue) return;
     const channel = supabase
       .channel(`iscrizioni-turno-${turnoSlug}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni' }, async () => {
         queryClient.invalidateQueries({ queryKey: ['turno-iscrizioni', turnoValue] });
         queryClient.invalidateQueries({ queryKey: ['turno-counts'] });
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+        await queryClient.refetchQueries({ queryKey: ['turno-iscrizioni', turnoValue] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
