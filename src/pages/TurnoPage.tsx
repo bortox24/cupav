@@ -521,6 +521,10 @@ export default function TurnoPage() {
       return data ?? [];
     },
     enabled: !!user && hasAccess && !!turnoValue,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const duplicateIscrizioneIds = useMemo(() => {
@@ -697,14 +701,24 @@ export default function TurnoPage() {
     });
   }, [iscrizioni]);
 
+  useEffect(() => {
+    const validIds = new Set(iscrizioni.map((r: any) => r.id));
+    setPresentSet(prev => {
+      const cleaned = new Set([...prev].filter(id => validIds.has(id)));
+      return cleaned.size === prev.size ? prev : cleaned;
+    });
+  }, [iscrizioni]);
+
   // Realtime iscrizioni
   useEffect(() => {
     if (!user || !turnoValue) return;
     const channel = supabase
       .channel(`iscrizioni-turno-${turnoSlug}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni' }, async () => {
         queryClient.invalidateQueries({ queryKey: ['turno-iscrizioni', turnoValue] });
         queryClient.invalidateQueries({ queryKey: ['turno-counts'] });
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+        await queryClient.refetchQueries({ queryKey: ['turno-iscrizioni', turnoValue] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };

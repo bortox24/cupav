@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
@@ -45,6 +46,22 @@ export interface ReminderLog {
 }
 
 export function useIscrizioniConPagamenti() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('pagamenti-iscrizioni-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pagamenti' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['iscrizioni-con-pagamenti'],
     queryFn: async () => {
@@ -93,6 +110,10 @@ export function useIscrizioniConPagamenti() {
         };
       });
     },
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 
