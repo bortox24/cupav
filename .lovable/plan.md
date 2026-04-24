@@ -1,109 +1,126 @@
-## Sì, esatto
+## Doppioni trovati, divisi per turno
 
-Il controllo va fatto **appena il genitore prova ad andare avanti dalla prima parte del modulo**, cioè dopo aver compilato la schermata che hai allegato.
+Ho ricontrollato la tabella iscrizioni raggruppando per:
+- turno
+- cognome ragazzo normalizzato
+- nome ragazzo normalizzato
 
-Non deve arrivare fino alla fine del modulo: se il ragazzo risulta già iscritto, viene bloccato subito prima di passare a Liberatoria/Regolamento.
+La regola proposta è: **tenere l'iscrizione più vecchia** e rimuovere le iscrizioni successive dello stesso ragazzo nello stesso turno.
 
-## Dati usati per il controllo
+### 1° Media
 
-Il confronto userà questi dati della prima parte:
+**Francesco Nichele** — 2 iscrizioni
 
-- Cognome ragazzo
-- Nome ragazzo
-- Turno selezionato
+Da tenere:
+- 23/04/2026 08:25 — genitore: Antonella Zanetti — email: antonella_zanetti@hotmail.it
 
-Il confronto sarà fatto ignorando:
+Da rimuovere:
+- 23/04/2026 08:31 — genitore: Sergio Nichele — email: sergionichele79@gmail.com
 
-- maiuscole/minuscole
-- spazi doppi
-- spazi iniziali/finali
-- accenti semplici
+### 3° Media
 
-Esempio: questi verranno considerati uguali:
+**Cristian Garzon** — 2 iscrizioni
 
-```text
-Rossi Mario
-rossi mario
-ROSSI MARIO
-Rossi  Mario
-```
+Da tenere:
+- 22/04/2026 21:25 — genitore: Alessia Fracaro — email: alessiafracaro@gmail.com
 
-## Avviso mostrato al genitore
+Da rimuovere:
+- 23/04/2026 11:23 — genitore: Alessia Fracaro — email: alessiafracaro@gmail.com
 
-Se esiste già un’iscrizione con stesso ragazzo e stesso turno, il form non va avanti e mostra un messaggio del tipo:
+### 4° Elementare
 
-```text
-Iscrizione già presente
-Suo figlio risulta già iscritto al turno 1° Media il giorno 23/04/2026.
-Per dubbi o correzioni contattare CUPAV.
-```
+**Aurora Febbrile** — 2 iscrizioni
 
-La data sarà presa dal campo `created_at` dell’iscrizione già presente nel database.
+Da tenere:
+- 15/04/2026 00:28 — genitore: Luigi Febbrile — email: luigifebbrile@live.it
 
-## Modifiche da fare
+Da rimuovere:
+- 15/04/2026 07:05 — genitore: Luigi Febbrile — email: luigifebbrile@live.it
 
-### 1. Nuova funzione backend di controllo
+### 5° Elementare
 
-Creo una funzione backend dedicata, ad esempio `check-iscrizione-duplicate`, che riceve:
+**Cristina Dallegno** — 2 iscrizioni
 
-```json
-{
-  "ragazzo_cognome": "Rossi",
-  "ragazzo_nome": "Mario",
-  "turno": "1° Media"
-}
-```
+Da tenere:
+- 19/04/2026 17:46 — genitore: Tania Filì — email: taniadomfili@yahoo.it
 
-e restituisce:
-
-```json
-{
-  "exists": true,
-  "turno": "1° Media",
-  "created_at": "2026-04-23T..."
-}
-```
-
-oppure:
-
-```json
-{
-  "exists": false
-}
-```
-
-Questo evita di aprire in modo pubblico la lettura diretta della tabella iscrizioni.
-
-### 2. Controllo quando si clicca “Avanti” nello step 1
-
-In `src/pages/public/IscrizioneCampeggio.tsx` modifico `nextStep` così:
-
-1. valida tutti i campi obbligatori dello step 1
-2. se nome, cognome e turno sono presenti, chiama il controllo doppione
-3. se esiste già l’iscrizione, mostra l’avviso e resta nello step 1
-4. se non esiste, prosegue normalmente allo step successivo
-
-Quindi il genitore non deve compilare tutto il modulo.
-
-### 3. Secondo controllo prima dell’invio finale
-
-Aggiungo anche lo stesso controllo dentro `handleSubmit`, subito prima dell’inserimento finale.
-
-Serve come sicurezza nel caso raro in cui due genitori compilino il modulo contemporaneamente: uno potrebbe superare lo step 1, ma l’altro inviare prima. In quel caso il secondo viene bloccato comunque prima del salvataggio.
+Da rimuovere:
+- 19/04/2026 17:53 — genitore: Jacopo Dallegno — email: jacopodallegno@yahoo.it
 
 ## Nota importante
 
-Il blocco avverrà per **stesso nome + stesso cognome + stesso turno**.
+Rispetto all'analisi precedente, in questo controllo attuale non risulta più il doppione di **Lina Zoljami** in 5° Elementare. Quindi al momento i gruppi doppi sono **4**, per un totale di **4 iscrizioni da rimuovere**.
 
-Quindi:
+## Piano di rimozione
 
-- stesso ragazzo nello stesso turno: bloccato
-- stesso ragazzo in un turno diverso: permesso
-- stesso cognome ma nome diverso: permesso
+### 1. Backup logico prima della cancellazione
 
-## File coinvolti
+Prima di eliminare qualcosa, preparo una query di verifica con l'elenco completo degli ID che verranno rimossi.
 
-- `supabase/functions/check-iscrizione-duplicate/index.ts`
-- `src/pages/public/IscrizioneCampeggio.tsx`
+Gli ID da rimuovere sono:
 
-Nessuna modifica grafica importante al modulo, solo il blocco e il messaggio di avviso.
+```text
+43439eb2-e393-44b8-8bb5-d3e3e48ac4a5  Francesco Nichele  1° Media
+42258a36-1a94-43a0-b288-d3ba30873379  Cristian Garzon    3° Media
+c0854b80-12ec-4626-b036-8e3139cc71e1  Aurora Febbrile    4° Elementare
+df802b37-300d-4fff-a7dc-73e5f040e22f  Cristina Dallegno  5° Elementare
+```
+
+### 2. Rimozione record collegati nei pagamenti
+
+Ho verificato che ci sono **4 record in `pagamenti`** collegati esattamente a queste iscrizioni doppie.
+
+Quindi la rimozione deve avvenire in questo ordine:
+
+1. eliminare i pagamenti collegati alle iscrizioni duplicate
+2. eliminare le iscrizioni duplicate
+
+Questo evita pagamenti orfani o dati incoerenti.
+
+Non risultano invece log di sollecito pagamento collegati a questi doppioni:
+
+```text
+pagamento_reminder_logs: 0
+```
+
+### 3. Cancellazione delle iscrizioni duplicate
+
+Dopo aver eliminato i pagamenti collegati, cancello dalla tabella `iscrizioni` solo le 4 righe duplicate successive, lasciando intatte le prime iscrizioni.
+
+### 4. Verifica finale
+
+Dopo la cancellazione eseguo due controlli:
+
+1. controllo che non esistano più doppioni per stesso nome + cognome + turno
+2. controllo che le pagine `/turno` e `Gestione Pagamenti` non mostrino più i record rimossi
+
+## Dettaglio tecnico
+
+La cancellazione prevista sarà equivalente a:
+
+```sql
+DELETE FROM pagamenti
+WHERE iscrizione_id IN (
+  '43439eb2-e393-44b8-8bb5-d3e3e48ac4a5',
+  '42258a36-1a94-43a0-b288-d3ba30873379',
+  'c0854b80-12ec-4626-b036-8e3139cc71e1',
+  'df802b37-300d-4fff-a7dc-73e5f040e22f'
+);
+
+DELETE FROM iscrizioni
+WHERE id IN (
+  '43439eb2-e393-44b8-8bb5-d3e3e48ac4a5',
+  '42258a36-1a94-43a0-b288-d3ba30873379',
+  'c0854b80-12ec-4626-b036-8e3139cc71e1',
+  'df802b37-300d-4fff-a7dc-73e5f040e22f'
+);
+```
+
+## Risultato atteso
+
+Dopo l'intervento:
+
+- ogni ragazzo risulterà iscritto una sola volta per turno
+- spariranno i badge **DOPPIONE** per questi casi nelle pagine `/turno`
+- in Gestione Pagamenti resterà una sola card per ciascun ragazzo
+- il nuovo controllo anti-doppione già implementato bloccherà nuovi casi futuri dal modulo pubblico
