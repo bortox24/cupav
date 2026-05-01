@@ -19,7 +19,7 @@ export default function TurnoFamigliePage() {
   const totaleAnimali = items.reduce((sum, i) => sum + i.num_animali, 0);
 
   return (
-    <MainLayout title="Turno Famiglie 2026">
+    <MainLayout title="Turno Famiglie">
       <div className="space-y-6">
         {/* Hero */}
         <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 text-white rounded-2xl p-6 shadow-xl">

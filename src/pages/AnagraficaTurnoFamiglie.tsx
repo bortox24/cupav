@@ -154,7 +154,7 @@ export default function AnagraficaTurnoFamiglie() {
               <Tent className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1">
-              <h2 className="font-bold text-foreground">Turno Famiglie 2026</h2>
+              <h2 className="font-bold text-foreground">Turno Famiglie</h2>
               <p className="text-sm text-muted-foreground">{items.length} iscrizion{items.length === 1 ? 'e' : 'i'} ricevut{items.length === 1 ? 'a' : 'e'}</p>
             </div>
             <Button variant="outline" onClick={() => exportCSV(filtered)} disabled={filtered.length === 0}>
