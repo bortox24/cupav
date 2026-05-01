@@ -398,6 +398,12 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <InviaComunicazioneFamigliaWizard
+        iscrizione={item}
+        open={comunicazioneOpen}
+        onOpenChange={setComunicazioneOpen}
+      />
     </>
   );
 }
