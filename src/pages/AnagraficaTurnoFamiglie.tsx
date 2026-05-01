@@ -100,17 +100,37 @@ function FamigliaCard({ item, onClick }: { item: IscrizioneFamiglia; onClick: ()
 function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFamiglia | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const updateMut = useUpdateIscrizioneFamiglia();
   const deleteMut = useDeleteIscrizioneFamiglia();
+  const queryClient = useQueryClient();
+  const { user, profile } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<IscrizioneFamiglia | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [comunicazioneOpen, setComunicazioneOpen] = useState(false);
 
   // Sync form when item changes
   useMemo(() => {
     if (item) { setForm({ ...item }); setEditMode(false); }
   }, [item?.id]);
 
+  // Fetch logs
+  const { data: invioLogs = [] } = useQuery({
+    queryKey: ['anagrafica-invio-logs-famiglia', item?.id],
+    queryFn: async () => {
+      if (!item?.id) return [];
+      const { data, error } = await (supabase as any)
+        .from('anagrafica_invio_logs')
+        .select('*')
+        .eq('iscrizione_famiglia_id', item.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && !!item?.id,
+  });
+
   if (!item || !form) return null;
   const tot = totalePartecipanti(form);
+  const userName = profile?.full_name || profile?.email || '';
 
   const update = <K extends keyof IscrizioneFamiglia>(k: K, v: IscrizioneFamiglia[K]) => setForm(p => p ? { ...p, [k]: v } : p);
 
@@ -122,17 +142,42 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const addRecapito = () => update('recapiti_telefonici', [...form.recapiti_telefonici, { nome: '', telefono: '' } as RecapitoTel]);
   const removeRecapito = (idx: number) => update('recapiti_telefonici', form.recapiti_telefonici.filter((_, i) => i !== idx));
 
+  const invalidateLogs = () => queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs-famiglia', item.id] });
+
   const handleSave = () => {
     const { id, created_at, ...updates } = form;
+    const diff = buildDiff(item, form);
     updateMut.mutate({ id, updates }, {
-      onSuccess: () => { toast.success('Iscrizione aggiornata'); setEditMode(false); },
+      onSuccess: async () => {
+        toast.success('Iscrizione aggiornata');
+        setEditMode(false);
+        if (user && diff) {
+          await logFamigliaAction({
+            iscrizioneId: item.id, userId: user.id, userName,
+            tipo: 'modifica_dati', dettaglio: diff,
+          });
+          invalidateLogs();
+        }
+      },
       onError: (e: any) => toast.error(e.message || 'Errore aggiornamento'),
     });
   };
 
   const handleArchive = () => {
-    updateMut.mutate({ id: item.id, updates: { archiviato: !item.archiviato } }, {
-      onSuccess: () => { toast.success(item.archiviato ? 'Iscrizione ripristinata' : 'Iscrizione archiviata'); onOpenChange(false); },
+    const willArchive = !item.archiviato;
+    updateMut.mutate({ id: item.id, updates: { archiviato: willArchive } }, {
+      onSuccess: async () => {
+        toast.success(item.archiviato ? 'Iscrizione ripristinata' : 'Iscrizione archiviata');
+        if (user) {
+          await logFamigliaAction({
+            iscrizioneId: item.id, userId: user.id, userName,
+            tipo: willArchive ? 'archiviazione' : 'ripristino',
+            dettaglio: willArchive ? 'Iscrizione archiviata' : 'Iscrizione ripristinata',
+          });
+          invalidateLogs();
+        }
+        onOpenChange(false);
+      },
       onError: (e: any) => toast.error(e.message || 'Errore'),
     });
   };
