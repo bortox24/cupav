@@ -148,6 +148,11 @@ export function useMyPagePermissions() {
     // Admin always has access to everything
     if (isAdmin) return true;
 
+    // Special case: pagine Turno Famiglie sono governate dal permesso turno "Turno famiglie"
+    if (pagePath === '/turno-famiglie' || pagePath === '/anagrafica-turno-famiglie') {
+      return turnoPermissions.some(p => p.turno === 'Turno famiglie');
+    }
+
     // Check for custom permission (exact match first, then pattern match)
     const customPermission = permissions.find(p => 
       p.page_path === pagePath || matchPath(p.page_path, pagePath)
