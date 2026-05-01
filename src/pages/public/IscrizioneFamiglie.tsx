@@ -64,6 +64,7 @@ function PeriodoDatePicker({ value, onChange, label, disabled }: { value: Date |
 export default function IscrizioneFamiglie() {
   const { toast } = useToast();
   const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
