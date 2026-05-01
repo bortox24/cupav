@@ -185,6 +185,19 @@ export default function Impostazioni() {
             </div>
             <div className="flex items-center justify-between">
               <div>
+                <Label className="text-base font-medium">Iscrizione Turno Famiglie</Label>
+                <p className="text-sm text-muted-foreground">
+                  Modulo iscrizione turno famiglie (/iscrizione-famiglie)
+                </p>
+              </div>
+              <Switch
+                checked={iscrizioneFamiglieEnabled}
+                onCheckedChange={(checked) => handleToggle('iscrizione_famiglie_enabled', checked)}
+                disabled={updateSetting.isPending}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
                 <Label className="text-base font-medium">Preiscrizioni</Label>
                 <p className="text-sm text-muted-foreground">
                   Modulo preiscrizione CUPAV (/preiscrizione-cupav)
