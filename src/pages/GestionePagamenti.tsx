@@ -353,8 +353,11 @@ export default function GestionePagamenti() {
   }, [items, search, filterTurno, filterStato]);
 
   const counts = useMemo(() => {
-    const c = { pagato: 0, parziale: 0, da_pagare: 0 };
-    items.forEach(i => { c[i.stato_pagamento]++; });
+    const c = { pagato: 0, parziale: 0, da_pagare: 0, famiglie: 0 };
+    items.forEach(i => {
+      c[i.stato_pagamento]++;
+      if (i.is_famiglia) c.famiglie++;
+    });
     return c;
   }, [items]);
 
@@ -367,7 +370,7 @@ export default function GestionePagamenti() {
     <MainLayout title="Gestione Pagamenti">
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
             <CardContent className="py-3 px-4 text-center">
               <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{counts.pagato}</p>
@@ -384,6 +387,14 @@ export default function GestionePagamenti() {
             <CardContent className="py-3 px-4 text-center">
               <p className="text-2xl font-bold text-red-700 dark:text-red-400">{counts.da_pagare}</p>
               <p className="text-xs text-muted-foreground">Da pagare</p>
+            </CardContent>
+          </Card>
+          <Card className="border-fuchsia-200 dark:border-fuchsia-800 bg-fuchsia-50/50 dark:bg-fuchsia-950/20">
+            <CardContent className="py-3 px-4 text-center">
+              <p className="text-2xl font-bold text-fuchsia-700 dark:text-fuchsia-400 flex items-center justify-center gap-1">
+                <Tent className="h-5 w-5" />{counts.famiglie}
+              </p>
+              <p className="text-xs text-muted-foreground">Famiglie</p>
             </CardContent>
           </Card>
         </div>
