@@ -28,8 +28,7 @@ export default function TurnoFamigliePage() {
               <Tent className="h-8 w-8" />
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold">Turno Famiglie</h2>
-              <p className="text-white/90 text-sm">​</p>
+              <h2 className="text-2xl font-bold leading-none">Turno Famiglie</h2>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 mt-5">
