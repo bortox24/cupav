@@ -8,14 +8,53 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Search, Users, Phone, Mail, MapPin, Calendar, Download, Tent, Pencil, Archive, ArchiveRestore, Trash2, Save, X, ChevronDown, Plus } from 'lucide-react';
+import { Loader2, Search, Users, Phone, Mail, MapPin, Calendar, Download, Tent, Pencil, Archive, ArchiveRestore, Trash2, Save, X, ChevronDown, Plus, Check, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { InviaComunicazioneFamigliaWizard } from '@/components/InviaComunicazioneFamigliaWizard';
+
+async function logFamigliaAction(params: {
+  iscrizioneId: string; userId: string; userName: string;
+  tipo: string; dettaglio?: string; successo?: boolean;
+}) {
+  await (supabase.from('anagrafica_invio_logs' as any) as any).insert({
+    iscrizione_famiglia_id: params.iscrizioneId,
+    inviato_da: params.userId,
+    inviato_da_nome: params.userName,
+    successo: params.successo ?? true,
+    tipo: params.tipo,
+    dettaglio: params.dettaglio || null,
+  });
+}
+
+function buildDiff(prev: IscrizioneFamiglia, next: IscrizioneFamiglia): string {
+  const labels: Partial<Record<keyof IscrizioneFamiglia, string>> = {
+    cognome: 'Cognome', nome: 'Nome', email: 'Email', residente_a: 'Residenza', via: 'Via',
+    tipo_periodo: 'Tipo periodo', data_inizio: 'Data inizio', data_fine: 'Data fine',
+    num_adulti: 'Adulti', num_4_10_anni: '4-10 anni', num_0_3_anni: '0-3 anni',
+    num_animali: 'Animali', acconto_versato: 'Acconto',
+    figlio_1_over10: 'Figlio 1 >10', figlio_2_over10: 'Figlio 2 >10', figlio_3_over10: 'Figlio 3 >10',
+  };
+  const changes: string[] = [];
+  (Object.keys(labels) as (keyof IscrizioneFamiglia)[]).forEach((k) => {
+    if (String(prev[k] ?? '') !== String(next[k] ?? '')) {
+      changes.push(`${labels[k]}: "${prev[k] ?? ''}" → "${next[k] ?? ''}"`);
+    }
+  });
+  const prevR = JSON.stringify(prev.recapiti_telefonici ?? []);
+  const nextR = JSON.stringify(next.recapiti_telefonici ?? []);
+  if (prevR !== nextR) changes.push('Recapiti telefonici aggiornati');
+  return changes.join(' · ');
+}
 
 function formatDate(d: string) {
   try { return format(new Date(d), 'dd/MM/yyyy', { locale: itLocale }); } catch { return d; }
