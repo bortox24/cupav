@@ -81,16 +81,6 @@ export const availablePages: PageInfo[] = [
     description: 'Gestionale staff CUPAV (animatori, cuochi, responsabili)',
   },
   {
-    path: '/turno-famiglie',
-    title: 'Turno Famiglie',
-    description: 'Dashboard del turno famiglie',
-  },
-  {
-    path: '/anagrafica-turno-famiglie',
-    title: 'Anagrafica Turno Famiglie',
-    description: 'Gestione iscrizioni turno famiglie',
-  },
-  {
     path: '/gestione-pagamenti',
     title: 'Gestione Pagamenti',
     description: 'Gestisci stato pagamenti delle iscrizioni',
@@ -140,9 +130,28 @@ export function useMyPagePermissions() {
     enabled: !!user?.id,
   });
 
+  const { data: turnoPermissions = [] } = useQuery({
+    queryKey: ['my-turno-permissions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await (supabase as any)
+        .from('turno_permessi')
+        .select('turno')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return (data ?? []) as { turno: string }[];
+    },
+    enabled: !!user?.id,
+  });
+
   const canAccessPage = (pagePath: string): boolean => {
     // Admin always has access to everything
     if (isAdmin) return true;
+
+    // Special case: pagine Turno Famiglie sono governate dal permesso turno "Turno famiglie"
+    if (pagePath === '/turno-famiglie' || pagePath === '/anagrafica-turno-famiglie') {
+      return turnoPermissions.some(p => p.turno === 'Turno famiglie');
+    }
 
     // Check for custom permission (exact match first, then pattern match)
     const customPermission = permissions.find(p => 
