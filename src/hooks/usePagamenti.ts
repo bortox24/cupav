@@ -33,6 +33,7 @@ export interface IscrizioneConPagamento {
   importo_dovuto: number;
   importo_pagato: number;
   pagamento_id: string | null;
+  is_famiglia?: boolean;
 }
 
 export interface ReminderLog {
@@ -55,6 +56,12 @@ export function useIscrizioniConPagamenti() {
         queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pagamenti' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni_famiglie' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pagamenti_famiglie' }, () => {
         queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
       })
       .subscribe();
@@ -98,7 +105,7 @@ export function useIscrizioniConPagamenti() {
         }
       }
 
-      return (iscrizioni || []).map((i: any): IscrizioneConPagamento => {
+      const standard: IscrizioneConPagamento[] = (iscrizioni || []).map((i: any) => {
         const p = pagamentiMap.get(i.id);
         return {
           ...i,
@@ -107,8 +114,55 @@ export function useIscrizioniConPagamenti() {
           importo_dovuto: p?.importo_dovuto ?? 250,
           importo_pagato: p?.importo_pagato ?? 0,
           pagamento_id: p?.id || null,
+          is_famiglia: false,
         };
       });
+
+      // ===== Famiglie =====
+      const { data: famiglie } = await (supabase as any)
+        .from('iscrizioni_famiglie')
+        .select('*')
+        .order('cognome', { ascending: true })
+        .order('nome', { ascending: true });
+
+      const { data: pagFam } = await (supabase as any).from('pagamenti_famiglie').select('*');
+      const pagFamMap = new Map<string, any>();
+      (pagFam || []).forEach((p: any) => pagFamMap.set(p.iscrizione_id, p));
+
+      const missingFam = (famiglie || []).filter((i: any) => !pagFamMap.has(i.id));
+      if (missingFam.length > 0) {
+        const { data: newPag } = await (supabase as any)
+          .from('pagamenti_famiglie')
+          .insert(missingFam.map((i: any) => ({ iscrizione_id: i.id })))
+          .select();
+        (newPag || []).forEach((p: any) => pagFamMap.set(p.iscrizione_id, p));
+      }
+
+      const famigliePag: IscrizioneConPagamento[] = (famiglie || []).map((i: any) => {
+        const p = pagFamMap.get(i.id);
+        const recapiti = Array.isArray(i.recapiti_telefonici)
+          ? i.recapiti_telefonici.map((r: any) => `${r.nome}: ${r.telefono}`).join(' | ')
+          : '';
+        return {
+          id: i.id,
+          ragazzo_nome: i.nome,
+          ragazzo_cognome: i.cognome,
+          genitore_nome: '',
+          genitore_cognome: '',
+          genitore_qualita: 'Famiglia',
+          turno: 'Turno famiglie',
+          email: i.email,
+          recapiti_telefonici: recapiti,
+          stato_pagamento: p?.stato || 'da_pagare',
+          note_pagamento: p?.note || null,
+          importo_dovuto: p?.importo_dovuto ?? 0,
+          importo_pagato: p?.importo_pagato ?? 0,
+          pagamento_id: p?.id || null,
+          is_famiglia: true,
+        };
+      });
+
+      return [...standard, ...famigliePag];
     },
     staleTime: 0,
     refetchOnMount: 'always',

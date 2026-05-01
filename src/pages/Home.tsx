@@ -169,6 +169,16 @@ const allQuickAccessCards: QuickAccessCard[] = [
     iconColor: 'text-white',
   },
   {
+    title: 'Anagrafica Turno Famiglie',
+    description: 'Iscrizioni e dati famiglie campeggio',
+    icon: <Tent className="h-7 w-7" />,
+    path: '/anagrafica-turno-famiglie',
+    gradient: 'bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-50 dark:from-orange-950/50 dark:via-amber-950/30 dark:to-yellow-950/30',
+    borderColor: 'border-orange-300 dark:border-orange-700',
+    iconBg: 'bg-gradient-to-br from-orange-500 to-amber-600',
+    iconColor: 'text-white',
+  },
+  {
     title: 'Anagrafica Staff',
     description: 'Gestionale staff CUPAV (animatori, cuochi, responsabili)',
     icon: <UserPlus className="h-7 w-7" />,
@@ -344,6 +354,10 @@ export default function Home() {
                   Iscrizioni
                 </Link>
               )}
+              <Link to="/iscrizione-famiglie" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                <Users className="h-5 w-5" />
+                Iscrizione Famiglie
+              </Link>
               {siteSettings?.preiscrizione_enabled !== 'false' && (
                 <Link to="/preiscrizione-cupav" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
                   <FileText className="h-5 w-5" />

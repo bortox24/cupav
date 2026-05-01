@@ -15,6 +15,7 @@ export const TURNI: TurnoInfo[] = [
   { value: '1° Media', label: '1^ Media', slug: '1-media' },
   { value: '2° Media', label: '2^ Media', slug: '2-media' },
   { value: '3° Media', label: '3^ Media', slug: '3-media' },
+  { value: 'Turno famiglie', label: 'Turno Famiglie', slug: 'turno-famiglie' },
 ];
 
 export interface TurnoPermission {

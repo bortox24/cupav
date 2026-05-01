@@ -21,9 +21,12 @@ import VisualizzaModuloRisposte from "./pages/VisualizzaModuloRisposte";
 import ModuloForm from "./pages/public/ModuloForm";
 import PreiscrizioneCupav from "./pages/public/PreiscrizioneCupav";
 import IscrizioneCampeggio from "./pages/public/IscrizioneCampeggio";
+import IscrizioneFamiglie from "./pages/public/IscrizioneFamiglie";
 import ModuloStaff from "./pages/public/ModuloStaff";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
+import AnagraficaTurnoFamiglie from "./pages/AnagraficaTurnoFamiglie";
 import TurnoPage from "./pages/TurnoPage";
+import TurnoFamigliePage from "./pages/TurnoFamigliePage";
 import GestionePagamenti from "./pages/GestionePagamenti";
 import Impostazioni from "./pages/Impostazioni";
 import AnagraficaAnimatori from "./pages/AnagraficaAnimatori";
@@ -191,9 +194,30 @@ function AppRoutes() {
         }
       />
 
+      {/* Anagrafica Turno Famiglie */}
+      <Route
+        path="/anagrafica-turno-famiglie"
+        element={
+          <ProtectedRoute>
+            <AnagraficaTurnoFamiglie />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Turno Famiglie page */}
+      <Route
+        path="/turno/turno-famiglie"
+        element={
+          <ProtectedRoute>
+            <TurnoFamigliePage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Public routes */}
       <Route path="/preiscrizione-cupav" element={<PreiscrizioneCupav />} />
       <Route path="/iscrizione" element={<IscrizioneCampeggio />} />
+      <Route path="/iscrizione-famiglie" element={<IscrizioneFamiglie />} />
       <Route path="/modulo/:slug" element={<ModuloForm />} />
       <Route path="/modulo-staff" element={<ModuloStaff />} />
 

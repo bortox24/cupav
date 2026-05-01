@@ -382,6 +382,84 @@ export type Database = {
         }
         Relationships: []
       }
+      iscrizioni_famiglie: {
+        Row: {
+          acconto_versato: number
+          cognome: string
+          created_at: string
+          data_fine: string
+          data_inizio: string
+          email: string
+          figlio_1_over10: boolean
+          figlio_2_over10: boolean
+          figlio_3_over10: boolean
+          firma_data: string
+          firma_nome_cognome: string
+          id: string
+          nome: string
+          num_0_3_anni: number
+          num_4_10_anni: number
+          num_adulti: number
+          num_animali: number
+          recapiti_telefonici: Json
+          regolamento_accettato: boolean
+          residente_a: string
+          tipo_periodo: string
+          turno: string
+          via: string
+        }
+        Insert: {
+          acconto_versato?: number
+          cognome: string
+          created_at?: string
+          data_fine: string
+          data_inizio: string
+          email: string
+          figlio_1_over10?: boolean
+          figlio_2_over10?: boolean
+          figlio_3_over10?: boolean
+          firma_data: string
+          firma_nome_cognome: string
+          id?: string
+          nome: string
+          num_0_3_anni?: number
+          num_4_10_anni?: number
+          num_adulti?: number
+          num_animali?: number
+          recapiti_telefonici?: Json
+          regolamento_accettato?: boolean
+          residente_a: string
+          tipo_periodo: string
+          turno?: string
+          via: string
+        }
+        Update: {
+          acconto_versato?: number
+          cognome?: string
+          created_at?: string
+          data_fine?: string
+          data_inizio?: string
+          email?: string
+          figlio_1_over10?: boolean
+          figlio_2_over10?: boolean
+          figlio_3_over10?: boolean
+          firma_data?: string
+          firma_nome_cognome?: string
+          id?: string
+          nome?: string
+          num_0_3_anni?: number
+          num_4_10_anni?: number
+          num_adulti?: number
+          num_animali?: number
+          recapiti_telefonici?: Json
+          regolamento_accettato?: boolean
+          residente_a?: string
+          tipo_periodo?: string
+          turno?: string
+          via?: string
+        }
+        Relationships: []
+      }
       pagamenti: {
         Row: {
           created_at: string
@@ -425,6 +503,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pagamenti_famiglie: {
+        Row: {
+          created_at: string
+          id: string
+          importo_dovuto: number | null
+          importo_pagato: number
+          iscrizione_id: string
+          note: string | null
+          stato: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          importo_dovuto?: number | null
+          importo_pagato?: number
+          iscrizione_id: string
+          note?: string | null
+          stato?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          importo_dovuto?: number | null
+          importo_pagato?: number
+          iscrizione_id?: string
+          note?: string | null
+          stato?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       pagamento_reminder_logs: {
         Row: {
