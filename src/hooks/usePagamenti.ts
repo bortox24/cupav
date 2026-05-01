@@ -33,6 +33,7 @@ export interface IscrizioneConPagamento {
   importo_dovuto: number;
   importo_pagato: number;
   pagamento_id: string | null;
+  is_famiglia?: boolean;
 }
 
 export interface ReminderLog {
