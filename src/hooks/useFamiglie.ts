@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export type RecapitoTel = { nome: string; telefono: string };
@@ -28,6 +28,7 @@ export interface IscrizioneFamiglia {
   firma_data: string;
   firma_nome_cognome: string;
   turno: string;
+  archiviato: boolean;
 }
 
 export const TIPO_PERIODO_LABEL: Record<IscrizioneFamiglia['tipo_periodo'], string> = {
@@ -65,5 +66,33 @@ export function useIscrizioniFamiglie() {
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+  });
+}
+
+export function useUpdateIscrizioneFamiglia() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<IscrizioneFamiglia> }) => {
+      const { error } = await (supabase as any).from('iscrizioni_famiglie').update(updates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['iscrizioni-famiglie'] });
+      qc.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+    },
+  });
+}
+
+export function useDeleteIscrizioneFamiglia() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('iscrizioni_famiglie').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['iscrizioni-famiglie'] });
+      qc.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+    },
   });
 }

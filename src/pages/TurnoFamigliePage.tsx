@@ -13,7 +13,8 @@ function totalePartecipanti(i: IscrizioneFamiglia) {
 }
 
 export default function TurnoFamigliePage() {
-  const { data: items = [], isLoading } = useIscrizioniFamiglie();
+  const { data: allItems = [], isLoading } = useIscrizioniFamiglie();
+  const items = allItems.filter(i => !i.archiviato);
 
   const totalePersone = items.reduce((sum, i) => sum + totalePartecipanti(i), 0);
   const totaleAnimali = items.reduce((sum, i) => sum + i.num_animali, 0);
