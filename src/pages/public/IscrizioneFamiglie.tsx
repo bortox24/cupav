@@ -472,18 +472,12 @@ export default function IscrizioneFamiglie() {
                 </div>
 
                 <div>
-                  <Label>Data *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-left font-normal">
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {format(firmaData, "dd/MM/yyyy", { locale: it })}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={firmaData} onSelect={(d) => d && setFirmaData(d)} locale={it} className="p-3 pointer-events-auto" />
-                    </PopoverContent>
-                  </Popover>
+                  <Label>Data</Label>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/40 text-sm">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{format(firmaData, "dd/MM/yyyy", { locale: it })}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">(data odierna)</span>
+                  </div>
                 </div>
 
                 <div className="bg-muted/40 rounded-xl p-3">
