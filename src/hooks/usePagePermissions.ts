@@ -153,8 +153,9 @@ export function useMyPagePermissions() {
     // Admin always has access to everything
     if (isAdmin) return true;
 
-    // Special case: pagine Turno Famiglie sono governate dal permesso turno "Turno famiglie"
-    if (pagePath === '/turno-famiglie' || pagePath === '/anagrafica-turno-famiglie') {
+    // Special case: la dashboard /turno-famiglie è governata dal permesso turno "Turno famiglie"
+    // (l'anagrafica /anagrafica-turno-famiglie ha invece un permesso pagina dedicato)
+    if (pagePath === '/turno-famiglie') {
       return turnoPermissions.some(p => p.turno === 'Turno famiglie');
     }
 
