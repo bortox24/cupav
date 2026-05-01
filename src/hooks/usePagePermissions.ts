@@ -81,16 +81,6 @@ export const availablePages: PageInfo[] = [
     description: 'Gestionale staff CUPAV (animatori, cuochi, responsabili)',
   },
   {
-    path: '/turno-famiglie',
-    title: 'Turno Famiglie',
-    description: 'Dashboard del turno famiglie',
-  },
-  {
-    path: '/anagrafica-turno-famiglie',
-    title: 'Anagrafica Turno Famiglie',
-    description: 'Gestione iscrizioni turno famiglie',
-  },
-  {
     path: '/gestione-pagamenti',
     title: 'Gestione Pagamenti',
     description: 'Gestisci stato pagamenti delle iscrizioni',
