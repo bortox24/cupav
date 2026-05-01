@@ -68,3 +68,31 @@ export function useIscrizioniFamiglie() {
     refetchOnWindowFocus: true,
   });
 }
+
+export function useUpdateIscrizioneFamiglia() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<IscrizioneFamiglia> }) => {
+      const { error } = await (supabase as any).from('iscrizioni_famiglie').update(updates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['iscrizioni-famiglie'] });
+      qc.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+    },
+  });
+}
+
+export function useDeleteIscrizioneFamiglia() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('iscrizioni_famiglie').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['iscrizioni-famiglie'] });
+      qc.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+    },
+  });
+}
