@@ -15,9 +15,11 @@ import {
   CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send,
   Users as UsersIcon, Plus, Trash2, Mail, Facebook, Phone, Tent,
 } from "lucide-react";
+import { XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 // Capitalizes first letter of every word, lowercases the rest
 const capitalizeWords = (s: string) =>
@@ -62,6 +64,7 @@ function PeriodoDatePicker({ value, onChange, label, disabled }: { value: Date |
 export default function IscrizioneFamiglie() {
   const { toast } = useToast();
   const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -199,6 +202,20 @@ export default function IscrizioneFamiglie() {
       setSubmitting(false);
     }
   };
+
+  if (!settingsLoading && siteSettings?.iscrizione_famiglie_enabled === 'false') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-orange-50 to-background flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full text-center shadow-xl rounded-2xl">
+          <CardHeader>
+            <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <CardTitle>Iscrizioni chiuse</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">Le iscrizioni al Turno Famiglie sono attualmente chiuse. Riprova più tardi.</p>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (

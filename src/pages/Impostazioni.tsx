@@ -108,6 +108,7 @@ export default function Impostazioni() {
   }
 
   const iscrizioneEnabled = settings?.iscrizione_enabled === 'true';
+  const iscrizioneFamiglieEnabled = settings?.iscrizione_famiglie_enabled === 'true';
   const preiscrizioneEnabled = settings?.preiscrizione_enabled === 'true';
   const moduloStaffEnabled = settings?.modulo_staff_enabled === 'true';
 
@@ -179,6 +180,19 @@ export default function Impostazioni() {
               <Switch
                 checked={iscrizioneEnabled}
                 onCheckedChange={(checked) => handleToggle('iscrizione_enabled', checked)}
+                disabled={updateSetting.isPending}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base font-medium">Iscrizione Turno Famiglie</Label>
+                <p className="text-sm text-muted-foreground">
+                  Modulo iscrizione turno famiglie (/iscrizione-famiglie)
+                </p>
+              </div>
+              <Switch
+                checked={iscrizioneFamiglieEnabled}
+                onCheckedChange={(checked) => handleToggle('iscrizione_famiglie_enabled', checked)}
                 disabled={updateSetting.isPending}
               />
             </div>
