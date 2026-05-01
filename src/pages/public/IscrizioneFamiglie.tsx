@@ -15,9 +15,11 @@ import {
   CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Send,
   Users as UsersIcon, Plus, Trash2, Mail, Facebook, Phone, Tent,
 } from "lucide-react";
+import { XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 // Capitalizes first letter of every word, lowercases the rest
 const capitalizeWords = (s: string) =>
