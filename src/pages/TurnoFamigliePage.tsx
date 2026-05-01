@@ -29,7 +29,7 @@ export default function TurnoFamigliePage() {
             </div>
             <div className="flex-1">
               <h2 className="text-2xl font-bold">Turno Famiglie</h2>
-              <p className="text-white/90 text-sm">Sagron Mis (TN) — Agosto 2026</p>
+              <p className="text-white/90 text-sm">​</p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 mt-5">
