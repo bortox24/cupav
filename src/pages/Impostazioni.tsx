@@ -108,6 +108,7 @@ export default function Impostazioni() {
   }
 
   const iscrizioneEnabled = settings?.iscrizione_enabled === 'true';
+  const iscrizioneFamiglieEnabled = settings?.iscrizione_famiglie_enabled === 'true';
   const preiscrizioneEnabled = settings?.preiscrizione_enabled === 'true';
   const moduloStaffEnabled = settings?.modulo_staff_enabled === 'true';
 
