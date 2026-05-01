@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search, CreditCard, Send, Clock, CheckCircle2 } from 'lucide-react';
+import { Loader2, Search, CreditCard, Send, Clock, CheckCircle2, Tent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
@@ -147,7 +147,11 @@ function PagamentoDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneC
 function PagamentoCard({ item, onClick }: { item: IscrizioneConPagamento; onClick: () => void }) {
   const updateMutation = useUpdatePagamento();
   const [localImportoPagato, setLocalImportoPagato] = useState(item.importo_pagato || 0);
+  const [localImportoDovuto, setLocalImportoDovuto] = useState(item.importo_dovuto || 0);
   const [saved, setSaved] = useState(false);
+  const [savedDovuto, setSavedDovuto] = useState(false);
+
+  const isFamiglia = !!item.is_famiglia;
 
   const handleStatusChange = (newStato: string) => {
     const stato = newStato as PaymentStatus;
@@ -157,6 +161,7 @@ function PagamentoCard({ item, onClick }: { item: IscrizioneConPagamento; onClic
       stato,
       note: stato === 'parziale' ? `Già pagato: ${localImportoPagato}€ su ${item.importo_dovuto}€` : null,
       importo_pagato: stato === 'parziale' ? localImportoPagato : 0,
+      isFamiglia,
     });
   };
 
@@ -167,7 +172,18 @@ function PagamentoCard({ item, onClick }: { item: IscrizioneConPagamento; onClic
       stato: item.stato_pagamento,
       note: item.stato_pagamento === 'parziale' ? `Già pagato: ${localImportoPagato}€ su ${importo}€` : null,
       importo_dovuto: importo,
+      isFamiglia,
     });
+  };
+
+  const handleSaveImportoDovutoFamiglia = () => {
+    updateMutation.mutate({
+      iscrizioneId: item.id,
+      stato: item.stato_pagamento,
+      note: item.stato_pagamento === 'parziale' ? `Già pagato: ${localImportoPagato}€ su ${localImportoDovuto}€` : null,
+      importo_dovuto: localImportoDovuto,
+      isFamiglia,
+    }, { onSuccess: () => setSavedDovuto(true) });
   };
 
   const handleSavePartial = () => {
@@ -176,6 +192,7 @@ function PagamentoCard({ item, onClick }: { item: IscrizioneConPagamento; onClic
       stato: 'parziale',
       note: `Già pagato: ${localImportoPagato}€ su ${item.importo_dovuto}€`,
       importo_pagato: localImportoPagato,
+      isFamiglia,
     }, {
       onSuccess: () => setSaved(true),
     });
@@ -184,14 +201,22 @@ function PagamentoCard({ item, onClick }: { item: IscrizioneConPagamento; onClic
   const initials = `${(item.ragazzo_nome?.[0] || '').toUpperCase()}${(item.ragazzo_cognome?.[0] || '').toUpperCase()}`;
 
   return (
-    <Card className={`border-2 shadow-sm rounded-2xl overflow-hidden transition-all duration-300 ${statusColor(item.stato_pagamento)}`}>
+    <Card className={`border-2 shadow-sm rounded-2xl overflow-hidden transition-all duration-300 ${statusColor(item.stato_pagamento)} ${isFamiglia ? 'ring-2 ring-fuchsia-400 dark:ring-fuchsia-600 ring-offset-1' : ''}`}>
       <CardContent className="p-0">
+        {/* Famiglia banner */}
+        {isFamiglia && (
+          <div className="bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white px-4 py-1.5 flex items-center justify-center gap-1.5">
+            <Tent className="h-3.5 w-3.5" />
+            <span className="text-xs font-bold uppercase tracking-wider">Turno Famiglie</span>
+          </div>
+        )}
+
         {/* Header - clickable to open drawer */}
         <div
           className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity ${statusHeaderColor(item.stato_pagamento)}`}
           onClick={onClick}
         >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md bg-gradient-to-br from-primary to-blue-500">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md ${isFamiglia ? 'bg-gradient-to-br from-fuchsia-500 to-pink-600' : 'bg-gradient-to-br from-primary to-blue-500'}`}>
             {initials}
           </div>
           <div className="flex-1 min-w-0">
@@ -199,26 +224,51 @@ function PagamentoCard({ item, onClick }: { item: IscrizioneConPagamento; onClic
               {item.ragazzo_nome} {item.ragazzo_cognome}
             </h4>
             <p className="text-xs text-muted-foreground mt-0.5 truncate">
-              {item.genitore_nome} {item.genitore_cognome}
+              {isFamiglia ? 'Nucleo familiare' : `${item.genitore_nome} ${item.genitore_cognome}`}
             </p>
           </div>
-          {/* Importo dovuto dropdown */}
-          <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-            <Select value={String(item.importo_dovuto)} onValueChange={handleImportoDovutoChange}>
-              <SelectTrigger className="w-[90px] h-7 text-xs rounded-full bg-background border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                <SelectItem value="250">250€</SelectItem>
-                <SelectItem value="230">230€</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Importo dovuto: dropdown per standard, manuale per famiglie */}
+          {!isFamiglia && (
+            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+              <Select value={String(item.importo_dovuto)} onValueChange={handleImportoDovutoChange}>
+                <SelectTrigger className="w-[90px] h-7 text-xs rounded-full bg-background border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="250">250€</SelectItem>
+                  <SelectItem value="230">230€</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Body */}
         <div className="px-4 py-3 space-y-3">
           <p className="text-xs text-muted-foreground font-medium">{item.turno}</p>
+
+          {/* Importo dovuto manuale per famiglie */}
+          {isFamiglia && (
+            <div className="bg-fuchsia-50/60 dark:bg-fuchsia-950/20 rounded-xl p-3 space-y-2">
+              <Label className="text-xs text-muted-foreground">Importo dovuto (€)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  value={localImportoDovuto}
+                  onChange={(e) => { setLocalImportoDovuto(Number(e.target.value)); setSavedDovuto(false); }}
+                  className="h-8 text-sm bg-background"
+                />
+                {savedDovuto ? (
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓</span>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={handleSaveImportoDovutoFamiglia} disabled={updateMutation.isPending} className="h-8 text-xs px-3">
+                    Salva
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           <RadioGroup
             value={item.stato_pagamento}
@@ -303,8 +353,11 @@ export default function GestionePagamenti() {
   }, [items, search, filterTurno, filterStato]);
 
   const counts = useMemo(() => {
-    const c = { pagato: 0, parziale: 0, da_pagare: 0 };
-    items.forEach(i => { c[i.stato_pagamento]++; });
+    const c = { pagato: 0, parziale: 0, da_pagare: 0, famiglie: 0 };
+    items.forEach(i => {
+      c[i.stato_pagamento]++;
+      if (i.is_famiglia) c.famiglie++;
+    });
     return c;
   }, [items]);
 
@@ -317,7 +370,7 @@ export default function GestionePagamenti() {
     <MainLayout title="Gestione Pagamenti">
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
             <CardContent className="py-3 px-4 text-center">
               <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{counts.pagato}</p>
@@ -334,6 +387,14 @@ export default function GestionePagamenti() {
             <CardContent className="py-3 px-4 text-center">
               <p className="text-2xl font-bold text-red-700 dark:text-red-400">{counts.da_pagare}</p>
               <p className="text-xs text-muted-foreground">Da pagare</p>
+            </CardContent>
+          </Card>
+          <Card className="border-fuchsia-200 dark:border-fuchsia-800 bg-fuchsia-50/50 dark:bg-fuchsia-950/20">
+            <CardContent className="py-3 px-4 text-center">
+              <p className="text-2xl font-bold text-fuchsia-700 dark:text-fuchsia-400 flex items-center justify-center gap-1">
+                <Tent className="h-5 w-5" />{counts.famiglie}
+              </p>
+              <p className="text-xs text-muted-foreground">Famiglie</p>
             </CardContent>
           </Card>
         </div>

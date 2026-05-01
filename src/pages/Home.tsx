@@ -272,6 +272,16 @@ const turnoQuickAccessCards: QuickAccessCard[] = [
     iconBg: 'bg-gradient-to-br from-yellow-500 to-amber-600',
     iconColor: 'text-white',
   },
+  {
+    title: 'Turno Famiglie',
+    description: 'Famiglie iscritte al turno famiglie',
+    icon: <GraduationCap className="h-7 w-7" />,
+    path: '/turno/turno-famiglie',
+    gradient: 'bg-gradient-to-br from-fuchsia-100 via-pink-50 to-rose-50 dark:from-fuchsia-950/50 dark:via-pink-950/30 dark:to-rose-950/30',
+    borderColor: 'border-fuchsia-300 dark:border-fuchsia-700',
+    iconBg: 'bg-gradient-to-br from-fuchsia-500 to-pink-600',
+    iconColor: 'text-white',
+  },
 ];
 
 export default function Home() {
@@ -292,10 +302,22 @@ export default function Home() {
     },
   });
 
+  const { data: famiglieCount = 0 } = useQuery({
+    queryKey: ['turno-famiglie-count'],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from('iscrizioni_famiglie')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   const turnoCounts: Record<string, number> = {};
   turnoCountsRaw.forEach((row: { turno: string }) => {
     turnoCounts[row.turno] = (turnoCounts[row.turno] || 0) + 1;
   });
+  turnoCounts['Turno famiglie'] = famiglieCount;
 
   // Filter cards based on user's actual page permissions
   const accessibleCards = allQuickAccessCards.filter(card => {
@@ -381,7 +403,7 @@ export default function Home() {
               <GraduationCap className="h-5 w-5 text-primary" />
               Iscrizioni per turno
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {accessibleTurnoCards.map((card) => (
                 <Link 
                   key={card.path} 

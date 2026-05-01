@@ -176,15 +176,19 @@ export function useUpdatePagamento() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ iscrizioneId, stato, note, importo_dovuto, importo_pagato }: {
+    mutationFn: async ({ iscrizioneId, stato, note, importo_dovuto, importo_pagato, isFamiglia }: {
       iscrizioneId: string;
       stato: PaymentStatus;
       note?: string | null;
       importo_dovuto?: number;
       importo_pagato?: number;
+      isFamiglia?: boolean;
     }) => {
-      const { data: existing } = await supabase
-        .from('pagamenti')
+      const tableName = isFamiglia ? 'pagamenti_famiglie' : 'pagamenti';
+      const client = supabase as any;
+
+      const { data: existing } = await client
+        .from(tableName)
         .select('id')
         .eq('iscrizione_id', iscrizioneId)
         .maybeSingle();
@@ -194,14 +198,14 @@ export function useUpdatePagamento() {
       if (importo_pagato !== undefined) updateData.importo_pagato = importo_pagato;
 
       if (existing) {
-        const { error } = await supabase
-          .from('pagamenti')
+        const { error } = await client
+          .from(tableName)
           .update(updateData)
           .eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from('pagamenti')
+        const { error } = await client
+          .from(tableName)
           .insert({ iscrizione_id: iscrizioneId, ...updateData });
         if (error) throw error;
       }

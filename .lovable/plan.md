@@ -1,160 +1,80 @@
-## Piano: Iscrizione Turno Famiglie 2026
+## Obiettivi
 
-Trasforma il PDF allegato in un modulo digitale autonomo con anagrafica, vista turno e gestione pagamenti integrata.
-
----
-
-### 1. Database — nuove tabelle
-
-`**iscrizioni_famiglie**` (separata da `iscrizioni` perché ha struttura molto diversa):
-
-- `id` uuid PK, `created_at` timestamptz
-- **Sezione 1 – Dati personali**: `email`, `nome`, `cognome` (auto-capitalizzati), `residente_a`, `via`
-- `recapiti_telefonici` jsonb (array di `{nome, telefono}`, min 1)
-- **Sezione 2 – Iscrizione**: `tipo_periodo` text (`7_giorni` | `10_giorni` | `15_giorni` | `personalizzato`), `data_inizio` date, `data_fine` date (per "personalizzato", vincolato 08/08–22/08/2026)
-- **Sezione 2 – Partecipanti**: `num_adulti` int, `num_figli_over10` int (0–4), `num_figli_4_10` int, `num_figli_0_3` int, `num_animali` int
-- **Sezione 3 – Acconto/firma**: `acconto_versato` numeric, `regolamento_accettato` boolean, `firma_data` date, `firma_nome_cognome` text
-- `turno` text default `'Turno famiglie'` (per uniformità nei filtri)
-
-`**pagamenti_famiglie**`: stessa struttura di `pagamenti` ma con FK a `iscrizioni_famiglie`. `importo_dovuto` **NO default** (assegnato manualmente dallo staff).
-
-**RLS**: 
-
-- INSERT pubblico (form anonimo)
-- SELECT/UPDATE/DELETE solo `auth.uid() IS NOT NULL` (come `iscrizioni`)
-- `pagamenti_famiglie`: admin o `has_page_access('/gestione-pagamenti')`
-
-**Realtime**: aggiungi entrambe a `supabase_realtime`.
+1. Aggiungere la **6ª card "Turno Famiglie"** nella sezione "Iscrizioni per turno" della Home (stesso stile delle altre 5).
+2. Completare i **3 punti finali** rimasti dell'integrazione Turno Famiglie:
+   - Logica di **update pagamenti** per le iscrizioni famiglia
+   - **Badge visivo** "Turno Famiglie" in `GestionePagamenti`
+   - **Filtri/identificazione** chiara nella lista pagamenti
 
 ---
 
-### 2. Modulo pubblico `/iscrizione-famiglie`
+## 1. Sesta card "Turno Famiglie" nella Home
 
-Nuovo file `src/pages/public/IscrizioneFamiglie.tsx`, struttura simile a `IscrizioneCampeggio.tsx` ma con **3 tab/step**:
+In `src/pages/Home.tsx`, dentro l'array `turnoQuickAccessCards` (righe 224-275), aggiungere come 6° elemento:
 
-**Tab 1 — Informazioni personali**
+```ts
+{
+  title: 'Turno Famiglie',
+  description: 'Famiglie iscritte al turno famiglie',
+  icon: <Tent className="h-7 w-7" />, // o GraduationCap per coerenza
+  path: '/turno/turno-famiglie',
+  gradient: 'bg-gradient-to-br from-fuchsia-100 via-pink-50 to-rose-50 dark:from-fuchsia-950/50 dark:via-pink-950/30 dark:to-rose-950/30',
+  borderColor: 'border-fuchsia-300 dark:border-fuchsia-700',
+  iconBg: 'bg-gradient-to-br from-fuchsia-500 to-pink-600',
+  iconColor: 'text-white',
+}
+```
 
-- Email per comunicazioni *(obbligatorio)*
-- Nome + Cognome separati *(obbligatori, auto-capitalizzati: ogni parola con prima lettera maiuscola, resto minuscolo, in tempo reale onChange)*
-- Residente a *(obbligatorio)*, Via *(obbligatorio)*
-- **Recapiti telefonici dinamici**: lista con bottone `+` che aggiunge righe `{nome, telefono}`. Placeholder esempio: "Michele Rossi" / "333 1234567". Primo obbligatorio, altri opzionali con bottone elimina (X). Almeno 1 sempre presente.
+Aggiornamenti collegati:
+- Cambiare la griglia da `lg:grid-cols-5` a `lg:grid-cols-6` (riga 384) così tutte e 6 stanno su una riga su desktop.
+- Estendere la query `turnoCounts` (righe 284-298) per contare anche le righe di `iscrizioni_famiglie`. Aggiungo una seconda query e popolo `turnoCounts['Turno famiglie']` con il numero di nuclei familiari iscritti.
+- Il filtro permessi (riga 307-312) funziona già perché `TURNI` include già `Turno famiglie`. Gli admin la vedranno automaticamente; per gli altri staff sarà visibile solo se hanno il permesso turno corrispondente.
 
-**Tab 2 — Chiede l'iscrizione + Persone partecipanti**
-
-- RadioGroup *(obbligatorio)*:
-  - 7 giorni intero periodo — dal 08/08 al 15/08
-  - 10 giorni intero periodo — dal 08/08 al 19/08
-  - 15 giorni intero periodo — dal 08/08 al 22/08
-  - Personalizzato → mostra 2 DatePicker "dal/al" limitati a 08/08/2026–22/08/2026 (entrambi obbligatori se selezionato)
-- Sezione **Persone partecipanti** (card raggruppata, layout a griglia):
-  - Adulti (numero)
-  - 1°/2°/3° figlio >10 anni (checkbox), + 4° figlio (numero, come da PDF)
-  - 4–10 anni (numero), 0–3 anni (numero), Animali (numero)
-  - Almeno 1 partecipante totale obbligatorio
-
-**Tab 3 — Regolamento, quota e firma**
-
-- Box scrollabile con il **regolamento completo** (6 punti) dal PDF
-- Box con **quota giornaliera a persona** (4 fasce complete dal PDF: residente+collabora, residente, fuori comune+collabora, fuori comune)
-- Checkbox *(obbligatorio)*: "Ho letto e accetto il regolamento e la quota giornaliera a persona"
-- Campo numero "Versa come acconto € ___" *(obbligatorio, ≥ 0)*
-- Campo data **preinserito** con data odierna (formato dd/MM/yyyy, modificabile)
-- Riga firma read-only: "Firma per iscrizione e accettazione regolamento allegato: **{Nome Cognome}**" (auto-popolato da Tab 1)
-- Footer testuale fisso (non editabile): "Ci impegniamo a vivere quest'esperienza nello spirito del Campeggio Parrocchiale: …" (5 righe dal PDF)
-
-**Submit**: insert in `iscrizioni_famiglie` → invoke edge function (vedi sotto) → mostra **AlertDialog di conferma**:
-
-> "Grazie per aver inviato la tua iscrizione al Turno Famiglie! Ti contatteremo noi dello staff. Per qualsiasi cosa: [cupavdirettivo@gmail.com](mailto:cupavdirettivo@gmail.com) — Facebook: CUPAV Campeggio Unità Pastorale Altavilla Valmarana"
-
-(Nota: corretto da "cupofdirettivo" / "Fecebook" del PDF.)
-
-**Validazioni**: Zod schema con messaggi italiani; navigazione tab bloccata se step corrente invalido.
-
-**Routing**: aggiungi `<Route path="/iscrizione-famiglie" element={<IscrizioneFamiglie />} />` in `App.tsx`.
+Risultato: nella sezione "Iscrizioni per turno" appariranno 6 card affiancate, l'ultima dedicata al Turno Famiglie con countdown iscritti aggiornato in tempo reale.
 
 ---
 
-### 3. Edge function `notify-iscrizione-famiglia` (opzionale)
+## 2. Pagina `TurnoFamigliePage` come "vera" pagina turno
 
-Identica a `notify-iscrizione` ma per il nuovo turno → invia notifica n8n (riusa webhook esistente).
-
----
-
-### 4. Home — nuova card turno + countdown
-
-In `src/pages/Home.tsx`, aggiungi nella sezione "Iscrizioni per Turno" una card **"Turno Famiglie"** (icona `Users` o `TreePine`, gradient distinto es. arancio/ambra) che linka a `/turno/turno-famiglie`. Visibile solo se utente ha permesso turno o admin.
-
-Aggiungi `'Turno famiglie'` a `TURNI` in `src/hooks/useTurnoPermissions.ts` con slug `turno-famiglie`.
+La pagina esiste già in `/turno/turno-famiglie` (`src/pages/TurnoFamigliePage.tsx`). Il click sulla nuova card della Home porterà direttamente lì, esattamente come avviene per le altre 5 tab. Verifico che la pagina:
+- Mostri il count totale famiglie/persone (già presente).
+- Sia coerente nello stile con le pagine degli altri turni (header, layout `MainLayout`).
+- Se mancano sezioni rispetto agli altri turni (es. lista iscritti rapida), allineo la struttura.
 
 ---
 
-### 5. TurnoPage — supporto Turno Famiglie
+## 3. Aggiornamento pagamenti famiglie
 
-`src/pages/TurnoPage.tsx` deve riconoscere lo slug `turno-famiglie` e leggere da `iscrizioni_famiglie` invece di `iscrizioni`. Strategia: branch condizionale sullo slug → query alternativa con mapping dei campi (nome+cognome al posto di ragazzo+genitore). Tab "Appello/Tende/Pagamenti" adattate (no allergie/farmaci, mostra invece num. partecipanti e periodo).
+In `src/hooks/usePagamenti.ts`:
+- Aggiungere mutation `useUpdatePagamentoFamiglia` che scrive su `pagamenti_famiglie` (campi: `importo_dovuto`, `importo_pagato`, `stato`, `note`, `data_pagamento`).
+- Quando la card pagamento ha `is_famiglia === true`, l'UI deve usare questa mutation invece di quella standard.
+- Realtime già attivo sulla tabella → invalidazione automatica.
 
----
-
-### 6. Anagrafica Turno Famiglie
-
-Nuova pagina `src/pages/AnagraficaTurnoFamiglie.tsx` (modellata su `AnagraficaRagazzi.tsx`):
-
-- Tabella con tutti i campi del modulo: nome, cognome, email, residenza, via, recapiti (tutti), tipo periodo + date, num partecipanti per categoria, acconto, data firma
-- Ricerca, filtri, esportazione CSV/PDF
-- Dettaglio cliccabile con drawer
-- Card di Accesso Rapido in Home con icona `Users` → path `/anagrafica-turno-famiglie`
-- Route protetta + permesso pagina configurabile in `/admin/permessi`
+In `src/pages/GestionePagamenti.tsx`:
+- Nel componente card pagamento, ramificare il salvataggio in base a `is_famiglia`.
+- Permettere **inserimento manuale dell'importo dovuto** per le famiglie (le altre iscrizioni hanno importo fisso 230/250€).
 
 ---
 
-### 7. Gestione Pagamenti — integrazione
+## 4. Badge e identificazione visiva in Gestione Pagamenti
 
-In `src/hooks/usePagamenti.ts` e `src/pages/GestionePagamenti.tsx`:
+In `src/pages/GestionePagamenti.tsx`:
+- Sulle card con `is_famiglia === true`:
+  - Badge in alto a destra: **"🏕️ Turno Famiglie"** (stile `bg-fuchsia-500 text-white`, rounded-full).
+  - Bordo card più marcato: `border-2 border-fuchsia-400 dark:border-fuchsia-600`.
+  - Sfondo leggermente tinto: `bg-fuchsia-50/30 dark:bg-fuchsia-950/20`.
+- Aggiungere chip filtro nella toolbar in alto: `Tutti | Standard | Turno Famiglie` per isolare velocemente le famiglie.
+- Nel contatore in alto, aggiungere riga "Famiglie: N" accanto ai contatori esistenti (Da pagare / Parziale / Pagato).
 
-- Estendi `useIscrizioniConPagamenti` per **unire** (UNION) `iscrizioni` + `iscrizioni_famiglie`, ognuna con i propri pagamenti, normalizzando i campi (`ragazzo_nome` = `nome`, `ragazzo_cognome` = `cognome` per famiglie).
-- Aggiungi flag `is_famiglia: boolean` nel tipo `IscrizioneConPagamento`.
-- `'Turno famiglie'` già presente in `TURNI_FILTER` (riga 19) — verifica funzioni.
-
-**Identificazione visiva**:
-
-- Badge ben visibile **"🏕️ Turno Famiglie"** in alto a destra della card (colore distinto: viola/indaco con bordo) — sempre mostrato in lista, non solo nei filtri
-- Bordo sinistro accentuato (es. `border-l-4 border-indigo-500`) sulle card famiglia
-
-**Prezzo libero**:
-
-- Per `is_famiglia=true`, `importo_dovuto` parte da `null/0` e mostra placeholder "Da definire" con icona warning
-- Lo staff inserisce manualmente l'importo nel drawer dettaglio (campo numero libero, nessun default 250€)
-- Stato pagamento (`da_pagare`/`parziale`/`pagato`) calcolato come per gli altri solo dopo che l'importo è stato impostato; finché è null mostra badge "Importo da assegnare"
+Risultato: le iscrizioni famiglia sono **immediatamente riconoscibili** anche scorrendo velocemente la lista mista.
 
 ---
 
-### 8. Permessi pagine
+## File da modificare
 
-Aggiungi a `/admin/permessi-pagine` due nuove pagine selezionabili:
+- `src/pages/Home.tsx` — aggiunta 6ª card + griglia a 6 colonne + count famiglie
+- `src/pages/TurnoFamigliePage.tsx` — allineamento layout (se necessario)
+- `src/hooks/usePagamenti.ts` — mutation update famiglie
+- `src/pages/GestionePagamenti.tsx` — badge, bordo, filtro, salvataggio condizionale
 
-- `/anagrafica-turno-famiglie`
-- `/turno/turno-famiglie` (gestita via `turno_permessi` esistente)
-
----
-
-### File modificati / creati
-
-**Creati**:
-
-- `supabase/migrations/<ts>_iscrizioni_famiglie.sql`
-- `src/pages/public/IscrizioneFamiglie.tsx`
-- `src/pages/AnagraficaTurnoFamiglie.tsx`
-- `supabase/functions/notify-iscrizione-famiglia/index.ts` (opzionale)
-
-**Modificati**:
-
-- `src/App.tsx` (2 nuove route)
-- `src/pages/Home.tsx` (card turno famiglie + accesso rapido anagrafica)
-- `src/hooks/useTurnoPermissions.ts` (aggiunge turno)
-- `src/pages/TurnoPage.tsx` (branch famiglie)
-- `src/hooks/usePagamenti.ts` (union query + flag)
-- `src/pages/GestionePagamenti.tsx` (badge + prezzo libero)
-- `src/pages/AdminPermessiPagine.tsx` (nuove pagine)
-
-### Memoria progetto da aggiornare
-
-Nuovo file `mem://features/turno-famiglie` con caratteristiche di questo flusso e link nell'index.
+Nessuna modifica al database: le tabelle `iscrizioni_famiglie` e `pagamenti_famiglie` sono già pronte.
