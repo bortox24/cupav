@@ -1,0 +1,1 @@
+ALTER TABLE public.iscrizioni_famiglie ADD COLUMN IF NOT EXISTS archiviato boolean NOT NULL DEFAULT false;

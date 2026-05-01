@@ -385,6 +385,7 @@ export type Database = {
       iscrizioni_famiglie: {
         Row: {
           acconto_versato: number
+          archiviato: boolean
           cognome: string
           created_at: string
           data_fine: string
@@ -410,6 +411,7 @@ export type Database = {
         }
         Insert: {
           acconto_versato?: number
+          archiviato?: boolean
           cognome: string
           created_at?: string
           data_fine: string
@@ -435,6 +437,7 @@ export type Database = {
         }
         Update: {
           acconto_versato?: number
+          archiviato?: boolean
           cognome?: string
           created_at?: string
           data_fine?: string
