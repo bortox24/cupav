@@ -130,6 +130,20 @@ export function useMyPagePermissions() {
     enabled: !!user?.id,
   });
 
+  const { data: turnoPermissions = [] } = useQuery({
+    queryKey: ['my-turno-permissions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await (supabase as any)
+        .from('turno_permessi')
+        .select('turno')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return (data ?? []) as { turno: string }[];
+    },
+    enabled: !!user?.id,
+  });
+
   const canAccessPage = (pagePath: string): boolean => {
     // Admin always has access to everything
     if (isAdmin) return true;
