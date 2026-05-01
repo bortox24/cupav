@@ -210,7 +210,7 @@ export default function IscrizioneFamiglie() {
             </div>
             <h2 className="text-2xl font-bold text-foreground">Grazie per la tua iscrizione!</h2>
             <p className="text-muted-foreground">
-              Hai inviato la richiesta per il <strong>Turno Famiglie 2026</strong>.<br />
+              Hai inviato la richiesta per il <strong>Turno Famiglie</strong>.<br />
               Ti contatteremo noi dello staff a breve.
             </p>
             <div className="bg-muted/40 rounded-xl p-4 text-sm space-y-2">
@@ -240,7 +240,7 @@ export default function IscrizioneFamiglie() {
         <div className="max-w-2xl mx-auto flex flex-col items-center text-center gap-3 sm:flex-row sm:text-left sm:gap-4">
           <img src={logoUrl} alt="CUPAV" className="h-20 w-20 sm:h-14 sm:w-14 rounded-xl bg-white/20 p-1" />
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">ISCRIZIONE TURNO FAMIGLIE 2026</h1>
+            <h1 className="text-xl sm:text-2xl font-bold uppercase">ISCRIZIONE TURNO FAMIGLIE</h1>
             <p className="text-white/90 text-sm">CUPAV — Campeggio Unità Pastorale Altavilla Valmarana</p>
           </div>
         </div>
