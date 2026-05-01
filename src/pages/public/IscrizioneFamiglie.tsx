@@ -203,6 +203,20 @@ export default function IscrizioneFamiglie() {
     }
   };
 
+  if (!settingsLoading && siteSettings?.iscrizione_famiglie_enabled === 'false') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-orange-50 to-background flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full text-center shadow-xl rounded-2xl">
+          <CardHeader>
+            <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <CardTitle>Iscrizioni chiuse</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">Le iscrizioni al Turno Famiglie sono attualmente chiuse. Riprova più tardi.</p>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-orange-50 to-background flex items-center justify-center p-4">
