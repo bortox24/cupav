@@ -8,14 +8,53 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Search, Users, Phone, Mail, MapPin, Calendar, Download, Tent, Pencil, Archive, ArchiveRestore, Trash2, Save, X, ChevronDown, Plus } from 'lucide-react';
+import { Loader2, Search, Users, Phone, Mail, MapPin, Calendar, Download, Tent, Pencil, Archive, ArchiveRestore, Trash2, Save, X, ChevronDown, Plus, Check, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { InviaComunicazioneFamigliaWizard } from '@/components/InviaComunicazioneFamigliaWizard';
+
+async function logFamigliaAction(params: {
+  iscrizioneId: string; userId: string; userName: string;
+  tipo: string; dettaglio?: string; successo?: boolean;
+}) {
+  await (supabase.from('anagrafica_invio_logs' as any) as any).insert({
+    iscrizione_famiglia_id: params.iscrizioneId,
+    inviato_da: params.userId,
+    inviato_da_nome: params.userName,
+    successo: params.successo ?? true,
+    tipo: params.tipo,
+    dettaglio: params.dettaglio || null,
+  });
+}
+
+function buildDiff(prev: IscrizioneFamiglia, next: IscrizioneFamiglia): string {
+  const labels: Partial<Record<keyof IscrizioneFamiglia, string>> = {
+    cognome: 'Cognome', nome: 'Nome', email: 'Email', residente_a: 'Residenza', via: 'Via',
+    tipo_periodo: 'Tipo periodo', data_inizio: 'Data inizio', data_fine: 'Data fine',
+    num_adulti: 'Adulti', num_4_10_anni: '4-10 anni', num_0_3_anni: '0-3 anni',
+    num_animali: 'Animali', acconto_versato: 'Acconto',
+    figlio_1_over10: 'Figlio 1 >10', figlio_2_over10: 'Figlio 2 >10', figlio_3_over10: 'Figlio 3 >10',
+  };
+  const changes: string[] = [];
+  (Object.keys(labels) as (keyof IscrizioneFamiglia)[]).forEach((k) => {
+    if (String(prev[k] ?? '') !== String(next[k] ?? '')) {
+      changes.push(`${labels[k]}: "${prev[k] ?? ''}" → "${next[k] ?? ''}"`);
+    }
+  });
+  const prevR = JSON.stringify(prev.recapiti_telefonici ?? []);
+  const nextR = JSON.stringify(next.recapiti_telefonici ?? []);
+  if (prevR !== nextR) changes.push('Recapiti telefonici aggiornati');
+  return changes.join(' · ');
+}
 
 function formatDate(d: string) {
   try { return format(new Date(d), 'dd/MM/yyyy', { locale: itLocale }); } catch { return d; }
@@ -61,17 +100,37 @@ function FamigliaCard({ item, onClick }: { item: IscrizioneFamiglia; onClick: ()
 function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFamiglia | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const updateMut = useUpdateIscrizioneFamiglia();
   const deleteMut = useDeleteIscrizioneFamiglia();
+  const queryClient = useQueryClient();
+  const { user, profile } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<IscrizioneFamiglia | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [comunicazioneOpen, setComunicazioneOpen] = useState(false);
 
   // Sync form when item changes
   useMemo(() => {
     if (item) { setForm({ ...item }); setEditMode(false); }
   }, [item?.id]);
 
+  // Fetch logs
+  const { data: invioLogs = [] } = useQuery({
+    queryKey: ['anagrafica-invio-logs-famiglia', item?.id],
+    queryFn: async () => {
+      if (!item?.id) return [];
+      const { data, error } = await (supabase as any)
+        .from('anagrafica_invio_logs')
+        .select('*')
+        .eq('iscrizione_famiglia_id', item.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && !!item?.id,
+  });
+
   if (!item || !form) return null;
   const tot = totalePartecipanti(form);
+  const userName = profile?.full_name || profile?.email || '';
 
   const update = <K extends keyof IscrizioneFamiglia>(k: K, v: IscrizioneFamiglia[K]) => setForm(p => p ? { ...p, [k]: v } : p);
 
@@ -83,17 +142,42 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const addRecapito = () => update('recapiti_telefonici', [...form.recapiti_telefonici, { nome: '', telefono: '' } as RecapitoTel]);
   const removeRecapito = (idx: number) => update('recapiti_telefonici', form.recapiti_telefonici.filter((_, i) => i !== idx));
 
+  const invalidateLogs = () => queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs-famiglia', item.id] });
+
   const handleSave = () => {
     const { id, created_at, ...updates } = form;
+    const diff = buildDiff(item, form);
     updateMut.mutate({ id, updates }, {
-      onSuccess: () => { toast.success('Iscrizione aggiornata'); setEditMode(false); },
+      onSuccess: async () => {
+        toast.success('Iscrizione aggiornata');
+        setEditMode(false);
+        if (user && diff) {
+          await logFamigliaAction({
+            iscrizioneId: item.id, userId: user.id, userName,
+            tipo: 'modifica_dati', dettaglio: diff,
+          });
+          invalidateLogs();
+        }
+      },
       onError: (e: any) => toast.error(e.message || 'Errore aggiornamento'),
     });
   };
 
   const handleArchive = () => {
-    updateMut.mutate({ id: item.id, updates: { archiviato: !item.archiviato } }, {
-      onSuccess: () => { toast.success(item.archiviato ? 'Iscrizione ripristinata' : 'Iscrizione archiviata'); onOpenChange(false); },
+    const willArchive = !item.archiviato;
+    updateMut.mutate({ id: item.id, updates: { archiviato: willArchive } }, {
+      onSuccess: async () => {
+        toast.success(item.archiviato ? 'Iscrizione ripristinata' : 'Iscrizione archiviata');
+        if (user) {
+          await logFamigliaAction({
+            iscrizioneId: item.id, userId: user.id, userName,
+            tipo: willArchive ? 'archiviazione' : 'ripristino',
+            dettaglio: willArchive ? 'Iscrizione archiviata' : 'Iscrizione ripristinata',
+          });
+          invalidateLogs();
+        }
+        onOpenChange(false);
+      },
       onError: (e: any) => toast.error(e.message || 'Errore'),
     });
   };
@@ -157,6 +241,15 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                   <p>Firma: <strong>{item.firma_nome_cognome}</strong> — {formatDate(item.firma_data)}</p>
                 </div>
 
+                <Button
+                  onClick={() => setComunicazioneOpen(true)}
+                  variant="default"
+                  className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Invia comunicazione
+                </Button>
+
                 <div className="grid grid-cols-3 gap-2 pt-2">
                   <Button variant="outline" className="flex items-center" onClick={() => setEditMode(true)}>
                     <Pencil className="h-4 w-4 mr-2" />Modifica
@@ -169,6 +262,53 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                     <Trash2 className="h-4 w-4 mr-2" />Elimina
                   </Button>
                 </div>
+
+                {/* Sezione Log */}
+                <Separator />
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="flex items-center gap-1 text-sm font-medium w-full hover:text-primary transition-colors">
+                    📋 Log attività ({invioLogs.length})
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    {invioLogs.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nessuna attività registrata</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {(invioLogs as any[]).map((log: any) => (
+                          <div key={log.id} className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 text-xs bg-muted/40 rounded-lg px-2 py-1.5 min-w-0">
+                              {log.successo ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              ) : (
+                                <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                              )}
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0 ${
+                                log.tipo === 'modifica_dati' ? 'bg-amber-500' :
+                                log.tipo === 'archiviazione' ? 'bg-slate-500' :
+                                log.tipo === 'ripristino' ? 'bg-teal-500' :
+                                log.tipo === 'invio_comunicazione_custom' ? 'bg-red-500' :
+                                'bg-blue-500'
+                              }`}>
+                                {log.tipo === 'modifica_dati' ? 'Modifica' :
+                                 log.tipo === 'archiviazione' ? 'Archiviata' :
+                                 log.tipo === 'ripristino' ? 'Ripristinata' :
+                                 log.tipo === 'invio_comunicazione_custom' ? 'Comunicazione' :
+                                 'Azione'}
+                              </span>
+                              <span className="font-medium truncate">{log.inviato_da_nome}</span>
+                              <span className="text-muted-foreground text-[10px] shrink-0 whitespace-nowrap">
+                                {format(new Date(log.created_at), 'dd-MM-yy, HH:mm')}
+                              </span>
+                            </div>
+                            {log.dettaglio && (
+                              <p className="text-[10px] text-muted-foreground ml-7 break-words">{log.dettaglio}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             ) : (
               <div className="space-y-4">
@@ -258,6 +398,12 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <InviaComunicazioneFamigliaWizard
+        iscrizione={item}
+        open={comunicazioneOpen}
+        onOpenChange={setComunicazioneOpen}
+      />
     </>
   );
 }

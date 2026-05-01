@@ -21,7 +21,8 @@ export type Database = {
           id: string
           inviato_da: string
           inviato_da_nome: string
-          ragazzo_id: string
+          iscrizione_famiglia_id: string | null
+          ragazzo_id: string | null
           successo: boolean
           tipo: string
         }
@@ -31,7 +32,8 @@ export type Database = {
           id?: string
           inviato_da: string
           inviato_da_nome: string
-          ragazzo_id: string
+          iscrizione_famiglia_id?: string | null
+          ragazzo_id?: string | null
           successo?: boolean
           tipo?: string
         }
@@ -41,7 +43,8 @@ export type Database = {
           id?: string
           inviato_da?: string
           inviato_da_nome?: string
-          ragazzo_id?: string
+          iscrizione_famiglia_id?: string | null
+          ragazzo_id?: string | null
           successo?: boolean
           tipo?: string
         }
