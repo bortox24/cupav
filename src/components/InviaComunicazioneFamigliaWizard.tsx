@@ -99,12 +99,12 @@ export function InviaComunicazioneFamigliaWizard({ iscrizione, open, onOpenChang
       const { data: webhookRows } = await supabase
         .from('webhook_config')
         .select('webhook_url')
-        .ilike('descrizione', '%comunicazione custom%')
+        .ilike('descrizione', '%comunicazione custom famiglie%')
         .limit(1);
 
-      const webhookUrl = webhookRows?.[0]?.webhook_url;
+      const webhookUrl = webhookRows?.[0]?.webhook_url || 'https://n8n.marcobortolamai.synology.me/webhook/testo_custom_famiglie';
       if (!webhookUrl) {
-        toast.error('Nessun webhook configurato con descrizione "comunicazione custom"');
+        toast.error('Nessun webhook configurato per comunicazioni famiglie');
         setSending(false);
         return;
       }
