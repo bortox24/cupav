@@ -289,8 +289,8 @@ export default function IscrizioneFamiglie() {
                     <Input value={residenteA} onChange={e => setResidenteA(capitalizeWords(e.target.value))} />
                   </div>
                   <div>
-                    <Label>Via *</Label>
-                    <Input value={via} onChange={e => setVia(e.target.value)} />
+                    <Label>Via e numero civico *</Label>
+                    <Input value={via} onChange={e => setVia(capitalizeWords(e.target.value))} placeholder="Es. Via Roma 12" />
                   </div>
                 </div>
               </CardContent>
