@@ -133,7 +133,7 @@ export default function IscrizioneFamiglie() {
       if (!persInizio || !persFine) { toast({ title: "Inserisci le date personalizzate (dal/al)", variant: "destructive" }); return false; }
       if (persFine < persInizio) { toast({ title: "La data finale deve essere successiva a quella iniziale", variant: "destructive" }); return false; }
     }
-    const totalePartecipanti = numAdulti + (figlio1 ? 1 : 0) + (figlio2 ? 1 : 0) + (figlio3 ? 1 : 0) + num410 + num03;
+    const totalePartecipanti = numAdulti + figliOver10 + num410 + num03;
     if (totalePartecipanti < 1) { toast({ title: "Indica almeno un partecipante", variant: "destructive" }); return false; }
     return true;
   };
@@ -178,9 +178,10 @@ export default function IscrizioneFamiglie() {
         data_inizio: inizio,
         data_fine: fine,
         num_adulti: numAdulti,
-        figlio_1_over10: figlio1,
-        figlio_2_over10: figlio2,
-        figlio_3_over10: figlio3,
+        figlio_1_over10: figliOver10 >= 1,
+        figlio_2_over10: figliOver10 >= 2,
+        figlio_3_over10: figliOver10 >= 3,
+        num_figli_over10: Math.max(0, figliOver10 || 0),
         num_4_10_anni: num410,
         num_0_3_anni: num03,
         num_animali: numAnimali,
@@ -408,27 +409,16 @@ export default function IscrizioneFamiglie() {
                   </div>
                 </div>
 
-                <div className="bg-muted/30 rounded-xl p-3 space-y-2">
-                  <div>
-                    <Label className="text-sm font-semibold">🧑 Figli oltre i 10 anni</Label>
-                    <p className="text-[11px] text-muted-foreground">Spunta una casella per ogni figlio sopra i 10 anni (la tariffa diminuisce dal 2° e 3° figlio).</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {[
-                      { id: 'f1', val: figlio1, set: setFiglio1, lbl: '1° figlio' },
-                      { id: 'f2', val: figlio2, set: setFiglio2, lbl: '2° figlio' },
-                      { id: 'f3', val: figlio3, set: setFiglio3, lbl: '3° figlio' },
-                    ].map(f => (
-                      <label
-                        key={f.id}
-                        htmlFor={f.id}
-                        className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2 cursor-pointer transition-colors ${f.val ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border bg-background hover:border-emerald-300'}`}
-                      >
-                        <Checkbox id={f.id} checked={f.val} onCheckedChange={(v) => f.set(!!v)} />
-                        <span className="text-sm font-medium">{f.lbl}</span>
-                      </label>
-                    ))}
-                  </div>
+                <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
+                  <Label className="text-sm font-semibold">🧑 Figli oltre i 10 anni</Label>
+                  <p className="text-[11px] text-muted-foreground">Numero di figli sopra i 10 anni. La tariffa è scontata progressivamente: dal 3° figlio in poi si applica lo stesso sconto massimo.</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={figliOver10}
+                    onChange={e => setFigliOver10(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="bg-background"
+                  />
                 </div>
 
                 <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
