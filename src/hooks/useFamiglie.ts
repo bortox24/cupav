@@ -50,6 +50,10 @@ export function useIscrizioniFamiglie() {
         queryClient.invalidateQueries({ queryKey: ['iscrizioni-famiglie'] });
         queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pagamenti_famiglie' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['pagamenti-famiglie-mappa'] });
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
