@@ -523,18 +523,26 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   );
 }
 
-function exportCSV(items: IscrizioneFamiglia[]) {
-  const header = ['Cognome', 'Nome', 'Email', 'Residenza', 'Via', 'Recapiti', 'Periodo', 'Dal', 'Al', 'Adulti', 'Figli>10', '4-10', '0-3', 'Animali', 'Acconto', 'Data firma'];
-  const rows = items.map(i => [
-    i.cognome, i.nome, i.email, i.residente_a, i.via,
-    i.recapiti_telefonici.map(r => `${r.nome}: ${r.telefono}`).join(' | '),
-    TIPO_PERIODO_LABEL[i.tipo_periodo],
-    formatDate(i.data_inizio), formatDate(i.data_fine),
-    i.num_adulti,
-    [i.figlio_1_over10, i.figlio_2_over10, i.figlio_3_over10].filter(Boolean).length,
-    i.num_4_10_anni, i.num_0_3_anni, i.num_animali,
-    i.acconto_versato, formatDate(i.firma_data),
-  ]);
+function exportCSV(items: IscrizioneFamiglia[], pagMap: Map<string, PagamentoInfo>) {
+  const header = ['Cognome', 'Nome', 'Email', 'Residenza', 'Via', 'Recapiti', 'Periodo', 'Dal', 'Al', 'Adulti', 'Figli>10', '4-10', '0-3', 'Animali', 'Categoria', 'Totale dovuto', 'Acconto', 'Pagato', 'Residuo', 'Data firma'];
+  const rows = items.map(i => {
+    const p = pagMap.get(i.id);
+    const dovuto = p?.importo_dovuto ?? i.importo_totale_calcolato ?? 0;
+    const pagato = p?.importo_pagato ?? 0;
+    const residuo = Math.max(0, dovuto - pagato);
+    return [
+      i.cognome, i.nome, i.email, i.residente_a, i.via,
+      i.recapiti_telefonici.map(r => `${r.nome}: ${r.telefono}`).join(' | '),
+      TIPO_PERIODO_LABEL[i.tipo_periodo],
+      formatDate(i.data_inizio), formatDate(i.data_fine),
+      i.num_adulti,
+      [i.figlio_1_over10, i.figlio_2_over10, i.figlio_3_over10].filter(Boolean).length,
+      i.num_4_10_anni, i.num_0_3_anni, i.num_animali,
+      i.categoria_tariffa ?? '',
+      dovuto, i.acconto_versato, pagato, residuo,
+      formatDate(i.firma_data),
+    ];
+  });
   const csv = [header, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
