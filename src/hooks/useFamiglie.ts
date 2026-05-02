@@ -29,6 +29,8 @@ export interface IscrizioneFamiglia {
   firma_nome_cognome: string;
   turno: string;
   archiviato: boolean;
+  categoria_tariffa?: number | null;
+  importo_totale_calcolato?: number | null;
 }
 
 export const TIPO_PERIODO_LABEL: Record<IscrizioneFamiglia['tipo_periodo'], string> = {
