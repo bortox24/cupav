@@ -82,9 +82,7 @@ export default function IscrizioneFamiglie() {
   const [persInizio, setPersInizio] = useState<Date>();
   const [persFine, setPersFine] = useState<Date>();
   const [numAdulti, setNumAdulti] = useState<number>(0);
-  const [figlio1, setFiglio1] = useState(false);
-  const [figlio2, setFiglio2] = useState(false);
-  const [figlio3, setFiglio3] = useState(false);
+  const [figliOver10, setFigliOver10] = useState<number>(0); // numero figli >10, nessun limite
   const [num410, setNum410] = useState<number>(0);
   const [num03, setNum03] = useState<number>(0);
   const [numAnimali, setNumAnimali] = useState<number>(0);
