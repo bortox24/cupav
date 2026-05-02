@@ -296,6 +296,28 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                   <p>Firma: <strong>{item.firma_nome_cognome}</strong> — {formatDate(item.firma_data)}</p>
                 </div>
 
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-2 text-sm">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">💶 Tariffa & totale</h4>
+                  {item.categoria_tariffa ? (
+                    <>
+                      <p>Categoria: <strong>{item.categoria_tariffa}</strong> — <span className="text-muted-foreground">{tariffaCorrente?.descrizione ?? '-'}</span></p>
+                      <p>Giorni: <strong>{calcolo.giorni}</strong></p>
+                      {calcolo.righe.length > 0 && (
+                        <div className="text-xs space-y-0.5 pl-2 text-muted-foreground">
+                          {calcolo.righe.map((r, i) => (
+                            <p key={i}>• {r.voce}: {r.persone} × {formatEuro(r.prezzoGiorno)} × {r.giorni}gg = <strong className="text-foreground">{formatEuro(r.subtotale)}</strong></p>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-base font-bold text-foreground pt-1 border-t border-orange-200/60 dark:border-orange-900/40">
+                        Totale dovuto: {formatEuro(item.importo_totale_calcolato ?? calcolo.totale)}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-amber-700 dark:text-amber-400">⚠️ Categoria tariffaria non impostata. Premi "Modifica" per assegnarla.</p>
+                  )}
+                </div>
+
                 <Button
                   onClick={() => setComunicazioneOpen(true)}
                   variant="default"
