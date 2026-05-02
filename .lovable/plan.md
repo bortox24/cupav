@@ -1,39 +1,80 @@
+
+# Calcolo automatico prezzo iscrizione famiglie + UI tariffe
+
 ## Obiettivo
-Avere un solo permesso "Turno Famiglie" nella pagina Permessi (sezione Turni). Quando attivato, l'utente accede automaticamente sia ai dati delle iscrizioni famiglie sia alle pagine dedicate (`/turno-famiglie` e `/anagrafica-turno-famiglie`).
+Calcolare in automatico il totale dovuto da ogni famiglia in base a:
+- **Categoria tariffaria** (1–4)
+- **Composizione famiglia** (adulti, figli >10 ordinati, 4–10 anni, 0–3 gratis)
+- **Giorni di permanenza** (`data_fine − data_inizio + 1`)
+
+Visibile **solo in**:
+1. Anagrafica Turno Famiglie (card + dialog modifica + export CSV)
+2. Gestione Pagamenti (popola `importo_dovuto` automaticamente)
+
+Le tariffe sono **modificabili da UI** in Impostazioni, da chiunque abbia il permesso pagina `/impostazioni` (non solo admin).
+Il modulo pubblico **non viene toccato**.
+
+## Tariffe di default (giornaliere a persona)
+
+| Cat | Descrizione | Adulto | 1° figlio >10 | 2° figlio >10 | 3° figlio >10 | 4–10 anni | 0–3 anni |
+|---|---|---|---|---|---|---|---|
+| 1 | Altavilla + collabora CUPAV | 20 | 15 | 13 | 10 | 10 | 0 |
+| 2 | Altavilla | 25 | 20 | 15 | 12 | 12 | 0 |
+| 3 | Fuori Comune + collabora | 30 | 23 | 18 | 15 | 15 | 0 |
+| 4 | Fuori Comune | 35 | 25 | 20 | 17 | 17 | 0 |
+
+Formula: `totale = giorni × Σ(persone × tariffa_categoria)`
 
 ## Modifiche
 
-### 1. `src/hooks/usePagePermissions.ts`
-Rimuovere le due voci appena aggiunte:
-- `/turno-famiglie`
-- `/anagrafica-turno-famiglie`
+### 1. Database (migrazione)
 
-In questo modo non compaiono più nella sezione "Pagine" della tabella permessi.
+**a)** Aggiungere a `iscrizioni_famiglie`:
+- `categoria_tariffa` smallint nullable (1–4)
+- `importo_totale_calcolato` numeric nullable
 
-### 2. `src/hooks/usePagePermissions.ts` → `useMyPagePermissions.canAccessPage`
-Estendere la logica: se la pagina richiesta è `/turno-famiglie` o `/anagrafica-turno-famiglie`, restituire `true` quando l'utente ha il permesso del turno `Turno famiglie` (lettura da `turno_permessi` via nuovo hook combinato, oppure leggendo direttamente la tabella).
-
-Implementazione semplice: aggiungere una query a `turno_permessi` dentro `useMyPagePermissions` (o usare `useMyTurnoPermissions`) e nel `canAccessPage`:
-```ts
-if (pagePath === '/turno-famiglie' || pagePath === '/anagrafica-turno-famiglie') {
-  return turnoPerms.some(p => p.turno === 'Turno famiglie');
-}
+**b)** Nuova tabella `tariffe_famiglie`:
 ```
-
-### 3. RLS database (migrazione)
-Aggiornare le policy delle tabelle `iscrizioni_famiglie` e `pagamenti_famiglie` (se serve) per usare anche `has_turno_access(auth.uid(), 'Turno famiglie')` invece del semplice `auth.uid() IS NOT NULL`, così solo chi ha il permesso turno vede i dati famiglie.
-
-Attualmente `iscrizioni_famiglie` permette SELECT/UPDATE/DELETE a qualsiasi utente autenticato — va ristretto a:
-```sql
-is_admin() OR has_turno_access(auth.uid(), 'Turno famiglie')
+categoria        smallint PK (1..4)
+descrizione      text
+adulto           numeric
+figlio_1_over10  numeric
+figlio_2_over10  numeric
+figlio_3_over10  numeric
+eta_4_10         numeric
+eta_0_3          numeric default 0
+updated_at       timestamptz
+updated_by       uuid
 ```
+Seed con i 4 valori di default sopra.
 
-### 4. Sidebar / Home
-Verificare che i link a "Turno Famiglie" e "Anagrafica Turno Famiglie" usino il nuovo controllo (passa già da `canAccessPage`, quindi nessuna modifica necessaria se il punto 2 è fatto bene).
+**c)** RLS `tariffe_famiglie`:
+- SELECT: chiunque autenticato (serve a Anagrafica/Pagamenti per calcolare)
+- UPDATE: `is_admin() OR has_page_access(auth.uid(), '/impostazioni')`
+- INSERT/DELETE: solo admin (categorie fisse)
 
-## Risultato
-Nella pagina Permessi resterà **un'unica casella "Turno Famiglie"** sotto la sezione Turni, accanto agli altri turni (4° Elementare, 1° Media, ecc.). Spuntandola, l'utente:
-- vede le pagine Turno Famiglie e Anagrafica Turno Famiglie
-- può leggere/modificare i dati delle iscrizioni famiglie
+### 2. Hook + helper
+- `src/hooks/useTariffeFamiglie.ts`: query + mutation per leggere/aggiornare le 4 righe.
+- `src/lib/tariffeFamiglie.ts`: `calcolaGiorni()` e `calcolaTotaleFamiglia(iscrizione, tariffe)` → `{ totale, dettaglio[] }`.
 
-Coerente con come funzionano gli altri turni del campeggio.
+### 3. UI Impostazioni (`src/pages/Impostazioni.tsx`)
+Nuova card **"Tariffe Turno Famiglie"** visibile a chi ha accesso a `/impostazioni`:
+- Tabella con 4 righe (una per categoria) e 6 colonne di prezzo editabili (input numerici €).
+- Pulsante "Salva" per riga (o salvataggio inline al blur) con toast di conferma.
+- Nota: "I prezzi vengono usati per calcolare automaticamente il totale dovuto delle iscrizioni famiglie."
+
+### 4. Anagrafica Turno Famiglie (`src/pages/AnagraficaTurnoFamiglie.tsx`)
+- **Card**: badge `Totale €XXX • Acconto €YY • Residuo €ZZ` (verde/ambra/rosso a seconda dello stato pagamento).
+- **Dialog modifica**: nuovo Select "Categoria tariffaria" (1–4 con descrizione presa da DB). Riquadro con totale ricalcolato live al cambio di date/persone/categoria/tariffe, con dettaglio voce per voce.
+- **Iscrizioni vecchie senza categoria**: badge "Categoria non impostata" + apertura rapida del dialog.
+- **Export CSV**: aggiungere `Categoria`, `Totale dovuto`, `Residuo`.
+- Al salvataggio: aggiorna `categoria_tariffa` e `importo_totale_calcolato` in `iscrizioni_famiglie`, e propaga a `pagamenti_famiglie.importo_dovuto`.
+- Logga il cambio categoria/totale in `anagrafica_invio_logs` (tipo `modifica_categoria`) coerente con i log già attivi.
+
+### 5. Gestione Pagamenti (`src/hooks/usePagamenti.ts` + `src/pages/GestionePagamenti.tsx`)
+- Quando si crea un record `pagamenti_famiglie`, default `importo_dovuto = iscrizioni_famiglie.importo_totale_calcolato`.
+- Mostra il totale calcolato come suggerimento; l'admin può sempre fare override manuale.
+
+## Non incluso
+- Modifica del modulo pubblico di iscrizione famiglie (esplicitamente escluso).
+- Sconti per famiglia (basta override manuale di `importo_dovuto` in Gestione Pagamenti).
