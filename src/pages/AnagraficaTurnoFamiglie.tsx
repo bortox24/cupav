@@ -21,6 +21,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { InviaComunicazioneFamigliaWizard } from '@/components/InviaComunicazioneFamigliaWizard';
+import { useTariffeFamiglie } from '@/hooks/useTariffeFamiglie';
+import { calcolaTotaleFamiglia, calcolaGiorni, formatEuro, type TariffaFamiglia } from '@/lib/tariffeFamiglie';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 async function logFamigliaAction(params: {
   iscrizioneId: string; userId: string; userName: string;
@@ -43,6 +46,7 @@ function buildDiff(prev: IscrizioneFamiglia, next: IscrizioneFamiglia): string {
     num_adulti: 'Adulti', num_4_10_anni: '4-10 anni', num_0_3_anni: '0-3 anni',
     num_animali: 'Animali', acconto_versato: 'Acconto',
     figlio_1_over10: 'Figlio 1 >10', figlio_2_over10: 'Figlio 2 >10', figlio_3_over10: 'Figlio 3 >10',
+    categoria_tariffa: 'Categoria tariffa', importo_totale_calcolato: 'Totale calcolato',
   };
   const changes: string[] = [];
   (Object.keys(labels) as (keyof IscrizioneFamiglia)[]).forEach((k) => {
@@ -64,9 +68,25 @@ function totalePartecipanti(i: IscrizioneFamiglia) {
   return i.num_adulti + (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0) + i.num_4_10_anni + i.num_0_3_anni;
 }
 
-function FamigliaCard({ item, onClick }: { item: IscrizioneFamiglia; onClick: () => void }) {
+interface PagamentoInfo {
+  importo_dovuto: number | null;
+  importo_pagato: number;
+  stato: string;
+}
+
+function FamigliaCard({ item, pagamento, onClick }: { item: IscrizioneFamiglia; pagamento?: PagamentoInfo; onClick: () => void }) {
   const initials = `${(item.cognome[0] || '').toUpperCase()}${(item.nome[0] || '').toUpperCase()}`;
   const tot = totalePartecipanti(item);
+  const totaleCalc = item.importo_totale_calcolato ?? 0;
+  const dovuto = pagamento?.importo_dovuto ?? totaleCalc;
+  const pagato = pagamento?.importo_pagato ?? 0;
+  const residuo = Math.max(0, dovuto - pagato);
+  const stato = pagato <= 0 ? 'da_pagare' : (residuo <= 0 ? 'pagato' : 'parziale');
+  const statoColor =
+    stato === 'pagato' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+    : stato === 'parziale' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+    : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300';
+  const noCategoria = !item.categoria_tariffa;
   return (
     <Card className={`border-2 border-l-4 ${item.archiviato ? 'border-l-muted-foreground/40 opacity-70' : 'border-l-orange-500'} rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer`} onClick={onClick}>
       <CardContent className="p-4 space-y-3">
@@ -92,6 +112,17 @@ function FamigliaCard({ item, onClick }: { item: IscrizioneFamiglia; onClick: ()
             <p className="font-semibold text-foreground flex items-center gap-1"><Users className="h-3 w-3" />{tot} {item.num_animali > 0 ? `+ 🐾${item.num_animali}` : ''}</p>
           </div>
         </div>
+        {noCategoria ? (
+          <div className="rounded-lg px-2 py-1.5 text-[11px] bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
+            ⚠️ Categoria tariffa non impostata
+          </div>
+        ) : (
+          <div className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold flex items-center justify-between gap-2 ${statoColor}`}>
+            <span>Tot. {formatEuro(dovuto)}</span>
+            <span className="opacity-80">Acc. {formatEuro(pagato)}</span>
+            <span>Res. {formatEuro(residuo)}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -102,6 +133,7 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const deleteMut = useDeleteIscrizioneFamiglia();
   const queryClient = useQueryClient();
   const { user, profile } = useAuth();
+  const { data: tariffe = [] } = useTariffeFamiglie();
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<IscrizioneFamiglia | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -132,6 +164,10 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const tot = totalePartecipanti(form);
   const userName = profile?.full_name || profile?.email || '';
 
+  const tariffaCorrente: TariffaFamiglia | null =
+    form.categoria_tariffa ? tariffe.find(t => t.categoria === form.categoria_tariffa) ?? null : null;
+  const calcolo = calcolaTotaleFamiglia(form, tariffaCorrente);
+
   const update = <K extends keyof IscrizioneFamiglia>(k: K, v: IscrizioneFamiglia[K]) => setForm(p => p ? { ...p, [k]: v } : p);
 
   const updateRecapito = (idx: number, field: 'nome' | 'telefono', val: string) => {
@@ -145,10 +181,29 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const invalidateLogs = () => queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs-famiglia', item.id] });
 
   const handleSave = () => {
-    const { id, created_at, ...updates } = form;
-    const diff = buildDiff(item, form);
+    // Ricalcola totale con tariffa corrente
+    const t = form.categoria_tariffa ? tariffe.find(x => x.categoria === form.categoria_tariffa) ?? null : null;
+    const ric = calcolaTotaleFamiglia(form, t);
+    const formWithCalc: IscrizioneFamiglia = { ...form, importo_totale_calcolato: t ? ric.totale : null };
+    const { id, created_at, ...updates } = formWithCalc;
+    const diff = buildDiff(item, formWithCalc);
     updateMut.mutate({ id, updates }, {
       onSuccess: async () => {
+        // Propaga importo_dovuto su pagamenti_famiglie
+        if (t) {
+          const { data: existingPag } = await (supabase as any)
+            .from('pagamenti_famiglie').select('id, importo_pagato').eq('iscrizione_id', id).maybeSingle();
+          if (existingPag) {
+            await (supabase as any).from('pagamenti_famiglie').update({
+              importo_dovuto: ric.totale, updated_by: user?.id ?? null,
+            }).eq('id', existingPag.id);
+          } else {
+            await (supabase as any).from('pagamenti_famiglie').insert({
+              iscrizione_id: id, importo_dovuto: ric.totale, updated_by: user?.id ?? null,
+            });
+          }
+          queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+        }
         toast.success('Iscrizione aggiornata');
         setEditMode(false);
         if (user && diff) {
@@ -239,6 +294,28 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                   <p>Acconto versato: <strong>€ {item.acconto_versato}</strong></p>
                   <p>Regolamento accettato: <strong>{item.regolamento_accettato ? 'Sì' : 'No'}</strong></p>
                   <p>Firma: <strong>{item.firma_nome_cognome}</strong> — {formatDate(item.firma_data)}</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-2 text-sm">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">💶 Tariffa & totale</h4>
+                  {item.categoria_tariffa ? (
+                    <>
+                      <p>Categoria: <strong>{item.categoria_tariffa}</strong> — <span className="text-muted-foreground">{tariffaCorrente?.descrizione ?? '-'}</span></p>
+                      <p>Giorni: <strong>{calcolo.giorni}</strong></p>
+                      {calcolo.righe.length > 0 && (
+                        <div className="text-xs space-y-0.5 pl-2 text-muted-foreground">
+                          {calcolo.righe.map((r, i) => (
+                            <p key={i}>• {r.voce}: {r.persone} × {formatEuro(r.prezzoGiorno)} × {r.giorni}gg = <strong className="text-foreground">{formatEuro(r.subtotale)}</strong></p>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-base font-bold text-foreground pt-1 border-t border-orange-200/60 dark:border-orange-900/40">
+                        Totale dovuto: {formatEuro(item.importo_totale_calcolato ?? calcolo.totale)}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-amber-700 dark:text-amber-400">⚠️ Categoria tariffaria non impostata. Premi "Modifica" per assegnarla.</p>
+                  )}
                 </div>
 
                 <Button
@@ -367,6 +444,44 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                   <div><Label>Acconto versato (€)</Label><Input type="number" min={0} step="0.01" value={form.acconto_versato} onChange={e => update('acconto_versato', parseFloat(e.target.value) || 0)} /></div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Categoria tariffaria</Label>
+                  <Select
+                    value={form.categoria_tariffa ? String(form.categoria_tariffa) : ''}
+                    onValueChange={(v) => update('categoria_tariffa', parseInt(v) as any)}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Seleziona categoria..." /></SelectTrigger>
+                    <SelectContent>
+                      {tariffe.map(t => (
+                        <SelectItem key={t.categoria} value={String(t.categoria)}>
+                          {t.categoria}. {t.descrizione}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-2 text-sm">
+                  <h4 className="font-semibold text-foreground">💶 Anteprima totale</h4>
+                  {!tariffaCorrente ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Seleziona una categoria per calcolare il totale.</p>
+                  ) : calcolo.giorni === 0 ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Imposta date valide per calcolare il totale.</p>
+                  ) : (
+                    <>
+                      <p className="text-xs text-muted-foreground">Giorni: <strong className="text-foreground">{calcolo.giorni}</strong></p>
+                      <div className="text-xs space-y-0.5 text-muted-foreground">
+                        {calcolo.righe.map((r, i) => (
+                          <p key={i}>• {r.voce}: {r.persone} × {formatEuro(r.prezzoGiorno)} × {r.giorni}gg = <strong className="text-foreground">{formatEuro(r.subtotale)}</strong></p>
+                        ))}
+                      </div>
+                      <p className="text-base font-bold text-foreground pt-1 border-t border-orange-200/60 dark:border-orange-900/40">
+                        Totale dovuto: {formatEuro(calcolo.totale)}
+                      </p>
+                    </>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 pt-2">
                   <Button variant="outline" onClick={() => { setForm({ ...item }); setEditMode(false); }}>
                     <X className="h-4 w-4 mr-2" />Annulla
@@ -408,18 +523,26 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   );
 }
 
-function exportCSV(items: IscrizioneFamiglia[]) {
-  const header = ['Cognome', 'Nome', 'Email', 'Residenza', 'Via', 'Recapiti', 'Periodo', 'Dal', 'Al', 'Adulti', 'Figli>10', '4-10', '0-3', 'Animali', 'Acconto', 'Data firma'];
-  const rows = items.map(i => [
-    i.cognome, i.nome, i.email, i.residente_a, i.via,
-    i.recapiti_telefonici.map(r => `${r.nome}: ${r.telefono}`).join(' | '),
-    TIPO_PERIODO_LABEL[i.tipo_periodo],
-    formatDate(i.data_inizio), formatDate(i.data_fine),
-    i.num_adulti,
-    [i.figlio_1_over10, i.figlio_2_over10, i.figlio_3_over10].filter(Boolean).length,
-    i.num_4_10_anni, i.num_0_3_anni, i.num_animali,
-    i.acconto_versato, formatDate(i.firma_data),
-  ]);
+function exportCSV(items: IscrizioneFamiglia[], pagMap: Map<string, PagamentoInfo>) {
+  const header = ['Cognome', 'Nome', 'Email', 'Residenza', 'Via', 'Recapiti', 'Periodo', 'Dal', 'Al', 'Adulti', 'Figli>10', '4-10', '0-3', 'Animali', 'Categoria', 'Totale dovuto', 'Acconto', 'Pagato', 'Residuo', 'Data firma'];
+  const rows = items.map(i => {
+    const p = pagMap.get(i.id);
+    const dovuto = p?.importo_dovuto ?? i.importo_totale_calcolato ?? 0;
+    const pagato = p?.importo_pagato ?? 0;
+    const residuo = Math.max(0, dovuto - pagato);
+    return [
+      i.cognome, i.nome, i.email, i.residente_a, i.via,
+      i.recapiti_telefonici.map(r => `${r.nome}: ${r.telefono}`).join(' | '),
+      TIPO_PERIODO_LABEL[i.tipo_periodo],
+      formatDate(i.data_inizio), formatDate(i.data_fine),
+      i.num_adulti,
+      [i.figlio_1_over10, i.figlio_2_over10, i.figlio_3_over10].filter(Boolean).length,
+      i.num_4_10_anni, i.num_0_3_anni, i.num_animali,
+      i.categoria_tariffa ?? '',
+      dovuto, i.acconto_versato, pagato, residuo,
+      formatDate(i.firma_data),
+    ];
+  });
   const csv = [header, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -434,6 +557,31 @@ export default function AnagraficaTurnoFamiglie() {
   const [selected, setSelected] = useState<IscrizioneFamiglia | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [archiviatiOpen, setArchiviatiOpen] = useState(false);
+
+  const { data: pagamentiFamiglie = [] } = useQuery({
+    queryKey: ['pagamenti-famiglie-mappa'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('pagamenti_famiglie')
+        .select('iscrizione_id, importo_dovuto, importo_pagato, stato');
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  const pagMap = useMemo(() => {
+    const m = new Map<string, PagamentoInfo>();
+    (pagamentiFamiglie as any[]).forEach((p: any) => {
+      m.set(p.iscrizione_id, {
+        importo_dovuto: p.importo_dovuto,
+        importo_pagato: Number(p.importo_pagato) || 0,
+        stato: p.stato,
+      });
+    });
+    return m;
+  }, [pagamentiFamiglie]);
 
   const matches = (i: IscrizioneFamiglia) => {
     if (!search.trim()) return true;
@@ -458,7 +606,7 @@ export default function AnagraficaTurnoFamiglie() {
               <h2 className="font-bold text-foreground">Turno Famiglie</h2>
               <p className="text-sm text-muted-foreground">{attivi.length} attiv{attivi.length === 1 ? 'a' : 'e'} · {archiviati.length} archiviat{archiviati.length === 1 ? 'a' : 'e'}</p>
             </div>
-            <Button variant="outline" onClick={() => exportCSV(attivi)} disabled={attivi.length === 0}>
+            <Button variant="outline" onClick={() => exportCSV(attivi, pagMap)} disabled={attivi.length === 0}>
               <Download className="h-4 w-4 mr-2" />Esporta CSV
             </Button>
           </CardContent>
@@ -481,7 +629,7 @@ export default function AnagraficaTurnoFamiglie() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {attivi.map(item => (
-                <FamigliaCard key={item.id} item={item} onClick={() => { setSelected(item); setDrawerOpen(true); }} />
+                <FamigliaCard key={item.id} item={item} pagamento={pagMap.get(item.id)} onClick={() => { setSelected(item); setDrawerOpen(true); }} />
               ))}
             </div>
 
@@ -496,7 +644,7 @@ export default function AnagraficaTurnoFamiglie() {
                 <CollapsibleContent className="mt-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {archiviati.map(item => (
-                      <FamigliaCard key={item.id} item={item} onClick={() => { setSelected(item); setDrawerOpen(true); }} />
+                      <FamigliaCard key={item.id} item={item} pagamento={pagMap.get(item.id)} onClick={() => { setSelected(item); setDrawerOpen(true); }} />
                     ))}
                   </div>
                 </CollapsibleContent>

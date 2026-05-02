@@ -133,7 +133,10 @@ export function useIscrizioniConPagamenti() {
       if (missingFam.length > 0) {
         const { data: newPag } = await (supabase as any)
           .from('pagamenti_famiglie')
-          .insert(missingFam.map((i: any) => ({ iscrizione_id: i.id })))
+          .insert(missingFam.map((i: any) => ({
+            iscrizione_id: i.id,
+            importo_dovuto: i.importo_totale_calcolato ?? null,
+          })))
           .select();
         (newPag || []).forEach((p: any) => pagFamMap.set(p.iscrizione_id, p));
       }
@@ -155,7 +158,7 @@ export function useIscrizioniConPagamenti() {
           recapiti_telefonici: recapiti,
           stato_pagamento: p?.stato || 'da_pagare',
           note_pagamento: p?.note || null,
-          importo_dovuto: p?.importo_dovuto ?? 0,
+          importo_dovuto: p?.importo_dovuto ?? i.importo_totale_calcolato ?? 0,
           importo_pagato: p?.importo_pagato ?? 0,
           pagamento_id: p?.id || null,
           is_famiglia: true,

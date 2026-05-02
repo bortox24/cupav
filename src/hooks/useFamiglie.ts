@@ -29,6 +29,8 @@ export interface IscrizioneFamiglia {
   firma_nome_cognome: string;
   turno: string;
   archiviato: boolean;
+  categoria_tariffa?: number | null;
+  importo_totale_calcolato?: number | null;
 }
 
 export const TIPO_PERIODO_LABEL: Record<IscrizioneFamiglia['tipo_periodo'], string> = {
@@ -46,6 +48,10 @@ export function useIscrizioniFamiglie() {
       .channel('iscrizioni-famiglie-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'iscrizioni_famiglie' }, () => {
         queryClient.invalidateQueries({ queryKey: ['iscrizioni-famiglie'] });
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pagamenti_famiglie' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['pagamenti-famiglie-mappa'] });
         queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
       })
       .subscribe();

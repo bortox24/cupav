@@ -389,6 +389,7 @@ export type Database = {
         Row: {
           acconto_versato: number
           archiviato: boolean
+          categoria_tariffa: number | null
           cognome: string
           created_at: string
           data_fine: string
@@ -400,6 +401,7 @@ export type Database = {
           firma_data: string
           firma_nome_cognome: string
           id: string
+          importo_totale_calcolato: number | null
           nome: string
           num_0_3_anni: number
           num_4_10_anni: number
@@ -415,6 +417,7 @@ export type Database = {
         Insert: {
           acconto_versato?: number
           archiviato?: boolean
+          categoria_tariffa?: number | null
           cognome: string
           created_at?: string
           data_fine: string
@@ -426,6 +429,7 @@ export type Database = {
           firma_data: string
           firma_nome_cognome: string
           id?: string
+          importo_totale_calcolato?: number | null
           nome: string
           num_0_3_anni?: number
           num_4_10_anni?: number
@@ -441,6 +445,7 @@ export type Database = {
         Update: {
           acconto_versato?: number
           archiviato?: boolean
+          categoria_tariffa?: number | null
           cognome?: string
           created_at?: string
           data_fine?: string
@@ -452,6 +457,7 @@ export type Database = {
           firma_data?: string
           firma_nome_cognome?: string
           id?: string
+          importo_totale_calcolato?: number | null
           nome?: string
           num_0_3_anni?: number
           num_4_10_anni?: number
@@ -878,6 +884,45 @@ export type Database = {
           eseguito_da?: string
           eseguito_da_nome?: string
           id?: string
+        }
+        Relationships: []
+      }
+      tariffe_famiglie: {
+        Row: {
+          adulto: number
+          categoria: number
+          descrizione: string
+          eta_0_3: number
+          eta_4_10: number
+          figlio_1_over10: number
+          figlio_2_over10: number
+          figlio_3_over10: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          adulto?: number
+          categoria: number
+          descrizione: string
+          eta_0_3?: number
+          eta_4_10?: number
+          figlio_1_over10?: number
+          figlio_2_over10?: number
+          figlio_3_over10?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          adulto?: number
+          categoria?: number
+          descrizione?: string
+          eta_0_3?: number
+          eta_4_10?: number
+          figlio_1_over10?: number
+          figlio_2_over10?: number
+          figlio_3_over10?: number
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }

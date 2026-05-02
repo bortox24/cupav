@@ -12,6 +12,7 @@ import { useSiteSettings, useUpdateSiteSetting } from '@/hooks/useSiteSettings';
 import { useCustomLogo } from '@/hooks/useCustomLogo';
 import { availablePages } from '@/hooks/usePagePermissions';
 import { useQueryClient } from '@tanstack/react-query';
+import { TariffeFamiglieCard } from '@/components/TariffeFamiglieCard';
 
 export default function Impostazioni() {
   const { toast } = useToast();
@@ -314,6 +315,8 @@ export default function Impostazioni() {
             })}
           </CardContent>
         </Card>
+
+        <TariffeFamiglieCard />
       </div>
     </MainLayout>
   );
