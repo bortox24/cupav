@@ -629,7 +629,7 @@ export default function AnagraficaTurnoFamiglie() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {attivi.map(item => (
-                <FamigliaCard key={item.id} item={item} onClick={() => { setSelected(item); setDrawerOpen(true); }} />
+                <FamigliaCard key={item.id} item={item} pagamento={pagMap.get(item.id)} onClick={() => { setSelected(item); setDrawerOpen(true); }} />
               ))}
             </div>
 
@@ -644,7 +644,7 @@ export default function AnagraficaTurnoFamiglie() {
                 <CollapsibleContent className="mt-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {archiviati.map(item => (
-                      <FamigliaCard key={item.id} item={item} onClick={() => { setSelected(item); setDrawerOpen(true); }} />
+                      <FamigliaCard key={item.id} item={item} pagamento={pagMap.get(item.id)} onClick={() => { setSelected(item); setDrawerOpen(true); }} />
                     ))}
                   </div>
                 </CollapsibleContent>
