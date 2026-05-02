@@ -444,6 +444,44 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                   <div><Label>Acconto versato (€)</Label><Input type="number" min={0} step="0.01" value={form.acconto_versato} onChange={e => update('acconto_versato', parseFloat(e.target.value) || 0)} /></div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Categoria tariffaria</Label>
+                  <Select
+                    value={form.categoria_tariffa ? String(form.categoria_tariffa) : ''}
+                    onValueChange={(v) => update('categoria_tariffa', parseInt(v) as any)}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Seleziona categoria..." /></SelectTrigger>
+                    <SelectContent>
+                      {tariffe.map(t => (
+                        <SelectItem key={t.categoria} value={String(t.categoria)}>
+                          {t.categoria}. {t.descrizione}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-2 text-sm">
+                  <h4 className="font-semibold text-foreground">💶 Anteprima totale</h4>
+                  {!tariffaCorrente ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Seleziona una categoria per calcolare il totale.</p>
+                  ) : calcolo.giorni === 0 ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Imposta date valide per calcolare il totale.</p>
+                  ) : (
+                    <>
+                      <p className="text-xs text-muted-foreground">Giorni: <strong className="text-foreground">{calcolo.giorni}</strong></p>
+                      <div className="text-xs space-y-0.5 text-muted-foreground">
+                        {calcolo.righe.map((r, i) => (
+                          <p key={i}>• {r.voce}: {r.persone} × {formatEuro(r.prezzoGiorno)} × {r.giorni}gg = <strong className="text-foreground">{formatEuro(r.subtotale)}</strong></p>
+                        ))}
+                      </div>
+                      <p className="text-base font-bold text-foreground pt-1 border-t border-orange-200/60 dark:border-orange-900/40">
+                        Totale dovuto: {formatEuro(calcolo.totale)}
+                      </p>
+                    </>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 pt-2">
                   <Button variant="outline" onClick={() => { setForm({ ...item }); setEditMode(false); }}>
                     <X className="h-4 w-4 mr-2" />Annulla
