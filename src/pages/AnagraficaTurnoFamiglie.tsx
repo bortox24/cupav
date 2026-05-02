@@ -181,10 +181,29 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const invalidateLogs = () => queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs-famiglia', item.id] });
 
   const handleSave = () => {
-    const { id, created_at, ...updates } = form;
-    const diff = buildDiff(item, form);
+    // Ricalcola totale con tariffa corrente
+    const t = form.categoria_tariffa ? tariffe.find(x => x.categoria === form.categoria_tariffa) ?? null : null;
+    const ric = calcolaTotaleFamiglia(form, t);
+    const formWithCalc: IscrizioneFamiglia = { ...form, importo_totale_calcolato: t ? ric.totale : null };
+    const { id, created_at, ...updates } = formWithCalc;
+    const diff = buildDiff(item, formWithCalc);
     updateMut.mutate({ id, updates }, {
       onSuccess: async () => {
+        // Propaga importo_dovuto su pagamenti_famiglie
+        if (t) {
+          const { data: existingPag } = await (supabase as any)
+            .from('pagamenti_famiglie').select('id, importo_pagato').eq('iscrizione_id', id).maybeSingle();
+          if (existingPag) {
+            await (supabase as any).from('pagamenti_famiglie').update({
+              importo_dovuto: ric.totale, updated_by: user?.id ?? null,
+            }).eq('id', existingPag.id);
+          } else {
+            await (supabase as any).from('pagamenti_famiglie').insert({
+              iscrizione_id: id, importo_dovuto: ric.totale, updated_by: user?.id ?? null,
+            });
+          }
+          queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+        }
         toast.success('Iscrizione aggiornata');
         setEditMode(false);
         if (user && diff) {
