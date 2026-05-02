@@ -133,6 +133,7 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const deleteMut = useDeleteIscrizioneFamiglia();
   const queryClient = useQueryClient();
   const { user, profile } = useAuth();
+  const { data: tariffe = [] } = useTariffeFamiglie();
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<IscrizioneFamiglia | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -162,6 +163,10 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   if (!item || !form) return null;
   const tot = totalePartecipanti(form);
   const userName = profile?.full_name || profile?.email || '';
+
+  const tariffaCorrente: TariffaFamiglia | null =
+    form.categoria_tariffa ? tariffe.find(t => t.categoria === form.categoria_tariffa) ?? null : null;
+  const calcolo = calcolaTotaleFamiglia(form, tariffaCorrente);
 
   const update = <K extends keyof IscrizioneFamiglia>(k: K, v: IscrizioneFamiglia[K]) => setForm(p => p ? { ...p, [k]: v } : p);
 
