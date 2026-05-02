@@ -558,6 +558,31 @@ export default function AnagraficaTurnoFamiglie() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [archiviatiOpen, setArchiviatiOpen] = useState(false);
 
+  const { data: pagamentiFamiglie = [] } = useQuery({
+    queryKey: ['pagamenti-famiglie-mappa'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('pagamenti_famiglie')
+        .select('iscrizione_id, importo_dovuto, importo_pagato, stato');
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  const pagMap = useMemo(() => {
+    const m = new Map<string, PagamentoInfo>();
+    (pagamentiFamiglie as any[]).forEach((p: any) => {
+      m.set(p.iscrizione_id, {
+        importo_dovuto: p.importo_dovuto,
+        importo_pagato: Number(p.importo_pagato) || 0,
+        stato: p.stato,
+      });
+    });
+    return m;
+  }, [pagamentiFamiglie]);
+
   const matches = (i: IscrizioneFamiglia) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
@@ -581,7 +606,7 @@ export default function AnagraficaTurnoFamiglie() {
               <h2 className="font-bold text-foreground">Turno Famiglie</h2>
               <p className="text-sm text-muted-foreground">{attivi.length} attiv{attivi.length === 1 ? 'a' : 'e'} · {archiviati.length} archiviat{archiviati.length === 1 ? 'a' : 'e'}</p>
             </div>
-            <Button variant="outline" onClick={() => exportCSV(attivi)} disabled={attivi.length === 0}>
+            <Button variant="outline" onClick={() => exportCSV(attivi, pagMap)} disabled={attivi.length === 0}>
               <Download className="h-4 w-4 mr-2" />Esporta CSV
             </Button>
           </CardContent>
