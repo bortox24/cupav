@@ -20,6 +20,7 @@ export interface IscrizioneFamiglia {
   figlio_1_over10: boolean;
   figlio_2_over10: boolean;
   figlio_3_over10: boolean;
+  num_figli_over10: number;
   num_4_10_anni: number;
   num_0_3_anni: number;
   num_animali: number;

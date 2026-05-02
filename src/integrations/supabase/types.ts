@@ -407,6 +407,7 @@ export type Database = {
           num_4_10_anni: number
           num_adulti: number
           num_animali: number
+          num_figli_over10: number
           recapiti_telefonici: Json
           regolamento_accettato: boolean
           residente_a: string
@@ -435,6 +436,7 @@ export type Database = {
           num_4_10_anni?: number
           num_adulti?: number
           num_animali?: number
+          num_figli_over10?: number
           recapiti_telefonici?: Json
           regolamento_accettato?: boolean
           residente_a: string
@@ -463,6 +465,7 @@ export type Database = {
           num_4_10_anni?: number
           num_adulti?: number
           num_animali?: number
+          num_figli_over10?: number
           recapiti_telefonici?: Json
           regolamento_accettato?: boolean
           residente_a?: string
