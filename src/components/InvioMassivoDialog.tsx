@@ -434,7 +434,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
                     <ScrollArea className="h-[350px]">
                       <div
                         className="p-4"
-                        dangerouslySetInnerHTML={{ __html: generatedHtml }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(generatedHtml, { FORBID_TAGS: ['script', 'iframe', 'object', 'embed'], FORBID_ATTR: ['onerror', 'onload', 'onclick'] }) }}
                       />
                     </ScrollArea>
                   </div>
