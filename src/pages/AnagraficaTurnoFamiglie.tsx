@@ -46,6 +46,7 @@ function buildDiff(prev: IscrizioneFamiglia, next: IscrizioneFamiglia): string {
     num_adulti: 'Adulti', num_4_10_anni: '4-10 anni', num_0_3_anni: '0-3 anni',
     num_animali: 'Animali', acconto_versato: 'Acconto',
     figlio_1_over10: 'Figlio 1 >10', figlio_2_over10: 'Figlio 2 >10', figlio_3_over10: 'Figlio 3 >10',
+    num_figli_over10: 'N° figli >10',
     categoria_tariffa: 'Categoria tariffa', importo_totale_calcolato: 'Totale calcolato',
   };
   const changes: string[] = [];
@@ -64,8 +65,13 @@ function formatDate(d: string) {
   try { return format(new Date(d), 'dd/MM/yyyy', { locale: itLocale }); } catch { return d; }
 }
 
+function nFigliOver10(i: IscrizioneFamiglia): number {
+  const fromBool = (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0);
+  return Math.max(0, i.num_figli_over10 ?? 0) || fromBool;
+}
+
 function totalePartecipanti(i: IscrizioneFamiglia) {
-  return i.num_adulti + (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0) + i.num_4_10_anni + i.num_0_3_anni;
+  return i.num_adulti + nFigliOver10(i) + i.num_4_10_anni + i.num_0_3_anni;
 }
 
 interface PagamentoInfo {
@@ -284,7 +290,7 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                 <div className="bg-muted/30 rounded-xl p-3 space-y-1 text-sm">
                   <h4 className="font-semibold text-foreground flex items-center gap-2"><Users className="h-4 w-4" />Partecipanti ({tot})</h4>
                   <p>Adulti: <strong>{item.num_adulti}</strong></p>
-                  <p>Figli &gt; 10 anni: <strong>{[item.figlio_1_over10, item.figlio_2_over10, item.figlio_3_over10].filter(Boolean).length}</strong></p>
+                  <p>Figli &gt; 10 anni: <strong>{nFigliOver10(item)}</strong></p>
                   <p>4–10 anni: <strong>{item.num_4_10_anni}</strong></p>
                   <p>0–3 anni: <strong>{item.num_0_3_anni}</strong></p>
                   <p>Animali: <strong>{item.num_animali}</strong></p>
@@ -424,19 +430,25 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                   <div><Label>0–3 anni</Label><Input type="number" min={0} value={form.num_0_3_anni} onChange={e => update('num_0_3_anni', parseInt(e.target.value) || 0)} /></div>
                 </div>
 
-                <div className="bg-muted/30 rounded-xl p-3 space-y-2">
+                <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
                   <Label>Figli &gt; 10 anni</Label>
-                  <div className="flex gap-3 text-sm">
-                    {([1, 2, 3] as const).map(n => {
-                      const key = `figlio_${n}_over10` as 'figlio_1_over10' | 'figlio_2_over10' | 'figlio_3_over10';
-                      return (
-                        <label key={n} className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" checked={form[key]} onChange={e => update(key, e.target.checked)} className="h-4 w-4" />
-                          Figlio {n}
-                        </label>
-                      );
-                    })}
-                  </div>
+                  <p className="text-[11px] text-muted-foreground">Numero di figli sopra i 10 anni. Tariffa progressiva: dal 3° figlio in poi si applica lo sconto massimo (tariffa 3° figlio).</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={form.num_figli_over10 ?? 0}
+                    onChange={e => {
+                      const n = Math.max(0, parseInt(e.target.value) || 0);
+                      // aggiorno num_figli_over10 + i 3 boolean derivati (per compatibilità)
+                      setForm(prev => prev ? {
+                        ...prev,
+                        num_figli_over10: n,
+                        figlio_1_over10: n >= 1,
+                        figlio_2_over10: n >= 2,
+                        figlio_3_over10: n >= 3,
+                      } : prev);
+                    }}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -536,7 +548,7 @@ function exportCSV(items: IscrizioneFamiglia[], pagMap: Map<string, PagamentoInf
       TIPO_PERIODO_LABEL[i.tipo_periodo],
       formatDate(i.data_inizio), formatDate(i.data_fine),
       i.num_adulti,
-      [i.figlio_1_over10, i.figlio_2_over10, i.figlio_3_over10].filter(Boolean).length,
+      nFigliOver10(i),
       i.num_4_10_anni, i.num_0_3_anni, i.num_animali,
       i.categoria_tariffa ?? '',
       dovuto, i.acconto_versato, pagato, residuo,
