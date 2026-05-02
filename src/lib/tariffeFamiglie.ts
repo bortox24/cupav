@@ -42,7 +42,7 @@ type IscrizioneCalc = Pick<
   | 'data_inizio' | 'data_fine'
   | 'num_adulti' | 'num_4_10_anni' | 'num_0_3_anni'
   | 'figlio_1_over10' | 'figlio_2_over10' | 'figlio_3_over10'
->;
+> & { num_figli_over10?: number | null };
 
 export function calcolaTotaleFamiglia(
   iscrizione: IscrizioneCalc,
@@ -61,9 +61,21 @@ export function calcolaTotaleFamiglia(
   };
 
   push('Adulti', iscrizione.num_adulti, tariffa.adulto);
-  if (iscrizione.figlio_1_over10) push('1° figlio >10 anni', 1, tariffa.figlio_1_over10);
-  if (iscrizione.figlio_2_over10) push('2° figlio >10 anni', 1, tariffa.figlio_2_over10);
-  if (iscrizione.figlio_3_over10) push('3° figlio >10 anni', 1, tariffa.figlio_3_over10);
+
+  // Figli >10: nuova fonte di verità è num_figli_over10. Fallback ai 3 boolean per record legacy.
+  const nFigliFromBool =
+    (iscrizione.figlio_1_over10 ? 1 : 0) +
+    (iscrizione.figlio_2_over10 ? 1 : 0) +
+    (iscrizione.figlio_3_over10 ? 1 : 0);
+  const nFigli = Math.max(0, iscrizione.num_figli_over10 ?? 0) || nFigliFromBool;
+
+  if (nFigli >= 1) push('1° figlio >10 anni', 1, tariffa.figlio_1_over10);
+  if (nFigli >= 2) push('2° figlio >10 anni', 1, tariffa.figlio_2_over10);
+  if (nFigli >= 3) {
+    const extra = nFigli - 2; // 3°, 4°, 5°… tutti tariffa 3°
+    push(extra === 1 ? '3° figlio >10 anni' : `Figli >10 anni dal 3° (${extra})`, extra, tariffa.figlio_3_over10);
+  }
+
   push('Bambini 4–10 anni', iscrizione.num_4_10_anni, tariffa.eta_4_10);
   if (iscrizione.num_0_3_anni > 0) push('Bambini 0–3 anni (gratis)', iscrizione.num_0_3_anni, tariffa.eta_0_3);
 
