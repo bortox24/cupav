@@ -46,6 +46,7 @@ function buildDiff(prev: IscrizioneFamiglia, next: IscrizioneFamiglia): string {
     num_adulti: 'Adulti', num_4_10_anni: '4-10 anni', num_0_3_anni: '0-3 anni',
     num_animali: 'Animali', acconto_versato: 'Acconto',
     figlio_1_over10: 'Figlio 1 >10', figlio_2_over10: 'Figlio 2 >10', figlio_3_over10: 'Figlio 3 >10',
+    categoria_tariffa: 'Categoria tariffa', importo_totale_calcolato: 'Totale calcolato',
   };
   const changes: string[] = [];
   (Object.keys(labels) as (keyof IscrizioneFamiglia)[]).forEach((k) => {
