@@ -9,7 +9,9 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 function totalePartecipanti(i: IscrizioneFamiglia) {
-  return i.num_adulti + (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0) + i.num_4_10_anni + i.num_0_3_anni;
+  const fromBool = (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0);
+  const nFigli = Math.max(0, i.num_figli_over10 ?? 0) || fromBool;
+  return i.num_adulti + nFigli + i.num_4_10_anni + i.num_0_3_anni;
 }
 
 export default function TurnoFamigliePage() {
