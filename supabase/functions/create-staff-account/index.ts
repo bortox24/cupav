@@ -52,6 +52,20 @@ serve(async (req) => {
       );
     }
 
+    // Verify caller is admin
+    const { data: roleData } = await adminClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', callingUser.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+    if (!roleData) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: solo gli admin possono creare account staff" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { email, fullName, turni, animatoreId }: CreateStaffRequest = await req.json();
 
     if (!email || !fullName || !turni || turni.length === 0) {
