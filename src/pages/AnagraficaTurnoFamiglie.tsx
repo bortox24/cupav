@@ -21,6 +21,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { InviaComunicazioneFamigliaWizard } from '@/components/InviaComunicazioneFamigliaWizard';
+import { useTariffeFamiglie } from '@/hooks/useTariffeFamiglie';
+import { calcolaTotaleFamiglia, calcolaGiorni, formatEuro, type TariffaFamiglia } from '@/lib/tariffeFamiglie';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 async function logFamigliaAction(params: {
   iscrizioneId: string; userId: string; userName: string;
