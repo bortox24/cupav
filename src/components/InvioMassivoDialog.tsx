@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { RagazzoCompleto } from '@/hooks/useRagazzi';
+import DOMPurify from 'dompurify';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const TURNI_OPTIONS = [
