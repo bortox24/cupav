@@ -68,9 +68,25 @@ function totalePartecipanti(i: IscrizioneFamiglia) {
   return i.num_adulti + (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0) + i.num_4_10_anni + i.num_0_3_anni;
 }
 
-function FamigliaCard({ item, onClick }: { item: IscrizioneFamiglia; onClick: () => void }) {
+interface PagamentoInfo {
+  importo_dovuto: number | null;
+  importo_pagato: number;
+  stato: string;
+}
+
+function FamigliaCard({ item, pagamento, onClick }: { item: IscrizioneFamiglia; pagamento?: PagamentoInfo; onClick: () => void }) {
   const initials = `${(item.cognome[0] || '').toUpperCase()}${(item.nome[0] || '').toUpperCase()}`;
   const tot = totalePartecipanti(item);
+  const totaleCalc = item.importo_totale_calcolato ?? 0;
+  const dovuto = pagamento?.importo_dovuto ?? totaleCalc;
+  const pagato = pagamento?.importo_pagato ?? 0;
+  const residuo = Math.max(0, dovuto - pagato);
+  const stato = pagato <= 0 ? 'da_pagare' : (residuo <= 0 ? 'pagato' : 'parziale');
+  const statoColor =
+    stato === 'pagato' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+    : stato === 'parziale' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+    : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300';
+  const noCategoria = !item.categoria_tariffa;
   return (
     <Card className={`border-2 border-l-4 ${item.archiviato ? 'border-l-muted-foreground/40 opacity-70' : 'border-l-orange-500'} rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer`} onClick={onClick}>
       <CardContent className="p-4 space-y-3">
@@ -96,6 +112,17 @@ function FamigliaCard({ item, onClick }: { item: IscrizioneFamiglia; onClick: ()
             <p className="font-semibold text-foreground flex items-center gap-1"><Users className="h-3 w-3" />{tot} {item.num_animali > 0 ? `+ 🐾${item.num_animali}` : ''}</p>
           </div>
         </div>
+        {noCategoria ? (
+          <div className="rounded-lg px-2 py-1.5 text-[11px] bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
+            ⚠️ Categoria tariffa non impostata
+          </div>
+        ) : (
+          <div className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold flex items-center justify-between gap-2 ${statoColor}`}>
+            <span>Tot. {formatEuro(dovuto)}</span>
+            <span className="opacity-80">Acc. {formatEuro(pagato)}</span>
+            <span>Res. {formatEuro(residuo)}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
