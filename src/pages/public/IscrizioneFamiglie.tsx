@@ -392,42 +392,57 @@ export default function IscrizioneFamiglie() {
             </Card>
 
             <Card className="rounded-2xl">
-              <CardHeader><CardTitle className="text-base flex items-center gap-2"><UsersIcon className="h-4 w-4" />Persone partecipanti *</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><UsersIcon className="h-4 w-4" />Persone partecipanti *</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Indica quante persone partecipano per ciascuna fascia d'età.</p>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <Label>Adulti (numero)</Label>
-                    <Input type="number" min={0} value={numAdulti} onChange={e => setNumAdulti(Math.max(0, parseInt(e.target.value) || 0))} />
+                  <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
+                    <Label className="text-sm font-semibold">👶 Bambini 0–3 anni</Label>
+                    <p className="text-[11px] text-muted-foreground">Gratis</p>
+                    <Input type="number" min={0} value={num03} onChange={e => setNum03(Math.max(0, parseInt(e.target.value) || 0))} className="bg-background" />
                   </div>
-                  <div>
-                    <Label>4–10 anni (numero)</Label>
-                    <Input type="number" min={0} value={num410} onChange={e => setNum410(Math.max(0, parseInt(e.target.value) || 0))} />
-                  </div>
-                  <div>
-                    <Label>0–3 anni (numero)</Label>
-                    <Input type="number" min={0} value={num03} onChange={e => setNum03(Math.max(0, parseInt(e.target.value) || 0))} />
-                  </div>
-                  <div>
-                    <Label>Animali (numero)</Label>
-                    <Input type="number" min={0} value={numAnimali} onChange={e => setNumAnimali(Math.max(0, parseInt(e.target.value) || 0))} />
+                  <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
+                    <Label className="text-sm font-semibold">🧒 Bambini 4–10 anni</Label>
+                    <p className="text-[11px] text-muted-foreground">Tariffa ridotta</p>
+                    <Input type="number" min={0} value={num410} onChange={e => setNum410(Math.max(0, parseInt(e.target.value) || 0))} className="bg-background" />
                   </div>
                 </div>
-                <div className="space-y-2 bg-muted/30 rounded-xl p-3">
-                  <Label className="text-sm">Figli &gt; 10 anni</Label>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="f1" checked={figlio1} onCheckedChange={(v) => setFiglio1(!!v)} />
-                      <Label htmlFor="f1" className="font-normal cursor-pointer">1° figlio &gt; 10 anni</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="f2" checked={figlio2} onCheckedChange={(v) => setFiglio2(!!v)} />
-                      <Label htmlFor="f2" className="font-normal cursor-pointer">2° figlio &gt; 10 anni</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="f3" checked={figlio3} onCheckedChange={(v) => setFiglio3(!!v)} />
-                      <Label htmlFor="f3" className="font-normal cursor-pointer">3° figlio &gt; 10 anni</Label>
-                    </div>
+
+                <div className="bg-muted/30 rounded-xl p-3 space-y-2">
+                  <div>
+                    <Label className="text-sm font-semibold">🧑 Figli oltre i 10 anni</Label>
+                    <p className="text-[11px] text-muted-foreground">Spunta una casella per ogni figlio sopra i 10 anni (la tariffa diminuisce dal 2° e 3° figlio).</p>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[
+                      { id: 'f1', val: figlio1, set: setFiglio1, lbl: '1° figlio' },
+                      { id: 'f2', val: figlio2, set: setFiglio2, lbl: '2° figlio' },
+                      { id: 'f3', val: figlio3, set: setFiglio3, lbl: '3° figlio' },
+                    ].map(f => (
+                      <label
+                        key={f.id}
+                        htmlFor={f.id}
+                        className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2 cursor-pointer transition-colors ${f.val ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border bg-background hover:border-emerald-300'}`}
+                      >
+                        <Checkbox id={f.id} checked={f.val} onCheckedChange={(v) => f.set(!!v)} />
+                        <span className="text-sm font-medium">{f.lbl}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
+                  <Label className="text-sm font-semibold">🧑‍🦱 Adulti (dai 18 anni)</Label>
+                  <p className="text-[11px] text-muted-foreground">Numero di adulti partecipanti.</p>
+                  <Input type="number" min={0} value={numAdulti} onChange={e => setNumAdulti(Math.max(0, parseInt(e.target.value) || 0))} className="bg-background" />
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl p-3 space-y-1.5">
+                  <Label className="text-sm font-semibold">🐾 Animali al seguito</Label>
+                  <p className="text-[11px] text-muted-foreground">Numero di animali domestici che porterai.</p>
+                  <Input type="number" min={0} value={numAnimali} onChange={e => setNumAnimali(Math.max(0, parseInt(e.target.value) || 0))} className="bg-background" />
                 </div>
               </CardContent>
             </Card>
