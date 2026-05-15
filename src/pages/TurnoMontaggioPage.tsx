@@ -1,22 +1,45 @@
+import { useMemo, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useIscrizioniMontaggio, IscrizioneMontaggio } from '@/hooks/useIscrizioniMontaggio';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Hammer, Users, MapPin, ArrowRight, Moon } from 'lucide-react';
+import { Loader2, Hammer, Users, MapPin, ArrowRight, Moon, CalendarDays } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { GIORNI_MONTAGGIO, formatEuro } from '@/lib/tariffeMontaggio';
+import { CalendarioPresenzeDialog, GiornoCalendario } from '@/components/CalendarioPresenzeDialog';
 
 function totalePartecipanti(i: IscrizioneMontaggio) {
   return i.num_adulti + (i.num_figli_over10 ?? 0) + i.num_4_10_anni + i.num_0_3_anni;
 }
 
+const GIORNI_DATE_MAP: Record<string, Date> = {
+  sab_30_05: new Date(2026, 4, 30),
+  dom_31_05: new Date(2026, 4, 31),
+  lun_01_06: new Date(2026, 5, 1),
+  mar_02_06: new Date(2026, 5, 2),
+};
+
 export default function TurnoMontaggioPage() {
   const { data: allItems = [], isLoading } = useIscrizioniMontaggio();
   const items = allItems.filter(i => !i.archiviato);
+  const [calendarioOpen, setCalendarioOpen] = useState(false);
 
   const totalePersone = items.reduce((s, i) => s + totalePartecipanti(i), 0);
   const totaleImporto = items.reduce((s, i) => s + (i.importo_totale_calcolato ?? 0), 0);
+
+  const { giorniCalendario, presenzePerGiorno } = useMemo(() => {
+    const days: GiornoCalendario[] = GIORNI_MONTAGGIO.map(g => ({ key: g.value, date: GIORNI_DATE_MAP[g.value] }));
+    const presenze: Record<string, number> = {};
+    for (const g of GIORNI_MONTAGGIO) presenze[g.value] = 0;
+    for (const it of items) {
+      const tot = totalePartecipanti(it);
+      for (const g of (it.giorni_selezionati ?? [])) {
+        if (presenze[g] !== undefined) presenze[g] += tot;
+      }
+    }
+    return { giorniCalendario: days, presenzePerGiorno: presenze };
+  }, [items]);
 
   return (
     <MainLayout title="Montaggio Campeggio">
