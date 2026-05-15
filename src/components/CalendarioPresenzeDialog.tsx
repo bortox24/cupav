@@ -37,7 +37,6 @@ const colorMap = {
 
 export function CalendarioPresenzeDialog({ open, onOpenChange, title, giorni, presenzePerGiorno, colore }: Props) {
   const c = colorMap[colore];
-  const totaleGenerale = giorni.reduce((s, g) => s + (presenzePerGiorno[g.key] ?? 0), 0);
   const giornoMax = giorni.reduce(
     (max, g) => ((presenzePerGiorno[g.key] ?? 0) > (presenzePerGiorno[max?.key ?? ''] ?? -1) ? g : max),
     giorni[0],
