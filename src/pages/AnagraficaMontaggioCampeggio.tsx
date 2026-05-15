@@ -404,7 +404,7 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
 
                 <div className="space-y-2">
                   <Label>Giorni selezionati</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {GIORNI_MONTAGGIO.map(g => (
                       <label key={g.value} className="flex items-center gap-2 bg-muted/30 rounded-xl p-2 cursor-pointer">
                         <Checkbox
