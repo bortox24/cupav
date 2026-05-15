@@ -455,6 +455,12 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <InviaComunicazioneMontaggioWizard
+        iscrizione={item}
+        open={comunicazioneOpen}
+        onOpenChange={setComunicazioneOpen}
+      />
     </>
   );
 }
