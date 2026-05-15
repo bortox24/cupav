@@ -221,8 +221,13 @@ function AppRoutes() {
       <Route path="/preiscrizione-cupav" element={<PreiscrizioneCupav />} />
       <Route path="/iscrizione" element={<IscrizioneCampeggio />} />
       <Route path="/iscrizione-famiglie" element={<IscrizioneFamiglie />} />
+      <Route path="/iscrizione-montaggio" element={<IscrizioneMontaggio />} />
       <Route path="/modulo/:slug" element={<ModuloForm />} />
       <Route path="/modulo-staff" element={<ModuloStaff />} />
+
+      {/* Montaggio Campeggio */}
+      <Route path="/turno/montaggio-campeggio" element={<ProtectedRoute><TurnoMontaggioPage /></ProtectedRoute>} />
+      <Route path="/anagrafica-montaggio-campeggio" element={<ProtectedRoute><AnagraficaMontaggioCampeggio /></ProtectedRoute>} />
 
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
