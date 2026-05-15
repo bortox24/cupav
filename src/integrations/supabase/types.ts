@@ -475,6 +475,75 @@ export type Database = {
         }
         Relationships: []
       }
+      iscrizioni_montaggio: {
+        Row: {
+          archiviato: boolean
+          cognome: string
+          created_at: string
+          email: string
+          firma_data: string
+          firma_nome_cognome: string
+          giorni_selezionati: string[]
+          id: string
+          importo_totale_calcolato: number | null
+          nome: string
+          num_0_3_anni: number
+          num_4_10_anni: number
+          num_adulti: number
+          num_figli_over10: number
+          num_notti: number
+          recapiti_telefonici: Json
+          residente_a: string
+          tariffa_accettata: boolean
+          turno: string
+          via: string
+        }
+        Insert: {
+          archiviato?: boolean
+          cognome: string
+          created_at?: string
+          email: string
+          firma_data: string
+          firma_nome_cognome: string
+          giorni_selezionati?: string[]
+          id?: string
+          importo_totale_calcolato?: number | null
+          nome: string
+          num_0_3_anni?: number
+          num_4_10_anni?: number
+          num_adulti?: number
+          num_figli_over10?: number
+          num_notti?: number
+          recapiti_telefonici?: Json
+          residente_a: string
+          tariffa_accettata?: boolean
+          turno?: string
+          via: string
+        }
+        Update: {
+          archiviato?: boolean
+          cognome?: string
+          created_at?: string
+          email?: string
+          firma_data?: string
+          firma_nome_cognome?: string
+          giorni_selezionati?: string[]
+          id?: string
+          importo_totale_calcolato?: number | null
+          nome?: string
+          num_0_3_anni?: number
+          num_4_10_anni?: number
+          num_adulti?: number
+          num_figli_over10?: number
+          num_notti?: number
+          recapiti_telefonici?: Json
+          residente_a?: string
+          tariffa_accettata?: boolean
+          turno?: string
+          via?: string
+        }
+        Relationships: []
+      }
       pagamenti: {
         Row: {
           created_at: string
