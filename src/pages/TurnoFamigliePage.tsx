@@ -1,12 +1,14 @@
+import { useMemo, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useIscrizioniFamiglie, IscrizioneFamiglia, TIPO_PERIODO_LABEL } from '@/hooks/useFamiglie';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Tent, Users, Calendar, MapPin, ArrowRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { Loader2, Tent, Users, Calendar, MapPin, ArrowRight, CalendarDays } from 'lucide-react';
+import { format, addDays, differenceInCalendarDays } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { CalendarioPresenzeDialog, GiornoCalendario } from '@/components/CalendarioPresenzeDialog';
 
 function totalePartecipanti(i: IscrizioneFamiglia) {
   const fromBool = (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0);
@@ -14,12 +16,48 @@ function totalePartecipanti(i: IscrizioneFamiglia) {
   return i.num_adulti + nFigli + i.num_4_10_anni + i.num_0_3_anni;
 }
 
+const dayKey = (d: Date) => format(d, 'yyyy-MM-dd');
+
 export default function TurnoFamigliePage() {
   const { data: allItems = [], isLoading } = useIscrizioniFamiglie();
   const items = allItems.filter(i => !i.archiviato);
+  const [calendarioOpen, setCalendarioOpen] = useState(false);
 
   const totalePersone = items.reduce((sum, i) => sum + totalePartecipanti(i), 0);
   const totaleAnimali = items.reduce((sum, i) => sum + i.num_animali, 0);
+
+  const { giorniCalendario, presenzePerGiorno } = useMemo(() => {
+    if (items.length === 0) return { giorniCalendario: [] as GiornoCalendario[], presenzePerGiorno: {} as Record<string, number> };
+    let minD: Date | null = null;
+    let maxD: Date | null = null;
+    for (const it of items) {
+      const di = new Date(it.data_inizio);
+      const df = new Date(it.data_fine);
+      if (!minD || di < minD) minD = di;
+      if (!maxD || df > maxD) maxD = df;
+    }
+    if (!minD || !maxD) return { giorniCalendario: [], presenzePerGiorno: {} };
+    const span = differenceInCalendarDays(maxD, minD);
+    const days: GiornoCalendario[] = [];
+    const presenze: Record<string, number> = {};
+    for (let i = 0; i <= span; i++) {
+      const d = addDays(minD, i);
+      const k = dayKey(d);
+      days.push({ key: k, date: d });
+      presenze[k] = 0;
+    }
+    for (const it of items) {
+      const di = new Date(it.data_inizio);
+      const df = new Date(it.data_fine);
+      const tot = totalePartecipanti(it);
+      const sp = differenceInCalendarDays(df, di);
+      for (let i = 0; i <= sp; i++) {
+        const k = dayKey(addDays(di, i));
+        if (presenze[k] !== undefined) presenze[k] += tot;
+      }
+    }
+    return { giorniCalendario: days, presenzePerGiorno: presenze };
+  }, [items]);
 
   return (
     <MainLayout title="Turno Famiglie">
@@ -50,11 +88,23 @@ export default function TurnoFamigliePage() {
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Link to="/anagrafica-turno-famiglie">
-            <Button variant="outline">Apri anagrafica completa <ArrowRight className="h-4 w-4 ml-2" /></Button>
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => setCalendarioOpen(true)}>
+            <CalendarDays className="h-4 w-4 mr-2" />Calendario
+          </Button>
+          <Link to="/anagrafica-turno-famiglie" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto">Apri anagrafica completa <ArrowRight className="h-4 w-4 ml-2" /></Button>
           </Link>
         </div>
+
+        <CalendarioPresenzeDialog
+          open={calendarioOpen}
+          onOpenChange={setCalendarioOpen}
+          title="Calendario Turno Famiglie"
+          giorni={giorniCalendario}
+          presenzePerGiorno={presenzePerGiorno}
+          colore="orange"
+        />
 
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
