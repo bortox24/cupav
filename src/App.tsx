@@ -22,6 +22,7 @@ import ModuloForm from "./pages/public/ModuloForm";
 import PreiscrizioneCupav from "./pages/public/PreiscrizioneCupav";
 import IscrizioneCampeggio from "./pages/public/IscrizioneCampeggio";
 import IscrizioneFamiglie from "./pages/public/IscrizioneFamiglie";
+import IscrizioneMontaggio from "./pages/public/IscrizioneMontaggio";
 import ModuloStaff from "./pages/public/ModuloStaff";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
 import AnagraficaTurnoFamiglie from "./pages/AnagraficaTurnoFamiglie";
