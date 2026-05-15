@@ -1,83 +1,71 @@
 ## Obiettivo
 
-Aggiungere un flusso completo "Montaggio Campeggio" sulla falsariga del Turno Famiglie, con tariffa calcolata sul numero di **notti** trascorse in campeggio (giorni selezionati − 1). Disponibili 4 giorni: sab 30/05, dom 31/05, lun 01/06, mar 02/06 → max 3 notti. Chi seleziona solo il sabato paga 0€ (0 notti).
+Allineare la card di dettaglio dell'**Anagrafica Montaggio Campeggio** a quella dell'**Anagrafica Turno Famiglie**, aggiungendo il pulsante "Invia comunicazione" + log invii, e verificare la responsività mobile/tablet di tutti i nuovi componenti del modulo Montaggio.
 
-## 1. Database
+## 1. Wizard "Invia comunicazione" per Montaggio
 
-Nuova tabella `iscrizioni_montaggio` (sulla falsariga di `iscrizioni_famiglie`, semplificata):
+Creare un nuovo componente `src/components/InviaComunicazioneMontaggioWizard.tsx`, clone funzionale di `InviaComunicazioneFamigliaWizard`, con queste differenze:
 
-- Anagrafica: `email`, `nome`, `cognome`, `residente_a`, `via`, `recapiti_telefonici` (jsonb)
-- Partecipazione: `giorni_selezionati` (text[] tra `sab_30_05`, `dom_31_05`, `lun_01_06`, `mar_02_06`)
-- Partecipanti (come famiglie): `num_adulti`, `num_figli_over10` (int illimitato), `num_4_10_anni`, `num_0_3_anni`
-- Calcolo: `num_notti` (int), `importo_totale_calcolato` (numeric)
-- Firma: `firma_nome_cognome`, `firma_data`, `tariffa_accettata` (bool)
-- `archiviato` (bool), `created_at`, `turno` default `'Montaggio campeggio'`
+- Prop: `iscrizione: IscrizioneMontaggio`.
+- Webhook: lookup su `webhook_config` con `descrizione ILIKE '%comunicazione custom montaggio%'`, fallback `https://n8n.marcobortolamai.synology.me/webhook/testo_custom_montaggio`.
+- Payload JSON arricchito con i campi del montaggio: `giorni_selezionati`, `num_notti`, `num_adulti`, `num_figli_over10`, `num_4_10_anni`, `num_0_3_anni`, `importo_totale_calcolato`, `tipo: 'montaggio_campeggio'`, `iscrizione_montaggio_id: id`.
+- Email HTML: stesso template CUPAV, ma sottotitolo header "CUPAV — Montaggio Campeggio" (resto identico).
+- Logging in `anagrafica_invio_logs` con la nuova colonna `iscrizione_montaggio_id`.
 
-Tariffe **fisse, non configurabili** (su richiesta utente, valori hard-coded nella logica):
-- Adulto: 20€/notte
-- 1° figlio >10: 15€/notte · 2°: 13€/notte · 3°+ : 10€/notte (sconto 3° figlio applicato a tutti dal 3° in su, come per le famiglie)
-- 4–10 anni: 10€/notte
-- 0–3 anni: gratis
+## 2. Migration database
 
-`importo_totale = (somma_per_persona) × num_notti`, con `num_notti = max(0, giorni_selezionati.length − 1)`.
+Estendere `anagrafica_invio_logs` per supportare i log delle iscrizioni montaggio:
+- Aggiungere colonna `iscrizione_montaggio_id uuid` nullable, FK opzionale verso `iscrizioni_montaggio(id) on delete cascade`.
+- Aggiornare RLS / policy esistenti per coprire il nuovo riferimento (stesse regole di `iscrizione_famiglia_id`).
 
-RLS:
-- INSERT pubblico (`anon` + `authenticated`)
-- SELECT/UPDATE/DELETE: `is_admin() OR has_page_access(auth.uid(), '/anagrafica-montaggio-campeggio')`
+## 3. Aggiornamento `AnagraficaMontaggioCampeggio.tsx`
 
-## 2. Form pubblico `/iscrizione-montaggio`
+Nel `MontaggioDetailDrawer`:
+- Importare `useAuth`, `useQuery/useQueryClient`, `supabase`, il nuovo `InviaComunicazioneMontaggioWizard`.
+- Aggiungere stato `comunicazioneOpen`.
+- Recuperare i log da `anagrafica_invio_logs` filtrando `iscrizione_montaggio_id`.
+- Inserire, in modalità lettura, il pulsante full-width:
 
-Multi-step come `IscrizioneFamiglie.tsx`, 3 tab:
+```tsx
+<Button onClick={() => setComunicazioneOpen(true)}
+  className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 ...">
+  <Mail className="h-4 w-4 mr-2" />Invia comunicazione
+</Button>
+```
 
-**Tab 1 — Anagrafica:** email, nome, cognome, comune residenza, via e numero, recapiti telefonici (lista nome+numero, aggiungibili). Auto-capitalize "Cognome Nome".
+  seguito dalla griglia 3 pulsanti già esistenti (Modifica / Archivia / Elimina) — invariati nel comportamento.
+- Inserire la sezione "Cronologia invii" (lista compatta dei log) come nella pagina famiglie.
+- Loggare `modifica_dati`, `archiviazione`, `ripristino` con la stessa logica del wizard famiglie (riusare un mini helper locale `logMontaggioAction`).
+- Renderizzare `<InviaComunicazioneMontaggioWizard>` accanto all'AlertDialog di eliminazione.
 
-**Tab 2 — Partecipazione:**
-- 4 checkbox grandi (square, rounded-2xl) per i giorni: Sab 30/05, Dom 31/05, Lun 01/06, Mar 02/06. Mostra in tempo reale "X notti".
-- Stessi campi numerici partecipanti del modulo famiglie (adulti, figli >10 senza limite, 4–10, 0–3).
-- Riepilogo prezzo live per notte e totale.
+## 4. Verifica responsive mobile/tablet
 
-**Tab 3 — Conferma:**
-- Riepilogo tariffa giornaliera (per notte) e totale calcolato. Nessun regolamento, nessun acconto.
-- Checkbox: "Ho letto e accetto la quota giornaliera per notte indicata sopra".
-- Firma (nome cognome) + data odierna precompilata.
-- Submit → insert in `iscrizioni_montaggio`, redirect a schermata di conferma (riusabile da famiglie).
+Audit dei file creati per il modulo Montaggio (form pubblico, dashboard turno, anagrafica, sezione Home "Altre iscrizioni") e applicazione di fix puntuali dove serve:
 
-## 3. Pagina interna `/turno/montaggio-campeggio` (TurnoMontaggioPage)
+- `src/pages/public/IscrizioneMontaggio.tsx`: header/CTA stack su mobile, padding ridotti `px-4 sm:px-6`, griglie partecipanti `grid-cols-1 sm:grid-cols-2`, bottoni step full-width su mobile.
+- `src/pages/TurnoMontaggioPage.tsx`: hero `flex-col sm:flex-row`, contatori `grid-cols-3` con `text-xl sm:text-2xl`, CTA "Apri anagrafica" full-width su mobile.
+- `src/pages/AnagraficaMontaggioCampeggio.tsx`: toolbar `flex-col sm:flex-row`, Search/Archivia/Export bottoni full-width su mobile, drawer con `px-4 sm:px-5`, bottoni azione 3-grid che restano leggibili (testo nascosto < `sm` oppure `text-xs`), griglia giorni `grid-cols-2 sm:grid-cols-3`.
+- `src/pages/Home.tsx` (sezione "Altre iscrizioni" e card Quick Access "Anagrafica Montaggio Campeggio"): verificare che la nuova sezione usi la stessa griglia responsive delle altre e che il bottone nel welcome banner non rompa il wrap su iPhone.
 
-Clone visivo di `TurnoFamigliePage.tsx`:
-- Hero arancione/ambra con icona Tent, titolo "Montaggio Campeggio".
-- 3 contatori: Iscritti, Persone totali, Notti totali (oppure "Giorni-uomo").
-- Card per iscritto: cognome+nome, residenza, giorni selezionati (badge), totale partecipanti, importo.
-- Bottone "Apri anagrafica completa" → `/anagrafica-montaggio-campeggio`.
+QA finale via preview a viewport 375×812, 768×1024 e desktop, controllando che nulla vada in overflow.
 
-## 4. Pagina anagrafica `/anagrafica-montaggio-campeggio` (AnagraficaMontaggioCampeggio)
+## 5. Non in scope
 
-Clone funzionale di `AnagraficaTurnoFamiglie.tsx`:
-- Lista filtrabile, ricerca per nome.
-- Dialog di modifica con stessi campi del form pubblico (giorni, partecipanti, contatti).
-- Export CSV con colonne: cognome, nome, email, telefoni, giorni, notti, partecipanti per fascia, importo.
-- Archiviazione, eliminazione (admin / utenti con permesso).
+- Nessuna modifica a logica tariffaria, webhook esistenti famiglie, o RLS oltre la nuova colonna.
+- Nessun cambiamento al form pubblico se non micro-aggiustamenti di responsive.
 
-Hook nuovo `useIscrizioniMontaggio` (CRUD + invalidazioni react-query) sul modello di `useFamiglie`.
+## Dettagli tecnici (riferimento)
 
-## 5. Home — Sezione "Altre iscrizioni"
+Migration:
+```sql
+ALTER TABLE public.anagrafica_invio_logs
+  ADD COLUMN iscrizione_montaggio_id uuid
+  REFERENCES public.iscrizioni_montaggio(id) ON DELETE CASCADE;
+CREATE INDEX idx_anagrafica_invio_logs_montaggio
+  ON public.anagrafica_invio_logs(iscrizione_montaggio_id);
+```
 
-In `src/pages/Home.tsx`, sotto la sezione "Iscrizioni per turno", nuovo blocco con titolo **"Altre iscrizioni"** contenente una card grande "Montaggio Campeggio" che linka a `/turno/montaggio-campeggio`. Stile coerente con le altre card turno (icona, gradiente caldo, contatore live iscritti). Predisposta per future aggiunte (smontaggio, eventi).
-
-## 6. Routing & permessi
-
-- Nuove route in `src/App.tsx`: `/iscrizione-montaggio` (pubblica), `/turno/montaggio-campeggio` (protetta), `/anagrafica-montaggio-campeggio` (protetta).
-- Aggiunta `/anagrafica-montaggio-campeggio` e `/turno/montaggio-campeggio` all'elenco pagine assegnabili in `AdminPermessi`.
-
-## Dettagli tecnici
-
-- Logica prezzo: nuovo file `src/lib/tariffeMontaggio.ts` con costanti hard-coded e funzione `calcolaTotaleMontaggio({ giorni, partecipanti })` che ritorna righe dettagliate (per il riepilogo) + totale.
-- Salvataggio: il client invia `giorni_selezionati` + conteggi, ricalcola anche server-side al SELECT (memorizziamo `importo_totale_calcolato` snapshot al momento dell'invio per audit).
-- Riusare componenti già presenti: stepper, input partecipanti numerici, gestione recapiti dal form famiglie (estrarre eventualmente in componenti condivisi se serve, altrimenti duplicare per non rompere l'esistente).
-- Memory update: aggiungere `mem://features/montaggio-campeggio` con regole tariffa per notte e struttura form.
-
-## Cosa NON viene incluso
-
-- Nessuna integrazione webhook n8n / pagamenti / reminder (non richiesti).
-- Nessun regolamento PDF, nessun acconto.
-- Nessuna configurabilità tariffe da `/impostazioni` (valori fissi).
+File toccati:
+- nuovo: `src/components/InviaComunicazioneMontaggioWizard.tsx`
+- nuova migration su `anagrafica_invio_logs`
+- modificati: `src/pages/AnagraficaMontaggioCampeggio.tsx`, `src/pages/TurnoMontaggioPage.tsx`, `src/pages/public/IscrizioneMontaggio.tsx`, `src/pages/Home.tsx` (solo classi responsive)

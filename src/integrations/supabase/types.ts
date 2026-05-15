@@ -22,6 +22,7 @@ export type Database = {
           inviato_da: string
           inviato_da_nome: string
           iscrizione_famiglia_id: string | null
+          iscrizione_montaggio_id: string | null
           ragazzo_id: string | null
           successo: boolean
           tipo: string
@@ -33,6 +34,7 @@ export type Database = {
           inviato_da: string
           inviato_da_nome: string
           iscrizione_famiglia_id?: string | null
+          iscrizione_montaggio_id?: string | null
           ragazzo_id?: string | null
           successo?: boolean
           tipo?: string
@@ -44,11 +46,19 @@ export type Database = {
           inviato_da?: string
           inviato_da_nome?: string
           iscrizione_famiglia_id?: string | null
+          iscrizione_montaggio_id?: string | null
           ragazzo_id?: string | null
           successo?: boolean
           tipo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "anagrafica_invio_logs_iscrizione_montaggio_id_fkey"
+            columns: ["iscrizione_montaggio_id"]
+            isOneToOne: false
+            referencedRelation: "iscrizioni_montaggio"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "anagrafica_invio_logs_ragazzo_id_fkey"
             columns: ["ragazzo_id"]

@@ -21,35 +21,35 @@ export default function TurnoMontaggioPage() {
   return (
     <MainLayout title="Montaggio Campeggio">
       <div className="space-y-6">
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white rounded-2xl p-6 shadow-xl">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-              <Hammer className="h-8 w-8" />
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white rounded-2xl p-4 sm:p-6 shadow-xl">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-white/20 rounded-xl backdrop-blur-sm shrink-0">
+              <Hammer className="h-7 w-7 sm:h-8 sm:w-8" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold leading-none">Montaggio Campeggio</h2>
-              <p className="text-white/85 text-sm mt-1">Iscrizioni 30 maggio – 2 giugno 2026</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold leading-tight">Montaggio Campeggio</h2>
+              <p className="text-white/85 text-xs sm:text-sm mt-1">Iscrizioni 30 maggio – 2 giugno 2026</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 mt-5">
-            <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
-              <p className="text-2xl font-bold">{items.length}</p>
-              <p className="text-xs text-white/80">Iscrizioni</p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4 sm:mt-5">
+            <div className="bg-white/15 rounded-xl px-2 sm:px-3 py-2 text-center">
+              <p className="text-xl sm:text-2xl font-bold">{items.length}</p>
+              <p className="text-[10px] sm:text-xs text-white/80">Iscrizioni</p>
             </div>
-            <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
-              <p className="text-2xl font-bold">{totalePersone}</p>
-              <p className="text-xs text-white/80">Persone</p>
+            <div className="bg-white/15 rounded-xl px-2 sm:px-3 py-2 text-center">
+              <p className="text-xl sm:text-2xl font-bold">{totalePersone}</p>
+              <p className="text-[10px] sm:text-xs text-white/80">Persone</p>
             </div>
-            <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
-              <p className="text-2xl font-bold">{totaleNotti}</p>
-              <p className="text-xs text-white/80">Notti totali</p>
+            <div className="bg-white/15 rounded-xl px-2 sm:px-3 py-2 text-center">
+              <p className="text-xl sm:text-2xl font-bold">{totaleNotti}</p>
+              <p className="text-[10px] sm:text-xs text-white/80">Notti totali</p>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Link to="/anagrafica-montaggio-campeggio">
-            <Button variant="outline">Apri anagrafica completa <ArrowRight className="h-4 w-4 ml-2" /></Button>
+        <div className="flex justify-stretch sm:justify-end">
+          <Link to="/anagrafica-montaggio-campeggio" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto">Apri anagrafica completa <ArrowRight className="h-4 w-4 ml-2" /></Button>
           </Link>
         </div>
 

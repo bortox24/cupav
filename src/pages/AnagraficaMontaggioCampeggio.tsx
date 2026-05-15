@@ -11,22 +11,63 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
   Loader2, Search, Users, Phone, Mail, MapPin, Calendar, Download, Pencil,
-  Archive, ArchiveRestore, Trash2, Save, X, Plus, Hammer, Moon,
+  Archive, ArchiveRestore, Trash2, Save, X, Plus, Hammer, Moon, Check, XCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { InviaComunicazioneMontaggioWizard } from '@/components/InviaComunicazioneMontaggioWizard';
 import {
   GIORNI_MONTAGGIO, GiornoMontaggio,
   calcolaTotaleMontaggio, formatEuro,
 } from '@/lib/tariffeMontaggio';
+
+async function logMontaggioAction(params: {
+  iscrizioneId: string; userId: string; userName: string;
+  tipo: string; dettaglio?: string; successo?: boolean;
+}) {
+  await (supabase.from('anagrafica_invio_logs' as any) as any).insert({
+    iscrizione_montaggio_id: params.iscrizioneId,
+    inviato_da: params.userId,
+    inviato_da_nome: params.userName,
+    successo: params.successo ?? true,
+    tipo: params.tipo,
+    dettaglio: params.dettaglio || null,
+  });
+}
+
+function buildDiff(prev: IscrizioneMontaggio, next: IscrizioneMontaggio): string {
+  const labels: Partial<Record<keyof IscrizioneMontaggio, string>> = {
+    cognome: 'Cognome', nome: 'Nome', email: 'Email', residente_a: 'Residenza', via: 'Via',
+    num_adulti: 'Adulti', num_figli_over10: 'Figli >10', num_4_10_anni: '4-10 anni', num_0_3_anni: '0-3 anni',
+    num_notti: 'Notti', importo_totale_calcolato: 'Totale calcolato',
+  };
+  const changes: string[] = [];
+  (Object.keys(labels) as (keyof IscrizioneMontaggio)[]).forEach((k) => {
+    if (String(prev[k] ?? '') !== String(next[k] ?? '')) {
+      changes.push(`${labels[k]}: "${prev[k] ?? ''}" → "${next[k] ?? ''}"`);
+    }
+  });
+  const prevG = JSON.stringify(prev.giorni_selezionati ?? []);
+  const nextG = JSON.stringify(next.giorni_selezionati ?? []);
+  if (prevG !== nextG) changes.push('Giorni selezionati aggiornati');
+  const prevR = JSON.stringify(prev.recapiti_telefonici ?? []);
+  const nextR = JSON.stringify(next.recapiti_telefonici ?? []);
+  if (prevR !== nextR) changes.push('Recapiti telefonici aggiornati');
+  return changes.join(' · ');
+}
 
 function nFigli(i: IscrizioneMontaggio) { return Math.max(0, i.num_figli_over10 ?? 0); }
 function totalePartecipanti(i: IscrizioneMontaggio) {
@@ -95,15 +136,35 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
   { item: IscrizioneMontaggio | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const updateMut = useUpdateIscrizioneMontaggio();
   const deleteMut = useDeleteIscrizioneMontaggio();
+  const queryClient = useQueryClient();
+  const { user, profile } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<IscrizioneMontaggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [comunicazioneOpen, setComunicazioneOpen] = useState(false);
 
   useMemo(() => { if (item) { setForm({ ...item }); setEditMode(false); } }, [item?.id]);
+
+  const { data: invioLogs = [] } = useQuery({
+    queryKey: ['anagrafica-invio-logs-montaggio', item?.id],
+    queryFn: async () => {
+      if (!item?.id) return [];
+      const { data, error } = await (supabase as any)
+        .from('anagrafica_invio_logs')
+        .select('*')
+        .eq('iscrizione_montaggio_id', item.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && !!item?.id,
+  });
 
   if (!item || !form) return null;
   const tot = totalePartecipanti(form);
   const calcolo = calcolaTotaleMontaggio(form, form.giorni_selezionati ?? []);
+  const userName = profile?.full_name || profile?.email || '';
+  const invalidateLogs = () => queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs-montaggio', item.id] });
 
   const update = <K extends keyof IscrizioneMontaggio>(k: K, v: IscrizioneMontaggio[K]) =>
     setForm(p => p ? { ...p, [k]: v } : p);
@@ -129,16 +190,36 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
       importo_totale_calcolato: ric.totale,
     };
     const { id, created_at, ...updates } = payload;
+    const diff = buildDiff(item, payload);
     updateMut.mutate({ id, updates }, {
-      onSuccess: () => { toast.success('Iscrizione aggiornata'); setEditMode(false); },
+      onSuccess: async () => {
+        toast.success('Iscrizione aggiornata');
+        setEditMode(false);
+        if (user && diff) {
+          await logMontaggioAction({
+            iscrizioneId: item.id, userId: user.id, userName,
+            tipo: 'modifica_dati', dettaglio: diff,
+          });
+          invalidateLogs();
+        }
+      },
       onError: (e: any) => toast.error(e.message || 'Errore aggiornamento'),
     });
   };
 
   const handleArchive = () => {
-    updateMut.mutate({ id: item.id, updates: { archiviato: !item.archiviato } }, {
-      onSuccess: () => {
+    const willArchive = !item.archiviato;
+    updateMut.mutate({ id: item.id, updates: { archiviato: willArchive } }, {
+      onSuccess: async () => {
         toast.success(item.archiviato ? 'Iscrizione ripristinata' : 'Iscrizione archiviata');
+        if (user) {
+          await logMontaggioAction({
+            iscrizioneId: item.id, userId: user.id, userName,
+            tipo: willArchive ? 'archiviazione' : 'ripristino',
+            dettaglio: willArchive ? 'Iscrizione archiviata' : 'Iscrizione ripristinata',
+          });
+          invalidateLogs();
+        }
         onOpenChange(false);
       },
       onError: (e: any) => toast.error(e.message || 'Errore'),
@@ -156,7 +237,7 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[92vh]">
-          <div className="overflow-y-auto px-5 pb-8">
+          <div className="overflow-y-auto px-4 sm:px-5 pb-8">
             <DrawerHeader className="px-0 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg">
@@ -228,15 +309,72 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
                   <p>Firma: <strong>{item.firma_nome_cognome}</strong> — {formatDate(item.firma_data)}</p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setEditMode(true)}><Pencil className="h-4 w-4 mr-2" />Modifica</Button>
-                  <Button variant="outline" onClick={handleArchive}>
-                    {item.archiviato ? <><ArchiveRestore className="h-4 w-4 mr-2" />Ripristina</> : <><Archive className="h-4 w-4 mr-2" />Archivia</>}
+                <Button
+                  onClick={() => setComunicazioneOpen(true)}
+                  className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Invia comunicazione
+                </Button>
+
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <Button variant="outline" className="text-xs sm:text-sm px-2" onClick={() => setEditMode(true)}>
+                    <Pencil className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Modifica</span>
                   </Button>
-                  <Button variant="outline" className="text-destructive" onClick={() => setConfirmDelete(true)}>
-                    <Trash2 className="h-4 w-4 mr-2" />Elimina
+                  <Button variant="outline" className="text-xs sm:text-sm px-2" onClick={handleArchive} disabled={updateMut.isPending}>
+                    {item.archiviato ? <ArchiveRestore className="h-4 w-4 sm:mr-2" /> : <Archive className="h-4 w-4 sm:mr-2" />}
+                    <span className="hidden sm:inline">{item.archiviato ? 'Ripristina' : 'Archivia'}</span>
+                  </Button>
+                  <Button variant="outline" className="text-destructive text-xs sm:text-sm px-2" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Elimina</span>
                   </Button>
                 </div>
+
+                <Separator />
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="flex items-center gap-1 text-sm font-medium w-full hover:text-primary transition-colors">
+                    📋 Log attività ({invioLogs.length})
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    {invioLogs.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nessuna attività registrata</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {(invioLogs as any[]).map((log: any) => (
+                          <div key={log.id} className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 text-xs bg-muted/40 rounded-lg px-2 py-1.5 min-w-0">
+                              {log.successo ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              ) : (
+                                <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                              )}
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0 ${
+                                log.tipo === 'modifica_dati' ? 'bg-amber-500' :
+                                log.tipo === 'archiviazione' ? 'bg-slate-500' :
+                                log.tipo === 'ripristino' ? 'bg-teal-500' :
+                                log.tipo === 'invio_comunicazione_custom' ? 'bg-red-500' :
+                                'bg-blue-500'
+                              }`}>
+                                {log.tipo === 'modifica_dati' ? 'Modifica' :
+                                 log.tipo === 'archiviazione' ? 'Archiviata' :
+                                 log.tipo === 'ripristino' ? 'Ripristinata' :
+                                 log.tipo === 'invio_comunicazione_custom' ? 'Comunicazione' :
+                                 'Azione'}
+                              </span>
+                              <span className="font-medium truncate">{log.inviato_da_nome}</span>
+                              <span className="text-muted-foreground text-[10px] shrink-0 whitespace-nowrap">
+                                {format(new Date(log.created_at), 'dd-MM-yy, HH:mm')}
+                              </span>
+                            </div>
+                            {log.dettaglio && (
+                              <p className="text-[10px] text-muted-foreground ml-7 break-words">{log.dettaglio}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             ) : (
               <div className="space-y-4">
@@ -266,7 +404,7 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
 
                 <div className="space-y-2">
                   <Label>Giorni selezionati</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {GIORNI_MONTAGGIO.map(g => (
                       <label key={g.value} className="flex items-center gap-2 bg-muted/30 rounded-xl p-2 cursor-pointer">
                         <Checkbox
@@ -317,6 +455,12 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <InviaComunicazioneMontaggioWizard
+        iscrizione={item}
+        open={comunicazioneOpen}
+        onOpenChange={setComunicazioneOpen}
+      />
     </>
   );
 }
@@ -363,12 +507,12 @@ export default function AnagraficaMontaggioCampeggio() {
   return (
     <MainLayout title="Anagrafica Montaggio Campeggio">
       <div className="space-y-5">
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white rounded-2xl p-5 shadow-xl">
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white rounded-2xl p-4 sm:p-5 shadow-xl">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm"><Hammer className="h-7 w-7" /></div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold">Montaggio Campeggio</h2>
-              <p className="text-white/85 text-sm">{filtered.length} iscrizioni · {totalePersone} persone · {formatEuro(totale)}</p>
+            <div className="p-2 sm:p-3 bg-white/20 rounded-xl backdrop-blur-sm shrink-0"><Hammer className="h-6 w-6 sm:h-7 sm:w-7" /></div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold">Montaggio Campeggio</h2>
+              <p className="text-white/85 text-xs sm:text-sm">{filtered.length} iscrizioni · {totalePersone} persone · {formatEuro(totale)}</p>
             </div>
           </div>
         </div>
@@ -378,10 +522,10 @@ export default function AnagraficaMontaggioCampeggio() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input className="pl-9" placeholder="Cerca per nome, cognome o email…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <Button variant={showArchived ? 'default' : 'outline'} onClick={() => setShowArchived(s => !s)}>
+          <Button variant={showArchived ? 'default' : 'outline'} className="w-full sm:w-auto" onClick={() => setShowArchived(s => !s)}>
             <Archive className="h-4 w-4 mr-2" />{showArchived ? 'Mostra attive' : 'Mostra archiviate'}
           </Button>
-          <Button variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
+          <Button variant="outline" className="w-full sm:w-auto" onClick={exportCsv} disabled={filtered.length === 0}>
             <Download className="h-4 w-4 mr-2" />Export CSV
           </Button>
         </div>
