@@ -237,7 +237,7 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[92vh]">
-          <div className="overflow-y-auto px-5 pb-8">
+          <div className="overflow-y-auto px-4 sm:px-5 pb-8">
             <DrawerHeader className="px-0 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg">
