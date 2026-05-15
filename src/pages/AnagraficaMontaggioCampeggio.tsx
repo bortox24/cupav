@@ -136,15 +136,35 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
   { item: IscrizioneMontaggio | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const updateMut = useUpdateIscrizioneMontaggio();
   const deleteMut = useDeleteIscrizioneMontaggio();
+  const queryClient = useQueryClient();
+  const { user, profile } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<IscrizioneMontaggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [comunicazioneOpen, setComunicazioneOpen] = useState(false);
 
   useMemo(() => { if (item) { setForm({ ...item }); setEditMode(false); } }, [item?.id]);
+
+  const { data: invioLogs = [] } = useQuery({
+    queryKey: ['anagrafica-invio-logs-montaggio', item?.id],
+    queryFn: async () => {
+      if (!item?.id) return [];
+      const { data, error } = await (supabase as any)
+        .from('anagrafica_invio_logs')
+        .select('*')
+        .eq('iscrizione_montaggio_id', item.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && !!item?.id,
+  });
 
   if (!item || !form) return null;
   const tot = totalePartecipanti(form);
   const calcolo = calcolaTotaleMontaggio(form, form.giorni_selezionati ?? []);
+  const userName = profile?.full_name || profile?.email || '';
+  const invalidateLogs = () => queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs-montaggio', item.id] });
 
   const update = <K extends keyof IscrizioneMontaggio>(k: K, v: IscrizioneMontaggio[K]) =>
     setForm(p => p ? { ...p, [k]: v } : p);
@@ -170,16 +190,36 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
       importo_totale_calcolato: ric.totale,
     };
     const { id, created_at, ...updates } = payload;
+    const diff = buildDiff(item, payload);
     updateMut.mutate({ id, updates }, {
-      onSuccess: () => { toast.success('Iscrizione aggiornata'); setEditMode(false); },
+      onSuccess: async () => {
+        toast.success('Iscrizione aggiornata');
+        setEditMode(false);
+        if (user && diff) {
+          await logMontaggioAction({
+            iscrizioneId: item.id, userId: user.id, userName,
+            tipo: 'modifica_dati', dettaglio: diff,
+          });
+          invalidateLogs();
+        }
+      },
       onError: (e: any) => toast.error(e.message || 'Errore aggiornamento'),
     });
   };
 
   const handleArchive = () => {
-    updateMut.mutate({ id: item.id, updates: { archiviato: !item.archiviato } }, {
-      onSuccess: () => {
+    const willArchive = !item.archiviato;
+    updateMut.mutate({ id: item.id, updates: { archiviato: willArchive } }, {
+      onSuccess: async () => {
         toast.success(item.archiviato ? 'Iscrizione ripristinata' : 'Iscrizione archiviata');
+        if (user) {
+          await logMontaggioAction({
+            iscrizioneId: item.id, userId: user.id, userName,
+            tipo: willArchive ? 'archiviazione' : 'ripristino',
+            dettaglio: willArchive ? 'Iscrizione archiviata' : 'Iscrizione ripristinata',
+          });
+          invalidateLogs();
+        }
         onOpenChange(false);
       },
       onError: (e: any) => toast.error(e.message || 'Errore'),
