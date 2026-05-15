@@ -44,8 +44,8 @@ export function CalendarioPresenzeDialog({ open, onOpenChange, title, giorni, pr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-0 bg-transparent border-0 shadow-none sm:bg-background sm:border sm:shadow-lg">
-        <div className={cn('bg-gradient-to-r text-white p-4 sm:p-5 sm:rounded-t-lg rounded-2xl sm:rounded-b-none', c.headerGradient)}>
+      <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-0 rounded-2xl">
+        <div className={cn('bg-gradient-to-r text-white p-4 sm:p-5 rounded-t-2xl', c.headerGradient)}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <CalendarDays className="h-5 w-5" />
