@@ -11,22 +11,63 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
   Loader2, Search, Users, Phone, Mail, MapPin, Calendar, Download, Pencil,
-  Archive, ArchiveRestore, Trash2, Save, X, Plus, Hammer, Moon,
+  Archive, ArchiveRestore, Trash2, Save, X, Plus, Hammer, Moon, Check, XCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { InviaComunicazioneMontaggioWizard } from '@/components/InviaComunicazioneMontaggioWizard';
 import {
   GIORNI_MONTAGGIO, GiornoMontaggio,
   calcolaTotaleMontaggio, formatEuro,
 } from '@/lib/tariffeMontaggio';
+
+async function logMontaggioAction(params: {
+  iscrizioneId: string; userId: string; userName: string;
+  tipo: string; dettaglio?: string; successo?: boolean;
+}) {
+  await (supabase.from('anagrafica_invio_logs' as any) as any).insert({
+    iscrizione_montaggio_id: params.iscrizioneId,
+    inviato_da: params.userId,
+    inviato_da_nome: params.userName,
+    successo: params.successo ?? true,
+    tipo: params.tipo,
+    dettaglio: params.dettaglio || null,
+  });
+}
+
+function buildDiff(prev: IscrizioneMontaggio, next: IscrizioneMontaggio): string {
+  const labels: Partial<Record<keyof IscrizioneMontaggio, string>> = {
+    cognome: 'Cognome', nome: 'Nome', email: 'Email', residente_a: 'Residenza', via: 'Via',
+    num_adulti: 'Adulti', num_figli_over10: 'Figli >10', num_4_10_anni: '4-10 anni', num_0_3_anni: '0-3 anni',
+    num_notti: 'Notti', importo_totale_calcolato: 'Totale calcolato',
+  };
+  const changes: string[] = [];
+  (Object.keys(labels) as (keyof IscrizioneMontaggio)[]).forEach((k) => {
+    if (String(prev[k] ?? '') !== String(next[k] ?? '')) {
+      changes.push(`${labels[k]}: "${prev[k] ?? ''}" → "${next[k] ?? ''}"`);
+    }
+  });
+  const prevG = JSON.stringify(prev.giorni_selezionati ?? []);
+  const nextG = JSON.stringify(next.giorni_selezionati ?? []);
+  if (prevG !== nextG) changes.push('Giorni selezionati aggiornati');
+  const prevR = JSON.stringify(prev.recapiti_telefonici ?? []);
+  const nextR = JSON.stringify(next.recapiti_telefonici ?? []);
+  if (prevR !== nextR) changes.push('Recapiti telefonici aggiornati');
+  return changes.join(' · ');
+}
 
 function nFigli(i: IscrizioneMontaggio) { return Math.max(0, i.num_figli_over10 ?? 0); }
 function totalePartecipanti(i: IscrizioneMontaggio) {
