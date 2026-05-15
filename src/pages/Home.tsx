@@ -180,6 +180,16 @@ const allQuickAccessCards: QuickAccessCard[] = [
     iconColor: 'text-white',
   },
   {
+    title: 'Anagrafica Montaggio Campeggio',
+    description: 'Iscrizioni montaggio campeggio (30/05 – 02/06)',
+    icon: <Tent className="h-7 w-7" />,
+    path: '/anagrafica-montaggio-campeggio',
+    gradient: 'bg-gradient-to-br from-teal-100 via-emerald-50 to-green-50 dark:from-teal-950/50 dark:via-emerald-950/30 dark:to-green-950/30',
+    borderColor: 'border-teal-300 dark:border-teal-700',
+    iconBg: 'bg-gradient-to-br from-teal-500 to-emerald-600',
+    iconColor: 'text-white',
+  },
+  {
     title: 'Anagrafica Staff',
     description: 'Gestionale staff CUPAV (animatori, cuochi, responsabili)',
     icon: <UserPlus className="h-7 w-7" />,
@@ -387,6 +397,12 @@ export default function Home() {
                 <Link to="/iscrizione" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
                   <Tent className="h-5 w-5" />
                   Iscrizioni
+                </Link>
+              )}
+              {siteSettings?.iscrizione_montaggio_enabled !== 'false' && (
+                <Link to="/iscrizione-montaggio" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                  <Tent className="h-5 w-5" />
+                  Montaggio Campeggio
                 </Link>
               )}
               {siteSettings?.iscrizione_famiglie_enabled !== 'false' && (
