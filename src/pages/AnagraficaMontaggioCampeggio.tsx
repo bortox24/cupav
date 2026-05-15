@@ -507,12 +507,12 @@ export default function AnagraficaMontaggioCampeggio() {
   return (
     <MainLayout title="Anagrafica Montaggio Campeggio">
       <div className="space-y-5">
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white rounded-2xl p-5 shadow-xl">
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white rounded-2xl p-4 sm:p-5 shadow-xl">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm"><Hammer className="h-7 w-7" /></div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold">Montaggio Campeggio</h2>
-              <p className="text-white/85 text-sm">{filtered.length} iscrizioni · {totalePersone} persone · {formatEuro(totale)}</p>
+            <div className="p-2 sm:p-3 bg-white/20 rounded-xl backdrop-blur-sm shrink-0"><Hammer className="h-6 w-6 sm:h-7 sm:w-7" /></div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold">Montaggio Campeggio</h2>
+              <p className="text-white/85 text-xs sm:text-sm">{filtered.length} iscrizioni · {totalePersone} persone · {formatEuro(totale)}</p>
             </div>
           </div>
         </div>
