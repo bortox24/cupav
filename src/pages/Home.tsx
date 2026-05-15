@@ -314,6 +314,18 @@ export default function Home() {
     },
   });
 
+  const { data: montaggioCount = 0 } = useQuery({
+    queryKey: ['turno-montaggio-count'],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from('iscrizioni_montaggio')
+        .select('*', { count: 'exact', head: true })
+        .eq('archiviato', false);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   const turnoCounts: Record<string, number> = {};
   turnoCountsRaw.forEach((row: { turno: string }) => {
     turnoCounts[row.turno] = (turnoCounts[row.turno] || 0) + 1;
