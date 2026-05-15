@@ -1,71 +1,45 @@
 ## Obiettivo
+Aggiungere un pulsante **Calendario** a sinistra di "Apri anagrafica completa" su entrambe le pagine Turno Famiglie e Montaggio Campeggio. Cliccandolo si apre un dialog con la lista dei giorni del turno e, per ogni giorno, il numero totale di persone presenti in campeggio.
 
-Allineare la card di dettaglio dell'**Anagrafica Montaggio Campeggio** a quella dell'**Anagrafica Turno Famiglie**, aggiungendo il pulsante "Invia comunicazione" + log invii, e verificare la responsività mobile/tablet di tutti i nuovi componenti del modulo Montaggio.
+## Componente condiviso
 
-## 1. Wizard "Invia comunicazione" per Montaggio
+Creare `src/components/CalendarioPresenzeDialog.tsx`:
 
-Creare un nuovo componente `src/components/InviaComunicazioneMontaggioWizard.tsx`, clone funzionale di `InviaComunicazioneFamigliaWizard`, con queste differenze:
+- Props: `open`, `onOpenChange`, `title`, `giorni: { key: string; label: string; date: Date }[]`, `presenzePerGiorno: Record<string, number>`, `colore: 'orange' | 'amber'`.
+- Usa `Dialog` di shadcn (`max-w-lg`, `max-h-[85vh] overflow-y-auto`).
+- Layout responsive: griglia `grid-cols-1 sm:grid-cols-2` di card per giorno con:
+  - Data formattata in italiano (es. "Lunedì 3 agosto")
+  - Conteggio grande con icona `Users`
+  - Badge colorato gradient coerente con la pagina di provenienza
+- Totale generale in fondo (somma persone-giorno).
+- Stato vuoto se nessun giorno disponibile.
 
-- Prop: `iscrizione: IscrizioneMontaggio`.
-- Webhook: lookup su `webhook_config` con `descrizione ILIKE '%comunicazione custom montaggio%'`, fallback `https://n8n.marcobortolamai.synology.me/webhook/testo_custom_montaggio`.
-- Payload JSON arricchito con i campi del montaggio: `giorni_selezionati`, `num_notti`, `num_adulti`, `num_figli_over10`, `num_4_10_anni`, `num_0_3_anni`, `importo_totale_calcolato`, `tipo: 'montaggio_campeggio'`, `iscrizione_montaggio_id: id`.
-- Email HTML: stesso template CUPAV, ma sottotitolo header "CUPAV — Montaggio Campeggio" (resto identico).
-- Logging in `anagrafica_invio_logs` con la nuova colonna `iscrizione_montaggio_id`.
+## Turno Famiglie (`src/pages/TurnoFamigliePage.tsx`)
 
-## 2. Migration database
+- Aggiungere stato `calendarioOpen`.
+- Calcolare con `useMemo`:
+  - Range complessivo: min(data_inizio) → max(data_fine) di tutte le iscrizioni non archiviate.
+  - Iterare ogni giorno del range. Per ogni giorno, sommare `totalePartecipanti(item)` per ogni iscrizione il cui intervallo `[data_inizio, data_fine]` include quel giorno.
+- Toolbar: cambiare `flex justify-end` in `flex flex-col sm:flex-row sm:justify-end gap-2`. Inserire `<Button variant="outline" onClick={() => setCalendarioOpen(true)}><CalendarDays /> Calendario</Button>` **a sinistra** di "Apri anagrafica completa".
+- Renderizzare `<CalendarioPresenzeDialog>` con colore `orange`.
 
-Estendere `anagrafica_invio_logs` per supportare i log delle iscrizioni montaggio:
-- Aggiungere colonna `iscrizione_montaggio_id uuid` nullable, FK opzionale verso `iscrizioni_montaggio(id) on delete cascade`.
-- Aggiornare RLS / policy esistenti per coprire il nuovo riferimento (stesse regole di `iscrizione_famiglia_id`).
+## Montaggio Campeggio (`src/pages/TurnoMontaggioPage.tsx`)
 
-## 3. Aggiornamento `AnagraficaMontaggioCampeggio.tsx`
+- Aggiungere stato `calendarioOpen`.
+- Calcolare con `useMemo` su `GIORNI_MONTAGGIO`: per ciascun `value`, sommare `totalePartecipanti(item)` per ogni iscrizione che ha quel valore in `giorni_selezionati`.
+- Mappare ogni `GiornoMontaggio` su una `Date` reale (30/05, 31/05, 01/06, 02/06 del 2026) per coerenza con il componente condiviso.
+- Toolbar: il container è già `flex justify-stretch sm:justify-end`. Aggiungere il pulsante Calendario a sinistra (su mobile entrambi full-width stack verticale, su desktop affiancati).
+- Renderizzare `<CalendarioPresenzeDialog>` con colore `amber`.
 
-Nel `MontaggioDetailDrawer`:
-- Importare `useAuth`, `useQuery/useQueryClient`, `supabase`, il nuovo `InviaComunicazioneMontaggioWizard`.
-- Aggiungere stato `comunicazioneOpen`.
-- Recuperare i log da `anagrafica_invio_logs` filtrando `iscrizione_montaggio_id`.
-- Inserire, in modalità lettura, il pulsante full-width:
+## Responsive
 
-```tsx
-<Button onClick={() => setComunicazioneOpen(true)}
-  className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 ...">
-  <Mail className="h-4 w-4 mr-2" />Invia comunicazione
-</Button>
-```
+- Toolbar pulsanti: stack verticale full-width su mobile, affiancati su `sm+`.
+- Dialog: `max-w-lg` con padding ridotto su mobile (`p-4 sm:p-6`), griglia interna `grid-cols-1 sm:grid-cols-2`.
+- Testo data: forma compatta su mobile (`text-sm`), estesa su desktop.
 
-  seguito dalla griglia 3 pulsanti già esistenti (Modifica / Archivia / Elimina) — invariati nel comportamento.
-- Inserire la sezione "Cronologia invii" (lista compatta dei log) come nella pagina famiglie.
-- Loggare `modifica_dati`, `archiviazione`, `ripristino` con la stessa logica del wizard famiglie (riusare un mini helper locale `logMontaggioAction`).
-- Renderizzare `<InviaComunicazioneMontaggioWizard>` accanto all'AlertDialog di eliminazione.
+## File toccati
 
-## 4. Verifica responsive mobile/tablet
+- Nuovo: `src/components/CalendarioPresenzeDialog.tsx`
+- Modificati: `src/pages/TurnoFamigliePage.tsx`, `src/pages/TurnoMontaggioPage.tsx`
 
-Audit dei file creati per il modulo Montaggio (form pubblico, dashboard turno, anagrafica, sezione Home "Altre iscrizioni") e applicazione di fix puntuali dove serve:
-
-- `src/pages/public/IscrizioneMontaggio.tsx`: header/CTA stack su mobile, padding ridotti `px-4 sm:px-6`, griglie partecipanti `grid-cols-1 sm:grid-cols-2`, bottoni step full-width su mobile.
-- `src/pages/TurnoMontaggioPage.tsx`: hero `flex-col sm:flex-row`, contatori `grid-cols-3` con `text-xl sm:text-2xl`, CTA "Apri anagrafica" full-width su mobile.
-- `src/pages/AnagraficaMontaggioCampeggio.tsx`: toolbar `flex-col sm:flex-row`, Search/Archivia/Export bottoni full-width su mobile, drawer con `px-4 sm:px-5`, bottoni azione 3-grid che restano leggibili (testo nascosto < `sm` oppure `text-xs`), griglia giorni `grid-cols-2 sm:grid-cols-3`.
-- `src/pages/Home.tsx` (sezione "Altre iscrizioni" e card Quick Access "Anagrafica Montaggio Campeggio"): verificare che la nuova sezione usi la stessa griglia responsive delle altre e che il bottone nel welcome banner non rompa il wrap su iPhone.
-
-QA finale via preview a viewport 375×812, 768×1024 e desktop, controllando che nulla vada in overflow.
-
-## 5. Non in scope
-
-- Nessuna modifica a logica tariffaria, webhook esistenti famiglie, o RLS oltre la nuova colonna.
-- Nessun cambiamento al form pubblico se non micro-aggiustamenti di responsive.
-
-## Dettagli tecnici (riferimento)
-
-Migration:
-```sql
-ALTER TABLE public.anagrafica_invio_logs
-  ADD COLUMN iscrizione_montaggio_id uuid
-  REFERENCES public.iscrizioni_montaggio(id) ON DELETE CASCADE;
-CREATE INDEX idx_anagrafica_invio_logs_montaggio
-  ON public.anagrafica_invio_logs(iscrizione_montaggio_id);
-```
-
-File toccati:
-- nuovo: `src/components/InviaComunicazioneMontaggioWizard.tsx`
-- nuova migration su `anagrafica_invio_logs`
-- modificati: `src/pages/AnagraficaMontaggioCampeggio.tsx`, `src/pages/TurnoMontaggioPage.tsx`, `src/pages/public/IscrizioneMontaggio.tsx`, `src/pages/Home.tsx` (solo classi responsive)
+Nessuna modifica al database o a edge functions.
