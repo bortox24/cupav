@@ -28,6 +28,8 @@ import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
 import AnagraficaTurnoFamiglie from "./pages/AnagraficaTurnoFamiglie";
 import TurnoPage from "./pages/TurnoPage";
 import TurnoFamigliePage from "./pages/TurnoFamigliePage";
+import TurnoMontaggioPage from "./pages/TurnoMontaggioPage";
+import AnagraficaMontaggioCampeggio from "./pages/AnagraficaMontaggioCampeggio";
 import GestionePagamenti from "./pages/GestionePagamenti";
 import Impostazioni from "./pages/Impostazioni";
 import AnagraficaAnimatori from "./pages/AnagraficaAnimatori";
