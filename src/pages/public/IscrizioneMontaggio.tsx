@@ -256,7 +256,7 @@ export default function IscrizioneMontaggio() {
             <Card className="rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2"><Hammer className="h-4 w-4" />Giorni di partecipazione *</CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Seleziona i giorni in cui sarai al campeggio per il montaggio. Il prezzo viene calcolato sulle <strong>notti</strong> trascorse.</p>
+                <p className="text-xs text-muted-foreground mt-1 text-[#ff0000]">Seleziona i giorni in cui sarai al campeggio per il montaggio. Il prezzo viene calcolato sulle <strong>notti</strong> trascorse.</p>
               </CardHeader>
               <CardContent className="space-y-2">
                 {GIORNI_MONTAGGIO.map(g => (
@@ -282,7 +282,7 @@ export default function IscrizioneMontaggio() {
                   <span className="text-muted-foreground">Notti calcolate:</span>
                   <span className="font-bold text-amber-700 dark:text-amber-300 text-lg">{calcolo.notti}</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground italic">
+                <p className="text-[11px] text-muted-foreground italic text-[#ff0000]">
                   Chi viene solo il sabato per montare il campeggio non paga nulla (0 notti). Il pasto di mezzogiorno è gratuito.
                 </p>
               </CardContent>
@@ -291,7 +291,7 @@ export default function IscrizioneMontaggio() {
             <Card className="rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2"><UsersIcon className="h-4 w-4" />Persone partecipanti *</CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Indica quante persone partecipano per ciascuna fascia d'età.</p>
+                <p className="text-xs text-muted-foreground mt-1 text-[#ff0000]">Indica quante persone partecipano per ciascuna fascia d'età.</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
