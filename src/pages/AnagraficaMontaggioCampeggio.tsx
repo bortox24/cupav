@@ -522,10 +522,10 @@ export default function AnagraficaMontaggioCampeggio() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input className="pl-9" placeholder="Cerca per nome, cognome o email…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <Button variant={showArchived ? 'default' : 'outline'} onClick={() => setShowArchived(s => !s)}>
+          <Button variant={showArchived ? 'default' : 'outline'} className="w-full sm:w-auto" onClick={() => setShowArchived(s => !s)}>
             <Archive className="h-4 w-4 mr-2" />{showArchived ? 'Mostra attive' : 'Mostra archiviate'}
           </Button>
-          <Button variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
+          <Button variant="outline" className="w-full sm:w-auto" onClick={exportCsv} disabled={filtered.length === 0}>
             <Download className="h-4 w-4 mr-2" />Export CSV
           </Button>
         </div>
