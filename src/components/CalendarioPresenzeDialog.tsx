@@ -44,8 +44,8 @@ export function CalendarioPresenzeDialog({ open, onOpenChange, title, giorni, pr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-0">
-        <div className={cn('bg-gradient-to-r text-white p-4 sm:p-5 rounded-t-lg', c.headerGradient)}>
+      <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-0 bg-transparent border-0 shadow-none sm:bg-background sm:border sm:shadow-lg">
+        <div className={cn('bg-gradient-to-r text-white p-4 sm:p-5 sm:rounded-t-lg rounded-2xl sm:rounded-b-none', c.headerGradient)}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <CalendarDays className="h-5 w-5" />
@@ -57,45 +57,43 @@ export function CalendarioPresenzeDialog({ open, onOpenChange, title, giorni, pr
           </p>
         </div>
 
-        <div className="p-4 sm:p-5 space-y-4">
+        <div className="p-0 sm:p-5 pt-3 space-y-4">
           {giorni.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               Nessun giorno disponibile
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                {giorni.map(g => {
-                  const n = presenzePerGiorno[g.key] ?? 0;
-                  const isMax = n > 0 && g.key === giornoMax?.key;
-                  return (
-                    <div
-                      key={g.key}
-                      className={cn(
-                        'rounded-xl border-2 p-3 flex items-center justify-between gap-2 transition-all',
-                        c.cardBorder,
-                        c.cardBg,
-                        isMax && 'ring-2 ring-offset-1 ring-offset-background',
-                        isMax && (colore === 'orange' ? 'ring-orange-400' : 'ring-amber-400'),
-                      )}
-                    >
-                      <div className="min-w-0">
-                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
-                          {format(g.date, 'EEEE', { locale: itLocale })}
-                        </p>
-                        <p className="text-sm sm:text-base font-bold text-foreground capitalize">
-                          {format(g.date, 'd MMM yyyy', { locale: itLocale })}
-                        </p>
-                      </div>
-                      <div className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold', c.badge)}>
-                        <Users className="h-4 w-4" />
-                        <span className="text-lg leading-none">{n}</span>
-                      </div>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              {giorni.map(g => {
+                const n = presenzePerGiorno[g.key] ?? 0;
+                const isMax = n > 0 && g.key === giornoMax?.key;
+                return (
+                  <div
+                    key={g.key}
+                    className={cn(
+                      'rounded-xl border-2 p-2.5 sm:p-3 flex flex-col gap-2 transition-all',
+                      c.cardBorder,
+                      c.cardBg,
+                      isMax && 'ring-2 ring-offset-1 ring-offset-background',
+                      isMax && (colore === 'orange' ? 'ring-orange-400' : 'ring-amber-400'),
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground font-medium leading-tight">
+                        {format(g.date, 'EEEE', { locale: itLocale })}
+                      </p>
+                      <p className="text-xs sm:text-base font-bold text-foreground capitalize leading-tight">
+                        {format(g.date, 'd MMM yyyy', { locale: itLocale })}
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
-            </>
+                    <div className={cn('flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg font-bold', c.badge)}>
+                      <Users className="h-4 w-4" />
+                      <span className="text-base sm:text-lg leading-none">{n}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </DialogContent>
