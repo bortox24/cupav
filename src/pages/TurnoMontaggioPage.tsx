@@ -16,7 +16,7 @@ export default function TurnoMontaggioPage() {
   const items = allItems.filter(i => !i.archiviato);
 
   const totalePersone = items.reduce((s, i) => s + totalePartecipanti(i), 0);
-  const totaleNotti = items.reduce((s, i) => s + (i.num_notti ?? 0) * totalePartecipanti(i), 0);
+  const totaleImporto = items.reduce((s, i) => s + (i.importo_totale_calcolato ?? 0), 0);
 
   return (
     <MainLayout title="Montaggio Campeggio">
@@ -41,8 +41,8 @@ export default function TurnoMontaggioPage() {
               <p className="text-[10px] sm:text-xs text-white/80">Persone</p>
             </div>
             <div className="bg-white/15 rounded-xl px-2 sm:px-3 py-2 text-center">
-              <p className="text-xl sm:text-2xl font-bold">{totaleNotti}</p>
-              <p className="text-[10px] sm:text-xs text-white/80">Notti totali</p>
+              <p className="text-xl sm:text-2xl font-bold">{formatEuro(totaleImporto)}</p>
+              <p className="text-[10px] sm:text-xs text-white/80">Totale da versare</p>
             </div>
           </div>
         </div>
