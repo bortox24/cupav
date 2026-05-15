@@ -57,7 +57,7 @@ export function CalendarioPresenzeDialog({ open, onOpenChange, title, giorni, pr
           </p>
         </div>
 
-        <div className="p-0 sm:p-5 pt-3 space-y-4">
+        <div className="p-4 sm:p-5 space-y-4">
           {giorni.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               Nessun giorno disponibile
