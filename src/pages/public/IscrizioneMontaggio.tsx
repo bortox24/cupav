@@ -256,9 +256,16 @@ export default function IscrizioneMontaggio() {
             <Card className="rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2"><Hammer className="h-4 w-4" />Giorni di partecipazione *</CardTitle>
-                <p className="text-xs text-muted-foreground mt-1 text-[#ff0000]">Seleziona i giorni in cui sarai al campeggio per il montaggio. Il prezzo viene calcolato sulle <strong>notti</strong> trascorse.</p>
               </CardHeader>
               <CardContent className="space-y-2">
+                <div className="rounded-xl border-2 bg-red-50 dark:bg-red-950/30 p-3 text-sm text-red-700 dark:text-red-300 font-medium animate-border-blink-red">
+                  <p>
+                    📌 Seleziona i giorni in cui sarai al campeggio per il montaggio. Il prezzo viene calcolato sulle <strong>notti</strong> trascorse.
+                  </p>
+                  <p className="mt-2">
+                    ⚠️ Chi viene <strong>solo il sabato</strong> per montare il campeggio <strong>non paga nulla</strong> (0 notti). Il pasto di mezzogiorno è gratuito.
+                  </p>
+                </div>
                 {GIORNI_MONTAGGIO.map(g => (
                   <label
                     key={g.value}
@@ -282,9 +289,6 @@ export default function IscrizioneMontaggio() {
                   <span className="text-muted-foreground">Notti calcolate:</span>
                   <span className="font-bold text-amber-700 dark:text-amber-300 text-lg">{calcolo.notti}</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground italic text-[#ff0000]">
-                  Chi viene solo il sabato per montare il campeggio non paga nulla (0 notti). Il pasto di mezzogiorno è gratuito.
-                </p>
               </CardContent>
             </Card>
 
