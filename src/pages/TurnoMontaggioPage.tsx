@@ -70,11 +70,23 @@ export default function TurnoMontaggioPage() {
           </div>
         </div>
 
-        <div className="flex justify-stretch sm:justify-end">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => setCalendarioOpen(true)}>
+            <CalendarDays className="h-4 w-4 mr-2" />Calendario
+          </Button>
           <Link to="/anagrafica-montaggio-campeggio" className="w-full sm:w-auto">
             <Button variant="outline" className="w-full sm:w-auto">Apri anagrafica completa <ArrowRight className="h-4 w-4 ml-2" /></Button>
           </Link>
         </div>
+
+        <CalendarioPresenzeDialog
+          open={calendarioOpen}
+          onOpenChange={setCalendarioOpen}
+          title="Calendario Montaggio Campeggio"
+          giorni={giorniCalendario}
+          presenzePerGiorno={presenzePerGiorno}
+          colore="amber"
+        />
 
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
