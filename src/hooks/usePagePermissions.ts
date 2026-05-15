@@ -86,6 +86,16 @@ export const availablePages: PageInfo[] = [
     description: 'Gestione completa iscrizioni turno famiglie',
   },
   {
+    path: '/anagrafica-montaggio-campeggio',
+    title: 'Anagrafica Montaggio Campeggio',
+    description: 'Iscrizioni e dati per il montaggio del campeggio',
+  },
+  {
+    path: '/turno/montaggio-campeggio',
+    title: 'Dashboard Montaggio Campeggio',
+    description: 'Riepilogo iscrizioni montaggio campeggio',
+  },
+  {
     path: '/gestione-pagamenti',
     title: 'Gestione Pagamenti',
     description: 'Gestisci stato pagamenti delle iscrizioni',
