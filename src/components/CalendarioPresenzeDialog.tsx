@@ -95,11 +95,6 @@ export function CalendarioPresenzeDialog({ open, onOpenChange, title, giorni, pr
                   );
                 })}
               </div>
-
-              <div className={cn('rounded-xl p-3 flex items-center justify-between text-sm border-2', c.cardBorder, c.cardBg)}>
-                <span className="text-muted-foreground">Totale presenze (somma persone-giorno)</span>
-                <span className={cn('font-bold text-lg', c.accent)}>{totaleGenerale}</span>
-              </div>
             </>
           )}
         </div>
