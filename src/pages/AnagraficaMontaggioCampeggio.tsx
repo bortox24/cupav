@@ -309,15 +309,72 @@ function MontaggioDetailDrawer({ item, open, onOpenChange }:
                   <p>Firma: <strong>{item.firma_nome_cognome}</strong> — {formatDate(item.firma_data)}</p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setEditMode(true)}><Pencil className="h-4 w-4 mr-2" />Modifica</Button>
-                  <Button variant="outline" onClick={handleArchive}>
-                    {item.archiviato ? <><ArchiveRestore className="h-4 w-4 mr-2" />Ripristina</> : <><Archive className="h-4 w-4 mr-2" />Archivia</>}
+                <Button
+                  onClick={() => setComunicazioneOpen(true)}
+                  className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Invia comunicazione
+                </Button>
+
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <Button variant="outline" className="text-xs sm:text-sm px-2" onClick={() => setEditMode(true)}>
+                    <Pencil className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Modifica</span>
                   </Button>
-                  <Button variant="outline" className="text-destructive" onClick={() => setConfirmDelete(true)}>
-                    <Trash2 className="h-4 w-4 mr-2" />Elimina
+                  <Button variant="outline" className="text-xs sm:text-sm px-2" onClick={handleArchive} disabled={updateMut.isPending}>
+                    {item.archiviato ? <ArchiveRestore className="h-4 w-4 sm:mr-2" /> : <Archive className="h-4 w-4 sm:mr-2" />}
+                    <span className="hidden sm:inline">{item.archiviato ? 'Ripristina' : 'Archivia'}</span>
+                  </Button>
+                  <Button variant="outline" className="text-destructive text-xs sm:text-sm px-2" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Elimina</span>
                   </Button>
                 </div>
+
+                <Separator />
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="flex items-center gap-1 text-sm font-medium w-full hover:text-primary transition-colors">
+                    📋 Log attività ({invioLogs.length})
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    {invioLogs.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nessuna attività registrata</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {(invioLogs as any[]).map((log: any) => (
+                          <div key={log.id} className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 text-xs bg-muted/40 rounded-lg px-2 py-1.5 min-w-0">
+                              {log.successo ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              ) : (
+                                <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                              )}
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0 ${
+                                log.tipo === 'modifica_dati' ? 'bg-amber-500' :
+                                log.tipo === 'archiviazione' ? 'bg-slate-500' :
+                                log.tipo === 'ripristino' ? 'bg-teal-500' :
+                                log.tipo === 'invio_comunicazione_custom' ? 'bg-red-500' :
+                                'bg-blue-500'
+                              }`}>
+                                {log.tipo === 'modifica_dati' ? 'Modifica' :
+                                 log.tipo === 'archiviazione' ? 'Archiviata' :
+                                 log.tipo === 'ripristino' ? 'Ripristinata' :
+                                 log.tipo === 'invio_comunicazione_custom' ? 'Comunicazione' :
+                                 'Azione'}
+                              </span>
+                              <span className="font-medium truncate">{log.inviato_da_nome}</span>
+                              <span className="text-muted-foreground text-[10px] shrink-0 whitespace-nowrap">
+                                {format(new Date(log.created_at), 'dd-MM-yy, HH:mm')}
+                              </span>
+                            </div>
+                            {log.dettaglio && (
+                              <p className="text-[10px] text-muted-foreground ml-7 break-words">{log.dettaglio}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             ) : (
               <div className="space-y-4">
