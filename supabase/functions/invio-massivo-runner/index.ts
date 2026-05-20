@@ -217,19 +217,18 @@ async function handleResume(req: Request) {
   const authHeader = req.headers.get("Authorization") || "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
   let isAuthorized = secret === SERVICE_ROLE_KEY || bearer === SERVICE_ROLE_KEY;
-  let claimsDbg: any = null;
   if (!isAuthorized && bearer) {
     try {
       const parts = bearer.split(".");
       if (parts.length === 3) {
         const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
         const pad = b64 + "=".repeat((4 - b64.length % 4) % 4);
-        claimsDbg = JSON.parse(atob(pad));
-        if (claimsDbg?.role === "service_role") isAuthorized = true;
+        const c = JSON.parse(atob(pad));
+        if (c?.role === "service_role") isAuthorized = true;
       }
     } catch (_) { /* ignore */ }
   }
-  if (!isAuthorized) return json({ error: "Forbidden", debug: { claims: claimsDbg } }, 403);
+  if (!isAuthorized) return json({ error: "Forbidden" }, 403);
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
   const jobId = body.job_id;
