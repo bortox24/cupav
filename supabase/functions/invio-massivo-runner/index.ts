@@ -211,10 +211,13 @@ async function handleAbort(req: Request) {
   return json({ ok: true });
 }
 
-// --- RESUME (self / cron) ---
+// --- RESUME (self / cron / admin test) ---
 async function handleResume(req: Request) {
   const secret = req.headers.get("x-runner-secret");
-  if (secret !== SERVICE_ROLE_KEY) return json({ error: "Forbidden" }, 403);
+  const authHeader = req.headers.get("Authorization") || "";
+  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const isAuthorized = secret === SERVICE_ROLE_KEY || bearer === SERVICE_ROLE_KEY;
+  if (!isAuthorized) return json({ error: "Forbidden" }, 403);
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
   const jobId = body.job_id;
