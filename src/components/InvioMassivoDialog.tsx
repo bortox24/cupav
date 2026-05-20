@@ -136,7 +136,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const canGoNext =
     (step === 'message' && titolo.trim().length > 0 && testo.trim().length > 0 && ctaOk) ||
     (step === 'preview') ||
-    (step === 'filters' && !!selectedWebhookId && filteredRagazzi.length > 0);
+    (step === 'filters' && filteredRagazzi.length > 0);
 
   const goNext = () => {
     if (step === 'message') setStep('preview');
