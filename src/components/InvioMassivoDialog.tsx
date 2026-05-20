@@ -319,7 +319,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
             <Button onClick={goNext} disabled={!canGoNext || submitting} className="gap-1.5">
               {step === 'filters' ? (
                 <>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  {dryRun ? `Avvia test (${filteredRagazzi.length})` : `Avvia invio (${filteredRagazzi.length})`}</>
+                  Avvia invio ({filteredRagazzi.length})</>
               ) : (
                 <>Avanti <ArrowRight className="h-4 w-4" /></>
               )}
