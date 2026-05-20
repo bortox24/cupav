@@ -88,7 +88,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const previewHtml = buildEmailHtml(titolo, testo, 'Mario Rossi', ctaLabelTrim, ctaUrlTrim);
 
   const handleStart = async () => {
-    if (!selectedWebhookId || filteredRagazzi.length === 0) return;
+    if (filteredRagazzi.length === 0) return;
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('invio-massivo-runner', {
@@ -98,14 +98,11 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
           testo,
           ctaLabel: ctaLabelTrim,
           ctaUrl: ctaUrlTrim,
-          webhook_id: selectedWebhookId,
           ragazzi_ids: filteredRagazzi.map(r => r.id),
           filtri: { turni: selectedTurni, filtroNumero },
-          dry_run: dryRun,
         },
       });
       if (error) {
-        // Edge runtime returns body in error.context for non-2xx
         const ctx = (error as any)?.context;
         let msg = error.message;
         try {
@@ -121,9 +118,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
         toast.error(msg);
         return;
       }
-      toast.success(dryRun ? 'Test (dry-run) avviato' : 'Invio avviato in background');
+      toast.success('Invio avviato in background');
       onOpenChange(false);
-      // banner appears automatically via realtime
     } catch (e: any) {
       toast.error(e?.message || 'Errore');
     } finally {
