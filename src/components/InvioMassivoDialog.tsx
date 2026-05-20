@@ -226,7 +226,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     } else {
       toast.info('Invio massivo interrotto');
     }
-  }, [filteredRagazzi, selectedWebhook, user, profile, queryClient, titolo, testo]);
+  }, [filteredRagazzi, selectedWebhook, user, profile, queryClient, titolo, testo, ctaLabelTrim, ctaUrlTrim]);
 
   const stopSending = () => {
     abortRef.current = true;
