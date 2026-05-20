@@ -216,8 +216,9 @@ async function handleResume(req: Request) {
   const secret = req.headers.get("x-runner-secret");
   const authHeader = req.headers.get("Authorization") || "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  console.log("RESUME headers debug:", { hasSecret: !!secret, secretMatch: secret === SERVICE_ROLE_KEY, hasAuth: !!authHeader, bearerLen: bearer.length, bearerMatch: bearer === SERVICE_ROLE_KEY, bearerPrefix: bearer.slice(0, 20) });
   const isAuthorized = secret === SERVICE_ROLE_KEY || bearer === SERVICE_ROLE_KEY;
-  if (!isAuthorized) return json({ error: "Forbidden" }, 403);
+  if (!isAuthorized) return json({ error: "Forbidden", debug: { bearerPrefix: bearer.slice(0, 20), srPrefix: SERVICE_ROLE_KEY.slice(0, 20) } }, 403);
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
   const jobId = body.job_id;
