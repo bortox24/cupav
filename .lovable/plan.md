@@ -1,45 +1,43 @@
 ## Obiettivo
-Aggiungere un pulsante **Calendario** a sinistra di "Apri anagrafica completa" su entrambe le pagine Turno Famiglie e Montaggio Campeggio. Cliccandolo si apre un dialog con la lista dei giorni del turno e, per ogni giorno, il numero totale di persone presenti in campeggio.
+Semplificare il pulsante "Invio Massivo Comunicazioni" in Anagrafica Ragazzi: rimuovere completamente l'AI e usare lo stesso flusso (titolo + testo → template HTML CUPAV) già presente in `InviaComunicazioneWizard`, con anteprima, selezione turni e invio sequenziale (1 email ogni 30s).
 
-## Componente condiviso
+## Nuovo flusso (3 step)
 
-Creare `src/components/CalendarioPresenzeDialog.tsx`:
+**Step 1 — Scrivi messaggio**
+- Campo `Titolo` (Input, max 120 caratteri)
+- Campo `Testo` (Textarea, max 5000 caratteri) — l'utente incolla il testo "pari pari"
+- Nessun prompt AI, nessun campo dinamico, nessun pulsante "Genera"
 
-- Props: `open`, `onOpenChange`, `title`, `giorni: { key: string; label: string; date: Date }[]`, `presenzePerGiorno: Record<string, number>`, `colore: 'orange' | 'amber'`.
-- Usa `Dialog` di shadcn (`max-w-lg`, `max-h-[85vh] overflow-y-auto`).
-- Layout responsive: griglia `grid-cols-1 sm:grid-cols-2` di card per giorno con:
-  - Data formattata in italiano (es. "Lunedì 3 agosto")
-  - Conteggio grande con icona `Users`
-  - Badge colorato gradient coerente con la pagina di provenienza
-- Totale generale in fondo (somma persone-giorno).
-- Stato vuoto se nessun giorno disponibile.
+**Step 2 — Anteprima**
+- Anteprima dell'email renderizzata nel template HTML standard CUPAV (stesso `buildEmailHtml` usato in `InviaComunicazioneWizard.tsx`: header giallo con logo, titolo verde, "Gentile {nome_genitore}", testo, footer verde)
+- Mostrata in un `<iframe srcDoc>` come nel wizard singolo
+- Per l'anteprima si usa un nome genitore di esempio ("Genitore") oppure il primo della lista filtrata
 
-## Turno Famiglie (`src/pages/TurnoFamigliePage.tsx`)
+**Step 3 — Destinatari + invio**
+- Selezione turni (checkbox multipli: 4^/5^ Elementare, 1^/2^/3^ Media, Turno famiglie) — anno 2026
+- Filtro numero (tutti / con numero / senza numero) — mantenuto come oggi
+- Selezione webhook (Select dai `webhook_config`) — mantenuto
+- Conteggio destinatari filtrati
+- Pulsante "Avvia invio" → invia 1 email ogni 30 secondi, una per ragazzo
+- Per ogni ragazzo: ricostruisce l'HTML con `buildEmailHtml(titolo, testo, genitoreNome)` usando il nome del primo genitore del ragazzo, poi POST al webhook con payload identico a quello attuale + `html_content`
+- Coda visuale con stato per ogni ragazzo (pending/sending/sent/error), countdown 30s, pulsante Stop
+- Log su `anagrafica_invio_logs` con `tipo: 'invio_massivo'` (come oggi)
 
-- Aggiungere stato `calendarioOpen`.
-- Calcolare con `useMemo`:
-  - Range complessivo: min(data_inizio) → max(data_fine) di tutte le iscrizioni non archiviate.
-  - Iterare ogni giorno del range. Per ogni giorno, sommare `totalePartecipanti(item)` per ogni iscrizione il cui intervallo `[data_inizio, data_fine]` include quel giorno.
-- Toolbar: cambiare `flex justify-end` in `flex flex-col sm:flex-row sm:justify-end gap-2`. Inserire `<Button variant="outline" onClick={() => setCalendarioOpen(true)}><CalendarDays /> Calendario</Button>` **a sinistra** di "Apri anagrafica completa".
-- Renderizzare `<CalendarioPresenzeDialog>` con colore `orange`.
+## Modifiche tecniche
 
-## Montaggio Campeggio (`src/pages/TurnoMontaggioPage.tsx`)
+- **`src/components/InvioMassivoDialog.tsx`** — riscrittura completa:
+  - Rimuovere step `ai_generation`, `userPrompt`, `generatedHtml`, `modifications`, `selectedDynamicFields`, `replaceePlaceholders`, `generateEmail`, import di `DOMPurify`, dipendenza dalla edge function `generate-email-html`
+  - Aggiungere stato `titolo`, `testo`
+  - Estrarre `buildEmailHtml` in un file condiviso (`src/lib/comunicazioneEmailTemplate.ts`) e usarlo sia qui che in `InviaComunicazioneWizard.tsx` per coerenza
+  - Steps: `message` (titolo+testo) → `preview` (anteprima iframe) → `filters` (turni+webhook) → `sending` (coda)
+  - Intervallo invio: 30s (già configurato come `SEND_INTERVAL`)
 
-- Aggiungere stato `calendarioOpen`.
-- Calcolare con `useMemo` su `GIORNI_MONTAGGIO`: per ciascun `value`, sommare `totalePartecipanti(item)` per ogni iscrizione che ha quel valore in `giorni_selezionati`.
-- Mappare ogni `GiornoMontaggio` su una `Date` reale (30/05, 31/05, 01/06, 02/06 del 2026) per coerenza con il componente condiviso.
-- Toolbar: il container è già `flex justify-stretch sm:justify-end`. Aggiungere il pulsante Calendario a sinistra (su mobile entrambi full-width stack verticale, su desktop affiancati).
-- Renderizzare `<CalendarioPresenzeDialog>` con colore `amber`.
+- **`src/lib/comunicazioneEmailTemplate.ts`** (nuovo) — esporta `buildEmailHtml(titolo, testo, genitoreNome)` identico a quello in `InviaComunicazioneWizard`
 
-## Responsive
+- **`src/components/InviaComunicazioneWizard.tsx`** — importa `buildEmailHtml` dal nuovo file (nessun cambio funzionale)
 
-- Toolbar pulsanti: stack verticale full-width su mobile, affiancati su `sm+`.
-- Dialog: `max-w-lg` con padding ridotto su mobile (`p-4 sm:p-6`), griglia interna `grid-cols-1 sm:grid-cols-2`.
-- Testo data: forma compatta su mobile (`text-sm`), estesa su desktop.
-
-## File toccati
-
-- Nuovo: `src/components/CalendarioPresenzeDialog.tsx`
-- Modificati: `src/pages/TurnoFamigliePage.tsx`, `src/pages/TurnoMontaggioPage.tsx`
-
-Nessuna modifica al database o a edge functions.
+## Cosa NON cambia
+- Pulsante e posizione in Anagrafica Ragazzi
+- Tabella log e payload webhook
+- Wizard singolo "Invia comunicazione" dentro la card ragazzo
+- Edge function `generate-email-html` resta in repo ma non più usata da questo dialog (posso lasciarla o rimuoverla — dimmi tu)
