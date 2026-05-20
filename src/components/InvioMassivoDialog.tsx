@@ -315,7 +315,10 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
                   placeholder="Incolla qui il testo del messaggio…"
                   rows={12}
                   maxLength={5000}
-                  className="resize-y min-h-[240px]"
+                  className="resize-y min-h-[240px] select-text touch-auto overscroll-contain [-webkit-touch-callout:default] [-webkit-user-select:text] [user-select:text]"
+                  onPointerDownCapture={(e) => e.stopPropagation()}
+                  onTouchStartCapture={(e) => e.stopPropagation()}
+                  onMouseDownCapture={(e) => e.stopPropagation()}
                 />
                 <p className="text-xs text-muted-foreground">{testo.length}/5000 caratteri</p>
               </div>
