@@ -308,39 +308,34 @@ async function runJob(jobId: string) {
       let success = false;
       let errMsg = "";
 
-      if (cur.dry_run) {
-        success = true;
-        errMsg = "DRY RUN — nessun invio reale";
-      } else {
-        try {
-          const ctrl = new AbortController();
-          const to = setTimeout(() => ctrl.abort(), 25000);
-          const res = await fetch(cur.webhook_url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              titolo: cur.titolo,
-              testo: cur.testo,
-              cta_label: cur.cta_label,
-              cta_url: cur.cta_url,
-              html,
-              html_content: html,
-              ragazzo_id: item.ragazzo_id,
-              full_name: item.payload?.full_name,
-              data_nascita: item.payload?.data_nascita,
-              residente_altavilla: item.payload?.residente_altavilla,
-              genitori: item.payload?.genitori,
-              iscrizioni: item.payload?.iscrizioni,
-              numero: item.payload?.numero,
-            }),
-            signal: ctrl.signal,
-          });
-          clearTimeout(to);
-          success = res.ok;
-          if (!success) errMsg = `HTTP ${res.status}`;
-        } catch (e: any) {
-          errMsg = e?.message || "Errore di rete";
-        }
+      try {
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 25000);
+        const res = await fetch(cur.webhook_url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            titolo: cur.titolo,
+            testo: cur.testo,
+            cta_label: cur.cta_label,
+            cta_url: cur.cta_url,
+            html,
+            html_content: html,
+            ragazzo_id: item.ragazzo_id,
+            full_name: item.payload?.full_name,
+            data_nascita: item.payload?.data_nascita,
+            residente_altavilla: item.payload?.residente_altavilla,
+            genitori: item.payload?.genitori,
+            iscrizioni: item.payload?.iscrizioni,
+            numero: item.payload?.numero,
+          }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(to);
+        success = res.ok;
+        if (!success) errMsg = `HTTP ${res.status}`;
+      } catch (e: any) {
+        errMsg = e?.message || "Errore di rete";
       }
 
       // Update item + counters + log
