@@ -359,7 +359,7 @@ async function runJob(jobId: string) {
         inviato_da: cur.created_by,
         inviato_da_nome: cur.created_by_nome,
         successo: success,
-        tipo: cur.dry_run ? "invio_massivo_dryrun" : "invio_massivo",
+        tipo: "invio_massivo",
         dettaglio,
       });
 
