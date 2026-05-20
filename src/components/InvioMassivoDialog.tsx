@@ -56,6 +56,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   // Step 1 — message
   const [titolo, setTitolo] = useState('');
   const [testo, setTesto] = useState('');
+  const [ctaLabel, setCtaLabel] = useState('');
+  const [ctaUrl, setCtaUrl] = useState('');
 
   // Step 3 — filters
   const [selectedTurni, setSelectedTurni] = useState<string[]>([]);
@@ -96,6 +98,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
       setStep('message');
       setTitolo('');
       setTesto('');
+      setCtaLabel('');
+      setCtaUrl('');
       setSelectedTurni([]);
       setFiltroNumero('tutti');
       setSelectedWebhookId('');
@@ -123,7 +127,14 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
   const selectedWebhook = webhooks.find(w => w.id === selectedWebhookId);
 
-  const previewHtml = buildEmailHtml(titolo, testo, 'Mario Rossi');
+  const ctaUrlTrim = ctaUrl.trim();
+  const ctaLabelTrim = ctaLabel.trim();
+  const ctaValidUrl = /^https?:\/\//i.test(ctaUrlTrim);
+  const ctaPartial = (ctaLabelTrim.length > 0) !== (ctaUrlTrim.length > 0);
+  const ctaInvalidUrl = ctaUrlTrim.length > 0 && !ctaValidUrl;
+  const ctaOk = !ctaPartial && !ctaInvalidUrl;
+
+  const previewHtml = buildEmailHtml(titolo, testo, 'Mario Rossi', ctaLabelTrim, ctaUrlTrim);
 
   const startSending = useCallback(async () => {
     if (!selectedWebhook || !user || !profile) return;
@@ -147,7 +158,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
       const ragazzo = items[i].ragazzo;
       const genitoreNome = ragazzo.genitori?.[0]?.nome_cognome || 'Genitore';
-      const htmlContent = buildEmailHtml(titolo, testo, genitoreNome);
+      const htmlContent = buildEmailHtml(titolo, testo, genitoreNome, ctaLabelTrim, ctaUrlTrim);
 
       let successo = false;
       let errorMsg = '';
@@ -158,6 +169,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
           body: JSON.stringify({
             titolo,
             testo,
+            cta_label: ctaLabelTrim || null,
+            cta_url: ctaUrlTrim || null,
             html: htmlContent,
             html_content: htmlContent,
             ragazzo_id: ragazzo.id,
@@ -213,7 +226,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     } else {
       toast.info('Invio massivo interrotto');
     }
-  }, [filteredRagazzi, selectedWebhook, user, profile, queryClient, titolo, testo]);
+  }, [filteredRagazzi, selectedWebhook, user, profile, queryClient, titolo, testo, ctaLabelTrim, ctaUrlTrim]);
 
   const stopSending = () => {
     abortRef.current = true;
@@ -245,7 +258,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const currentStepIndex = steps.indexOf(step);
 
   const canGoNext =
-    (step === 'message' && titolo.trim().length > 0 && testo.trim().length > 0) ||
+    (step === 'message' && titolo.trim().length > 0 && testo.trim().length > 0 && ctaOk) ||
     (step === 'preview') ||
     (step === 'filters' && selectedWebhookId && filteredRagazzi.length > 0);
 
@@ -306,6 +319,42 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
                 />
                 <p className="text-xs text-muted-foreground">{testo.length}/5000 caratteri</p>
               </div>
+
+              <div className="space-y-3 rounded-lg border border-dashed p-3">
+                <div className="space-y-1">
+                  <Label className="text-sm">Pulsante a fine email (opzionale)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Aggiungi un pulsante cliccabile in fondo al messaggio. Compila entrambi i campi o lascia entrambi vuoti.
+                  </p>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Etichetta pulsante</Label>
+                    <Input
+                      value={ctaLabel}
+                      onChange={(e) => setCtaLabel(e.target.value)}
+                      placeholder="Es. Iscriviti ora"
+                      maxLength={40}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Link pulsante</Label>
+                    <Input
+                      type="url"
+                      value={ctaUrl}
+                      onChange={(e) => setCtaUrl(e.target.value)}
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+                {ctaPartial && (
+                  <p className="text-xs text-destructive">Compila sia l'etichetta che il link, oppure lascia entrambi vuoti.</p>
+                )}
+                {ctaInvalidUrl && (
+                  <p className="text-xs text-destructive">Il link deve iniziare con http:// o https://</p>
+                )}
+              </div>
+
               <p className="text-xs text-muted-foreground italic">
                 Il testo verrà inserito automaticamente nel layout email CUPAV standard.
               </p>
