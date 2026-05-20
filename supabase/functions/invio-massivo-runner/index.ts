@@ -13,7 +13,7 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SELF_URL = `${SUPABASE_URL}/functions/v1/invio-massivo-runner`;
 
 const MAX_RUN_MS = 20 * 60 * 1000; // 20 min, sotto al limite Edge Function
-const MAX_DRY_INTERVAL_OVERRIDE = 10; // sec max per override (solo dry-run)
+const FIXED_WEBHOOK_DESCRIZIONE = "Invio comunicazione custom";
 
 const admin = () =>
   createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
