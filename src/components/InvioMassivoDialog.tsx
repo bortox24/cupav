@@ -267,7 +267,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
       if (sending) stopSending();
       onOpenChange(v);
     }}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
@@ -295,7 +295,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
         <Separator />
 
-        <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
+        <div className="space-y-4">
           {step === 'message' && (
             <div className="space-y-4 py-2">
               <div className="space-y-2">
