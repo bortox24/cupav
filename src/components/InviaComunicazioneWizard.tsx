@@ -24,13 +24,22 @@ export function InviaComunicazioneWizard({ ragazzo, open, onOpenChange }: Props)
   const [step, setStep] = useState<1 | 2>(1);
   const [titolo, setTitolo] = useState('');
   const [testo, setTesto] = useState('');
+  const [ctaLabel, setCtaLabel] = useState('');
+  const [ctaUrl, setCtaUrl] = useState('');
   const [sending, setSending] = useState(false);
 
-  const reset = () => { setStep(1); setTitolo(''); setTesto(''); setSending(false); };
+  const reset = () => { setStep(1); setTitolo(''); setTesto(''); setCtaLabel(''); setCtaUrl(''); setSending(false); };
   const handleClose = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
 
+  const ctaLabelTrim = ctaLabel.trim();
+  const ctaUrlTrim = ctaUrl.trim();
+  const ctaValidUrl = /^https?:\/\//i.test(ctaUrlTrim);
+  const ctaPartial = (ctaLabelTrim.length > 0) !== (ctaUrlTrim.length > 0);
+  const ctaInvalidUrl = ctaUrlTrim.length > 0 && !ctaValidUrl;
+  const ctaOk = !ctaPartial && !ctaInvalidUrl;
+
   const genitoreNome = ragazzo.genitori?.[0]?.nome_cognome || 'Genitore';
-  const previewHtml = buildEmailHtml(titolo, testo, genitoreNome);
+  const previewHtml = buildEmailHtml(titolo, testo, genitoreNome, ctaLabelTrim, ctaUrlTrim);
 
   const handleSend = async () => {
     if (!user || !profile) { toast.error('Utente non autenticato'); return; }
