@@ -3,20 +3,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Send, Square, Check, XCircle, Clock, Users, Filter, ArrowLeft, ArrowRight, Wand2, Eye, RefreshCw } from 'lucide-react';
+import { Loader2, Send, Square, Check, XCircle, Clock, Users, Filter, ArrowLeft, ArrowRight, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { RagazzoCompleto } from '@/hooks/useRagazzi';
-import DOMPurify from 'dompurify';
+import { buildEmailHtml } from '@/lib/comunicazioneEmailTemplate';
 
-const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_YEAR = 2026;
 const TURNI_OPTIONS = [
   '4^ Elementare', '5^ Elementare',
   '1^ Media', '2^ Media', '3^ Media',
@@ -24,7 +26,7 @@ const TURNI_OPTIONS = [
 ];
 const SEND_INTERVAL = 30;
 
-type Step = 'message' | 'ai_generation' | 'filters' | 'sending';
+type Step = 'message' | 'preview' | 'filters' | 'sending';
 type SendStatus = 'pending' | 'sending' | 'sent' | 'error';
 
 interface QueueItem {
@@ -45,30 +47,15 @@ interface Props {
   ragazzi: RagazzoCompleto[];
 }
 
-const DYNAMIC_FIELDS = [
-  { label: 'Nome Ragazzo', tag: '{{nome_ragazzo}}', example: 'Marco Rossi' },
-  { label: 'Nome Breve', tag: '{{nome_ragazzo_breve}}', example: 'Marco' },
-  { label: 'Nome Genitore', tag: '{{nome_genitore}}', example: 'Giuseppe Rossi' },
-  { label: 'Turno', tag: '{{turno}}', example: '1^ Media' },
-  { label: 'Numero', tag: '{{numero}}', example: '42' },
-];
-
 export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
-  // Wizard
   const [step, setStep] = useState<Step>('message');
 
   // Step 1 — message
-  const [userPrompt, setUserPrompt] = useState('');
-
-  const [selectedDynamicFields, setSelectedDynamicFields] = useState<string[]>([]);
-
-  // Step 2 — AI generation
-  const [generatedHtml, setGeneratedHtml] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [modifications, setModifications] = useState('');
+  const [titolo, setTitolo] = useState('');
+  const [testo, setTesto] = useState('');
 
   // Step 3 — filters
   const [selectedTurni, setSelectedTurni] = useState<string[]>([]);
@@ -81,7 +68,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [sending, setSending] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [, setCurrentIndex] = useState(0);
   const abortRef = useRef(false);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -89,7 +76,6 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const errorCount = queue.filter(q => q.status === 'error').length;
   const totalCount = queue.length;
 
-  // Load webhooks when reaching step 3
   useEffect(() => {
     if (step !== 'filters') return;
     setLoadingWebhooks(true);
@@ -99,7 +85,6 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     });
   }, [step]);
 
-  // Reset on close
   useEffect(() => {
     if (!open) {
       abortRef.current = true;
@@ -109,17 +94,14 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
       setCurrentIndex(0);
       setCountdown(0);
       setStep('message');
-      setUserPrompt('');
-      setGeneratedHtml('');
-      setModifications('');
-      setSelectedDynamicFields([]);
+      setTitolo('');
+      setTesto('');
       setSelectedTurni([]);
       setFiltroNumero('tutti');
       setSelectedWebhookId('');
     }
   }, [open]);
 
-  // Filter logic
   const filteredRagazzi = ragazzi.filter(r => {
     if (r.archiviato) return false;
     if (selectedTurni.length > 0) {
@@ -141,78 +123,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
   const selectedWebhook = webhooks.find(w => w.id === selectedWebhookId);
 
-  // --- AI Generation ---
-  const generateEmail = useCallback(async (isRegenerate = false) => {
-    setGenerating(true);
-    try {
-      const body: any = {};
-      if (isRegenerate && generatedHtml) {
-        body.prompt = userPrompt;
-        body.previousHtml = generatedHtml;
-        body.modifications = modifications || 'Rigenera con le stesse indicazioni';
-      } else {
-        body.prompt = userPrompt;
-      }
-
-      // Add enabled dynamic fields info
-      if (selectedDynamicFields.length > 0) {
-        const enabledTags = selectedDynamicFields.join(', ');
-        body.prompt += `\n\nCAMPI DINAMICI ABILITATI: ${enabledTags}. Usa SOLO questi segnaposti nell'email, NON usare altri segnaposti.`;
-      } else {
-        body.prompt += `\n\nNON usare nessun segnaposto dinamico (come {{nome_ragazzo}}, {{turno}}, ecc.). Scrivi un messaggio generico senza personalizzazione.`;
-      }
-
-      const { data, error } = await supabase.functions.invoke('generate-email-html', { body });
-
-      if (error) throw new Error(error.message || 'Errore generazione');
-      if (data?.error) throw new Error(data.error);
-
-      setGeneratedHtml(data.html);
-      setModifications('');
-      if (isRegenerate) toast.success('Email rigenerata');
-    } catch (err: any) {
-      toast.error(err?.message || 'Errore nella generazione');
-    } finally {
-      setGenerating(false);
-    }
-  }, [userPrompt, generatedHtml, modifications, selectedDynamicFields]);
-
-  // --- Placeholder replacement ---
-  const replaceePlaceholders = (html: string, ragazzo: RagazzoCompleto): string => {
-    const nomeCompleto = ragazzo.full_name || '';
-    const nomeBreve = nomeCompleto.split(' ')[0] || '';
-    const nomeGenitore = ragazzo.genitori?.[0]?.nome_cognome || '';
-    const turno = ragazzo.iscrizioni.find(i => i.anno === CURRENT_YEAR)?.turno || '';
-    const numero = ragazzo.numero != null ? String(ragazzo.numero) : '';
-
-    return html
-      .replace(/\{\{nome_ragazzo\}\}/g, nomeCompleto)
-      .replace(/\{\{nome_ragazzo_breve\}\}/g, nomeBreve)
-      .replace(/\{\{nome_genitore\}\}/g, nomeGenitore)
-      .replace(/\{\{turno\}\}/g, turno)
-      .replace(/\{\{numero\}\}/g, numero);
-  };
-
-  // --- Sending ---
-  const buildPayload = (ragazzo: RagazzoCompleto) => ({
-    ragazzo_id: ragazzo.id,
-    full_name: ragazzo.full_name,
-    data_nascita: ragazzo.data_nascita,
-    residente_altavilla: ragazzo.residente_altavilla,
-    ha_allergie: ragazzo.ha_allergie,
-    allergie_dettaglio: ragazzo.allergie_dettaglio,
-    patologie_dettaglio: ragazzo.patologie_dettaglio,
-    genitori: ragazzo.genitori,
-    iscrizioni: ragazzo.iscrizioni,
-    farmaco_1_nome: ragazzo.farmaco_1_nome,
-    farmaco_1_posologia: ragazzo.farmaco_1_posologia,
-    farmaco_2_nome: ragazzo.farmaco_2_nome,
-    farmaco_2_posologia: ragazzo.farmaco_2_posologia,
-    farmaco_3_nome: ragazzo.farmaco_3_nome,
-    farmaco_3_posologia: ragazzo.farmaco_3_posologia,
-    numero: ragazzo.numero,
-    html_content: replaceePlaceholders(generatedHtml, ragazzo),
-  });
+  const previewHtml = buildEmailHtml(titolo, testo, 'Mario Rossi');
 
   const startSending = useCallback(async () => {
     if (!selectedWebhook || !user || !profile) return;
@@ -234,13 +145,29 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
       setCurrentIndex(i);
       setQueue(prev => prev.map((q, idx) => idx === i ? { ...q, status: 'sending' } : q));
 
+      const ragazzo = items[i].ragazzo;
+      const genitoreNome = ragazzo.genitori?.[0]?.nome_cognome || 'Genitore';
+      const htmlContent = buildEmailHtml(titolo, testo, genitoreNome);
+
       let successo = false;
       let errorMsg = '';
       try {
         const res = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(buildPayload(items[i].ragazzo)),
+          body: JSON.stringify({
+            titolo,
+            testo,
+            html: htmlContent,
+            html_content: htmlContent,
+            ragazzo_id: ragazzo.id,
+            full_name: ragazzo.full_name,
+            data_nascita: ragazzo.data_nascita,
+            residente_altavilla: ragazzo.residente_altavilla,
+            genitori: ragazzo.genitori,
+            iscrizioni: ragazzo.iscrizioni,
+            numero: ragazzo.numero,
+          }),
         });
         successo = res.ok;
         if (!successo) errorMsg = `HTTP ${res.status}`;
@@ -252,13 +179,14 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
         idx === i ? { ...q, status: successo ? 'sent' : 'error', errorMsg } : q
       ));
 
+      const dettaglioTesto = testo.length > 150 ? `${testo.slice(0, 150)}…` : testo;
       await supabase.from('anagrafica_invio_logs' as any).insert({
-        ragazzo_id: items[i].ragazzo.id,
+        ragazzo_id: ragazzo.id,
         inviato_da: user.id,
         inviato_da_nome: profile.full_name || profile.email,
         successo,
         tipo: 'invio_massivo',
-        dettaglio: `Webhook: ${webhookDesc}${errorMsg ? ` — ${errorMsg}` : ''}`,
+        dettaglio: `Webhook: ${webhookDesc} — Titolo: ${titolo} — ${dettaglioTesto}${errorMsg ? ` — ${errorMsg}` : ''}`,
       });
 
       if (i < items.length - 1 && !abortRef.current) {
@@ -285,44 +213,40 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
     } else {
       toast.info('Invio massivo interrotto');
     }
-  }, [filteredRagazzi, selectedWebhook, user, profile, queryClient, generatedHtml]);
+  }, [filteredRagazzi, selectedWebhook, user, profile, queryClient, titolo, testo]);
 
   const stopSending = () => {
     abortRef.current = true;
     if (countdownRef.current) clearInterval(countdownRef.current);
   };
 
-  // --- Navigation ---
   const goNext = () => {
-    if (step === 'message') {
-      setStep('ai_generation');
-      if (!generatedHtml) generateEmail();
-    } else if (step === 'ai_generation') {
-      setStep('filters');
-    } else if (step === 'filters') {
+    if (step === 'message') setStep('preview');
+    else if (step === 'preview') setStep('filters');
+    else if (step === 'filters') {
       setStep('sending');
       startSending();
     }
   };
 
   const goBack = () => {
-    if (step === 'ai_generation') setStep('message');
-    else if (step === 'filters') setStep('ai_generation');
+    if (step === 'preview') setStep('message');
+    else if (step === 'filters') setStep('preview');
   };
 
   const stepLabels: Record<Step, string> = {
     message: '1. Messaggio',
-    ai_generation: '2. Genera Email',
+    preview: '2. Anteprima',
     filters: '3. Destinatari',
     sending: '4. Invio',
   };
 
-  const steps: Step[] = ['message', 'ai_generation', 'filters', 'sending'];
+  const steps: Step[] = ['message', 'preview', 'filters', 'sending'];
   const currentStepIndex = steps.indexOf(step);
 
   const canGoNext =
-    (step === 'message' && userPrompt.trim().length > 10) ||
-    (step === 'ai_generation' && generatedHtml && !generating) ||
+    (step === 'message' && titolo.trim().length > 0 && testo.trim().length > 0) ||
+    (step === 'preview') ||
     (step === 'filters' && selectedWebhookId && filteredRagazzi.length > 0);
 
   return (
@@ -338,7 +262,6 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
           </DialogTitle>
         </DialogHeader>
 
-        {/* Stepper */}
         <div className="flex items-center gap-1 mb-2">
           {steps.map((s, i) => (
             <div key={s} className="flex items-center gap-1 flex-1">
@@ -360,124 +283,55 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
         <Separator />
 
         <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
-          {/* STEP 1: Message */}
           {step === 'message' && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold">Descrivi il messaggio da inviare</h3>
-                <p className="text-xs text-muted-foreground">
-                  Scrivi cosa vuoi comunicare, eventuali dettagli da includere o escludere. L'AI genererà l'email HTML.
-                </p>
-                <Textarea
-                  id="invio-massivo-textarea"
-                  value={userPrompt}
-                  onChange={e => setUserPrompt(e.target.value)}
-                  placeholder="Es: Comunicare ai genitori che il campeggio inizia il 15 luglio, portare sacco a pelo e crema solare. Non menzionare i costi..."
-                  className="min-h-[200px]"
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Titolo</Label>
+                <Input
+                  value={titolo}
+                  onChange={(e) => setTitolo(e.target.value)}
+                  placeholder="Es. Aggiornamento iscrizione 2026"
+                  maxLength={120}
                 />
-                <p className="text-xs text-muted-foreground italic">
-                  Minimo 10 caratteri per procedere
-                </p>
-                <div className="rounded-lg bg-muted/50 border border-border p-3 space-y-2">
-                  <p className="text-xs font-medium text-foreground">📌 Campi dinamici — seleziona quelli che l'AI potrà usare nell'email</p>
-                  <p className="text-xs text-muted-foreground">
-                    I campi attivi verranno inseriti automaticamente dall'AI nel messaggio. Verranno sostituiti con i dati reali di ogni ragazzo al momento dell'invio.
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {DYNAMIC_FIELDS.map(f => {
-                      const isActive = selectedDynamicFields.includes(f.tag);
-                      return (
-                        <button
-                          key={f.tag}
-                          type="button"
-                          onClick={() => setSelectedDynamicFields(prev =>
-                            isActive ? prev.filter(t => t !== f.tag) : [...prev, f.tag]
-                          )}
-                          className={`flex flex-col items-start rounded-md border px-3 py-1.5 text-left transition-colors cursor-pointer ${
-                            isActive
-                              ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
-                              : 'border-border bg-background hover:bg-accent hover:border-primary/40'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <div className={`h-3 w-3 rounded-sm border flex items-center justify-center ${
-                              isActive ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                            }`}>
-                              {isActive && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
-                            </div>
-                            <span className="text-xs font-semibold text-foreground">{f.label}</span>
-                          </div>
-                          <span className="text-[10px] text-muted-foreground ml-[18px]">es: {f.example}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
-          )}
-
-          {/* STEP 2: AI Generation */}
-          {step === 'ai_generation' && (
-            <div className="space-y-4">
-              {generating && (
-                <div className="flex items-center justify-center gap-2 py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">Generazione email in corso...</span>
-                </div>
-              )}
-
-              {!generating && generatedHtml && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold">Anteprima Email</h3>
-                  </div>
-                  <div className="border rounded-lg overflow-hidden bg-white">
-                    <ScrollArea className="h-[350px]">
-                      <div
-                        className="p-4"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(generatedHtml, { FORBID_TAGS: ['script', 'iframe', 'object', 'embed'], FORBID_ATTR: ['onerror', 'onload', 'onclick'] }) }}
-                      />
-                    </ScrollArea>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-semibold">Modifiche (opzionale)</h3>
-                    <Textarea
-                      value={modifications}
-                      onChange={e => setModifications(e.target.value)}
-                      placeholder="Es: Aggiungi un paragrafo sulle regole anti-COVID, cambia il colore del titolo..."
-                      className="min-h-[80px]"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => generateEmail(true)}
-                        disabled={generating}
-                        className="gap-1.5"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                        {modifications.trim() ? 'Applica modifiche' : 'Rigenera'}
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {!generating && !generatedHtml && (
-                <div className="text-center py-12">
-                  <p className="text-sm text-muted-foreground mb-3">Generazione non riuscita</p>
-                  <Button onClick={() => generateEmail()} className="gap-1.5">
-                    <Wand2 className="h-4 w-4" /> Riprova
-                  </Button>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label>Testo della comunicazione</Label>
+                <Textarea
+                  value={testo}
+                  onChange={(e) => setTesto(e.target.value)}
+                  placeholder="Incolla qui il testo del messaggio…"
+                  rows={12}
+                  maxLength={5000}
+                  className="resize-y min-h-[240px]"
+                />
+                <p className="text-xs text-muted-foreground">{testo.length}/5000 caratteri</p>
+              </div>
+              <p className="text-xs text-muted-foreground italic">
+                Il testo verrà inserito automaticamente nel layout email CUPAV standard.
+              </p>
             </div>
           )}
 
-          {/* STEP 3: Filters */}
+          {step === 'preview' && (
+            <div className="space-y-2 py-2">
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold">Anteprima Email</h3>
+              </div>
+              <div className="rounded-lg overflow-hidden border bg-white">
+                <iframe
+                  title="Anteprima email"
+                  srcDoc={previewHtml}
+                  className="w-full"
+                  style={{ height: '55vh', border: 'none', background: '#f4f4f4' }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Il nome del genitore verrà personalizzato per ogni destinatario.
+              </p>
+            </div>
+          )}
+
           {step === 'filters' && (
             <div className="space-y-4">
               <div className="space-y-3">
@@ -486,7 +340,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
                 </h3>
 
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium">Turni</p>
+                  <p className="text-xs text-muted-foreground font-medium">Turni (anno {CURRENT_YEAR})</p>
                   <div className="flex flex-wrap gap-2">
                     {TURNI_OPTIONS.map(turno => (
                       <label key={turno} className="flex items-center gap-1.5 text-sm cursor-pointer">
@@ -580,7 +434,6 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
             </div>
           )}
 
-          {/* STEP 4: Sending */}
           {step === 'sending' && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -654,7 +507,6 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
           )}
         </div>
 
-        {/* Navigation buttons */}
         {step !== 'sending' && (
           <>
             <Separator />
