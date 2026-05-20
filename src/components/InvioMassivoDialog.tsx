@@ -26,7 +26,7 @@ const TURNI_OPTIONS = [
 
 type Step = 'message' | 'preview' | 'filters';
 
-interface WebhookOption { id: string; webhook_url: string; descrizione: string | null }
+
 
 interface Props {
   open: boolean;
