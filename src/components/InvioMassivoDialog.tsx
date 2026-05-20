@@ -286,37 +286,6 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Webhook</h3>
-                  {loadingWebhooks ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : webhooks.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nessun webhook configurato</p>
-                  ) : (
-                    <Select value={selectedWebhookId} onValueChange={setSelectedWebhookId}>
-                      <SelectTrigger><SelectValue placeholder="Seleziona un webhook..." /></SelectTrigger>
-                      <SelectContent>
-                        {webhooks.map(w => <SelectItem key={w.id} value={w.id}>{w.descrizione || w.webhook_url}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-
-                <Separator />
-
-                <label className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 cursor-pointer">
-                  <Checkbox checked={dryRun} onCheckedChange={(v) => setDryRun(!!v)} className="mt-0.5" />
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold flex items-center gap-1.5">
-                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      Modalità test (dry-run)
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Simula l'intero processo senza chiamare il webhook: nessuna email reale viene inviata. Utile per verificare destinatari, filtri e funzionamento. L'intervallo viene ridotto a 2s.
-                    </p>
-                  </div>
-                </label>
-
                 {filteredRagazzi.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold">Anteprima destinatari</h3>
