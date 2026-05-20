@@ -133,6 +133,41 @@ export function InviaComunicazioneWizard({ ragazzo, open, onOpenChange }: Props)
               />
               <p className="text-xs text-muted-foreground">{testo.length}/5000 caratteri</p>
             </div>
+
+            <div className="space-y-3 rounded-lg border border-dashed p-3">
+              <div className="space-y-1">
+                <Label className="text-sm">Pulsante a fine email (opzionale)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Aggiungi un pulsante cliccabile in fondo al messaggio. Compila entrambi i campi o lascia entrambi vuoti.
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Etichetta pulsante</Label>
+                  <Input
+                    value={ctaLabel}
+                    onChange={(e) => setCtaLabel(e.target.value)}
+                    placeholder="Es. Iscriviti ora"
+                    maxLength={40}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Link pulsante</Label>
+                  <Input
+                    type="url"
+                    value={ctaUrl}
+                    onChange={(e) => setCtaUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+              {ctaPartial && (
+                <p className="text-xs text-destructive">Compila sia l'etichetta che il link, oppure lascia entrambi vuoti.</p>
+              )}
+              {ctaInvalidUrl && (
+                <p className="text-xs text-destructive">Il link deve iniziare con http:// o https://</p>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-2 py-2">
