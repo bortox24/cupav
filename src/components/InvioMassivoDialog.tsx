@@ -46,10 +46,6 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
   const [selectedTurni, setSelectedTurni] = useState<string[]>([]);
   const [filtroNumero, setFiltroNumero] = useState<'tutti' | 'con_numero' | 'senza_numero'>('tutti');
-  const [webhooks, setWebhooks] = useState<WebhookOption[]>([]);
-  const [selectedWebhookId, setSelectedWebhookId] = useState('');
-  const [loadingWebhooks, setLoadingWebhooks] = useState(false);
-  const [dryRun, setDryRun] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Se c'è un job attivo e l'utente apre il dialog, mostra direttamente il monitor
@@ -61,20 +57,11 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   }, [open, activeJob, onOpenChange]);
 
   useEffect(() => {
-    if (step !== 'filters') return;
-    setLoadingWebhooks(true);
-    supabase.from('webhook_config').select('*').then(({ data }) => {
-      setWebhooks((data as any[]) || []);
-      setLoadingWebhooks(false);
-    });
-  }, [step]);
-
-  useEffect(() => {
     if (!open) {
       setStep('message');
       setTitolo(''); setTesto(''); setCtaLabel(''); setCtaUrl('');
-      setSelectedTurni([]); setFiltroNumero('tutti'); setSelectedWebhookId('');
-      setDryRun(false); setSubmitting(false);
+      setSelectedTurni([]); setFiltroNumero('tutti');
+      setSubmitting(false);
     }
   }, [open]);
 
