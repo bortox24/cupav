@@ -67,8 +67,7 @@ async function handleStart(req: Request) {
 
   const {
     titolo, testo, ctaLabel, ctaUrl,
-    webhook_id, ragazzi_ids, filtri,
-    dry_run = false, send_interval_seconds,
+    ragazzi_ids, filtri,
   } = body;
 
   // Validazione
@@ -80,13 +79,8 @@ async function handleStart(req: Request) {
   if (ctaU && !/^https?:\/\//i.test(ctaU)) return json({ error: "CTA URL non valido" }, 400);
   if (!Array.isArray(ragazzi_ids) || ragazzi_ids.length === 0) return json({ error: "Nessun destinatario" }, 400);
   if (ragazzi_ids.length > 2000) return json({ error: "Troppi destinatari (max 2000)" }, 400);
-  if (!webhook_id) return json({ error: "Webhook obbligatorio" }, 400);
 
-  // Interval: 30s default, override solo in dry-run
-  let interval = 30;
-  if (dry_run && typeof send_interval_seconds === "number") {
-    interval = Math.max(1, Math.min(MAX_DRY_INTERVAL_OVERRIDE, Math.floor(send_interval_seconds)));
-  }
+  const interval = 30;
 
   const a = admin();
 
@@ -101,10 +95,10 @@ async function handleStart(req: Request) {
     return json({ error: "Hai già un invio in corso", existing_job_id: active[0].id }, 409);
   }
 
-  // Carica webhook
+  // Webhook fisso: 'Invio comunicazione custom'
   const { data: webhook, error: whErr } = await a
-    .from("webhook_config").select("*").eq("id", webhook_id).maybeSingle();
-  if (whErr || !webhook) return json({ error: "Webhook non trovato" }, 400);
+    .from("webhook_config").select("*").eq("descrizione", FIXED_WEBHOOK_DESCRIZIONE).maybeSingle();
+  if (whErr || !webhook) return json({ error: `Webhook '${FIXED_WEBHOOK_DESCRIZIONE}' non configurato` }, 400);
 
   // Carica ragazzi (server-side, no fidarsi del client)
   const { data: ragazzi, error: rErr } = await a
