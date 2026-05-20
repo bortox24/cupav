@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Send, Check, Users, Filter, ArrowLeft, ArrowRight, Eye, AlertTriangle } from 'lucide-react';
+import { Loader2, Send, Check, Users, Filter, ArrowLeft, ArrowRight, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { RagazzoCompleto } from '@/hooks/useRagazzi';
