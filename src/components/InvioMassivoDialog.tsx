@@ -127,7 +127,14 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
   const selectedWebhook = webhooks.find(w => w.id === selectedWebhookId);
 
-  const previewHtml = buildEmailHtml(titolo, testo, 'Mario Rossi');
+  const ctaUrlTrim = ctaUrl.trim();
+  const ctaLabelTrim = ctaLabel.trim();
+  const ctaValidUrl = /^https?:\/\//i.test(ctaUrlTrim);
+  const ctaPartial = (ctaLabelTrim.length > 0) !== (ctaUrlTrim.length > 0);
+  const ctaInvalidUrl = ctaUrlTrim.length > 0 && !ctaValidUrl;
+  const ctaOk = !ctaPartial && !ctaInvalidUrl;
+
+  const previewHtml = buildEmailHtml(titolo, testo, 'Mario Rossi', ctaLabelTrim, ctaUrlTrim);
 
   const startSending = useCallback(async () => {
     if (!selectedWebhook || !user || !profile) return;
