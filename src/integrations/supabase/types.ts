@@ -305,6 +305,140 @@ export type Database = {
           },
         ]
       }
+      invio_massivo_job_items: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          genitore_nome: string
+          id: string
+          job_id: string
+          payload: Json
+          position: number
+          ragazzo_full_name: string
+          ragazzo_id: string | null
+          sent_at: string | null
+          stato: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          genitore_nome?: string
+          id?: string
+          job_id: string
+          payload?: Json
+          position: number
+          ragazzo_full_name: string
+          ragazzo_id?: string | null
+          sent_at?: string | null
+          stato?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          genitore_nome?: string
+          id?: string
+          job_id?: string
+          payload?: Json
+          position?: number
+          ragazzo_full_name?: string
+          ragazzo_id?: string | null
+          sent_at?: string | null
+          stato?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invio_massivo_job_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "invio_massivo_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invio_massivo_jobs: {
+        Row: {
+          abort_requested: boolean
+          created_at: string
+          created_by: string
+          created_by_nome: string
+          cta_label: string | null
+          cta_url: string | null
+          current_index: number
+          dry_run: boolean
+          error_message: string | null
+          falliti: number
+          filtri: Json
+          finished_at: string | null
+          id: string
+          inviati: number
+          last_heartbeat_at: string | null
+          send_interval_seconds: number
+          started_at: string | null
+          stato: string
+          testo: string
+          titolo: string
+          totale: number
+          updated_at: string
+          webhook_descrizione: string | null
+          webhook_id: string | null
+          webhook_url: string
+        }
+        Insert: {
+          abort_requested?: boolean
+          created_at?: string
+          created_by: string
+          created_by_nome: string
+          cta_label?: string | null
+          cta_url?: string | null
+          current_index?: number
+          dry_run?: boolean
+          error_message?: string | null
+          falliti?: number
+          filtri?: Json
+          finished_at?: string | null
+          id?: string
+          inviati?: number
+          last_heartbeat_at?: string | null
+          send_interval_seconds?: number
+          started_at?: string | null
+          stato?: string
+          testo: string
+          titolo: string
+          totale?: number
+          updated_at?: string
+          webhook_descrizione?: string | null
+          webhook_id?: string | null
+          webhook_url: string
+        }
+        Update: {
+          abort_requested?: boolean
+          created_at?: string
+          created_by?: string
+          created_by_nome?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          current_index?: number
+          dry_run?: boolean
+          error_message?: string | null
+          falliti?: number
+          filtri?: Json
+          finished_at?: string | null
+          id?: string
+          inviati?: number
+          last_heartbeat_at?: string | null
+          send_interval_seconds?: number
+          started_at?: string | null
+          stato?: string
+          testo?: string
+          titolo?: string
+          totale?: number
+          updated_at?: string
+          webhook_descrizione?: string | null
+          webhook_id?: string | null
+          webhook_url?: string
+        }
+        Relationships: []
+      }
       iscrizioni: {
         Row: {
           allergie_dettaglio: string | null
