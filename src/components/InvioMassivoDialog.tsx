@@ -56,6 +56,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   // Step 1 — message
   const [titolo, setTitolo] = useState('');
   const [testo, setTesto] = useState('');
+  const [ctaLabel, setCtaLabel] = useState('');
+  const [ctaUrl, setCtaUrl] = useState('');
 
   // Step 3 — filters
   const [selectedTurni, setSelectedTurni] = useState<string[]>([]);
