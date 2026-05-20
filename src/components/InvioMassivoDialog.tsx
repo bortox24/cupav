@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Send, Check, Users, Filter, ArrowLeft, ArrowRight, Eye, AlertTriangle } from 'lucide-react';
+import { Loader2, Send, Check, Users, Filter, ArrowLeft, ArrowRight, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { RagazzoCompleto } from '@/hooks/useRagazzi';
@@ -26,7 +26,7 @@ const TURNI_OPTIONS = [
 
 type Step = 'message' | 'preview' | 'filters';
 
-interface WebhookOption { id: string; webhook_url: string; descrizione: string | null }
+
 
 interface Props {
   open: boolean;
@@ -46,10 +46,6 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
   const [selectedTurni, setSelectedTurni] = useState<string[]>([]);
   const [filtroNumero, setFiltroNumero] = useState<'tutti' | 'con_numero' | 'senza_numero'>('tutti');
-  const [webhooks, setWebhooks] = useState<WebhookOption[]>([]);
-  const [selectedWebhookId, setSelectedWebhookId] = useState('');
-  const [loadingWebhooks, setLoadingWebhooks] = useState(false);
-  const [dryRun, setDryRun] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Se c'è un job attivo e l'utente apre il dialog, mostra direttamente il monitor
@@ -61,20 +57,11 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   }, [open, activeJob, onOpenChange]);
 
   useEffect(() => {
-    if (step !== 'filters') return;
-    setLoadingWebhooks(true);
-    supabase.from('webhook_config').select('*').then(({ data }) => {
-      setWebhooks((data as any[]) || []);
-      setLoadingWebhooks(false);
-    });
-  }, [step]);
-
-  useEffect(() => {
     if (!open) {
       setStep('message');
       setTitolo(''); setTesto(''); setCtaLabel(''); setCtaUrl('');
-      setSelectedTurni([]); setFiltroNumero('tutti'); setSelectedWebhookId('');
-      setDryRun(false); setSubmitting(false);
+      setSelectedTurni([]); setFiltroNumero('tutti');
+      setSubmitting(false);
     }
   }, [open]);
 
@@ -101,7 +88,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const previewHtml = buildEmailHtml(titolo, testo, 'Mario Rossi', ctaLabelTrim, ctaUrlTrim);
 
   const handleStart = async () => {
-    if (!selectedWebhookId || filteredRagazzi.length === 0) return;
+    if (filteredRagazzi.length === 0) return;
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('invio-massivo-runner', {
@@ -111,14 +98,11 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
           testo,
           ctaLabel: ctaLabelTrim,
           ctaUrl: ctaUrlTrim,
-          webhook_id: selectedWebhookId,
           ragazzi_ids: filteredRagazzi.map(r => r.id),
           filtri: { turni: selectedTurni, filtroNumero },
-          dry_run: dryRun,
         },
       });
       if (error) {
-        // Edge runtime returns body in error.context for non-2xx
         const ctx = (error as any)?.context;
         let msg = error.message;
         try {
@@ -134,9 +118,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
         toast.error(msg);
         return;
       }
-      toast.success(dryRun ? 'Test (dry-run) avviato' : 'Invio avviato in background');
+      toast.success('Invio avviato in background');
       onOpenChange(false);
-      // banner appears automatically via realtime
     } catch (e: any) {
       toast.error(e?.message || 'Errore');
     } finally {
@@ -153,7 +136,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
   const canGoNext =
     (step === 'message' && titolo.trim().length > 0 && testo.trim().length > 0 && ctaOk) ||
     (step === 'preview') ||
-    (step === 'filters' && !!selectedWebhookId && filteredRagazzi.length > 0);
+    (step === 'filters' && filteredRagazzi.length > 0);
 
   const goNext = () => {
     if (step === 'message') setStep('preview');
@@ -303,37 +286,6 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Webhook</h3>
-                  {loadingWebhooks ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : webhooks.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nessun webhook configurato</p>
-                  ) : (
-                    <Select value={selectedWebhookId} onValueChange={setSelectedWebhookId}>
-                      <SelectTrigger><SelectValue placeholder="Seleziona un webhook..." /></SelectTrigger>
-                      <SelectContent>
-                        {webhooks.map(w => <SelectItem key={w.id} value={w.id}>{w.descrizione || w.webhook_url}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-
-                <Separator />
-
-                <label className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 cursor-pointer">
-                  <Checkbox checked={dryRun} onCheckedChange={(v) => setDryRun(!!v)} className="mt-0.5" />
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold flex items-center gap-1.5">
-                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      Modalità test (dry-run)
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Simula l'intero processo senza chiamare il webhook: nessuna email reale viene inviata. Utile per verificare destinatari, filtri e funzionamento. L'intervallo viene ridotto a 2s.
-                    </p>
-                  </div>
-                </label>
-
                 {filteredRagazzi.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold">Anteprima destinatari</h3>
@@ -367,7 +319,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
             <Button onClick={goNext} disabled={!canGoNext || submitting} className="gap-1.5">
               {step === 'filters' ? (
                 <>{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  {dryRun ? `Avvia test (${filteredRagazzi.length})` : `Avvia invio (${filteredRagazzi.length})`}</>
+                  Avvia invio ({filteredRagazzi.length})</>
               ) : (
                 <>Avanti <ArrowRight className="h-4 w-4" /></>
               )}

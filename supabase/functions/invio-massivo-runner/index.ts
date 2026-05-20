@@ -13,7 +13,7 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SELF_URL = `${SUPABASE_URL}/functions/v1/invio-massivo-runner`;
 
 const MAX_RUN_MS = 20 * 60 * 1000; // 20 min, sotto al limite Edge Function
-const MAX_DRY_INTERVAL_OVERRIDE = 10; // sec max per override (solo dry-run)
+const FIXED_WEBHOOK_DESCRIZIONE = "Invio comunicazione custom";
 
 const admin = () =>
   createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -67,8 +67,7 @@ async function handleStart(req: Request) {
 
   const {
     titolo, testo, ctaLabel, ctaUrl,
-    webhook_id, ragazzi_ids, filtri,
-    dry_run = false, send_interval_seconds,
+    ragazzi_ids, filtri,
   } = body;
 
   // Validazione
@@ -80,13 +79,8 @@ async function handleStart(req: Request) {
   if (ctaU && !/^https?:\/\//i.test(ctaU)) return json({ error: "CTA URL non valido" }, 400);
   if (!Array.isArray(ragazzi_ids) || ragazzi_ids.length === 0) return json({ error: "Nessun destinatario" }, 400);
   if (ragazzi_ids.length > 2000) return json({ error: "Troppi destinatari (max 2000)" }, 400);
-  if (!webhook_id) return json({ error: "Webhook obbligatorio" }, 400);
 
-  // Interval: 30s default, override solo in dry-run
-  let interval = 30;
-  if (dry_run && typeof send_interval_seconds === "number") {
-    interval = Math.max(1, Math.min(MAX_DRY_INTERVAL_OVERRIDE, Math.floor(send_interval_seconds)));
-  }
+  const interval = 30;
 
   const a = admin();
 
@@ -101,10 +95,10 @@ async function handleStart(req: Request) {
     return json({ error: "Hai già un invio in corso", existing_job_id: active[0].id }, 409);
   }
 
-  // Carica webhook
+  // Webhook fisso: 'Invio comunicazione custom'
   const { data: webhook, error: whErr } = await a
-    .from("webhook_config").select("*").eq("id", webhook_id).maybeSingle();
-  if (whErr || !webhook) return json({ error: "Webhook non trovato" }, 400);
+    .from("webhook_config").select("*").eq("descrizione", FIXED_WEBHOOK_DESCRIZIONE).maybeSingle();
+  if (whErr || !webhook) return json({ error: `Webhook '${FIXED_WEBHOOK_DESCRIZIONE}' non configurato` }, 400);
 
   // Carica ragazzi (server-side, no fidarsi del client)
   const { data: ragazzi, error: rErr } = await a
@@ -132,11 +126,11 @@ async function handleStart(req: Request) {
       testo,
       cta_label: ctaL || null,
       cta_url: ctaU || null,
-      webhook_id,
+      webhook_id: webhook.id,
       webhook_url: webhook.webhook_url,
       webhook_descrizione: webhook.descrizione || null,
       filtri: filtri || {},
-      dry_run: !!dry_run,
+      dry_run: false,
       send_interval_seconds: interval,
       stato: "queued",
       totale: validRagazzi.length,
@@ -187,7 +181,7 @@ async function handleStart(req: Request) {
   // @ts-ignore — EdgeRuntime is provided
   EdgeRuntime.waitUntil(runJob(job.id));
 
-  return json({ job_id: job.id, totale: validRagazzi.length, dry_run: !!dry_run }, 202);
+  return json({ job_id: job.id, totale: validRagazzi.length }, 202);
 }
 
 // --- ABORT ---
@@ -314,45 +308,40 @@ async function runJob(jobId: string) {
       let success = false;
       let errMsg = "";
 
-      if (cur.dry_run) {
-        success = true;
-        errMsg = "DRY RUN — nessun invio reale";
-      } else {
-        try {
-          const ctrl = new AbortController();
-          const to = setTimeout(() => ctrl.abort(), 25000);
-          const res = await fetch(cur.webhook_url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              titolo: cur.titolo,
-              testo: cur.testo,
-              cta_label: cur.cta_label,
-              cta_url: cur.cta_url,
-              html,
-              html_content: html,
-              ragazzo_id: item.ragazzo_id,
-              full_name: item.payload?.full_name,
-              data_nascita: item.payload?.data_nascita,
-              residente_altavilla: item.payload?.residente_altavilla,
-              genitori: item.payload?.genitori,
-              iscrizioni: item.payload?.iscrizioni,
-              numero: item.payload?.numero,
-            }),
-            signal: ctrl.signal,
-          });
-          clearTimeout(to);
-          success = res.ok;
-          if (!success) errMsg = `HTTP ${res.status}`;
-        } catch (e: any) {
-          errMsg = e?.message || "Errore di rete";
-        }
+      try {
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 25000);
+        const res = await fetch(cur.webhook_url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            titolo: cur.titolo,
+            testo: cur.testo,
+            cta_label: cur.cta_label,
+            cta_url: cur.cta_url,
+            html,
+            html_content: html,
+            ragazzo_id: item.ragazzo_id,
+            full_name: item.payload?.full_name,
+            data_nascita: item.payload?.data_nascita,
+            residente_altavilla: item.payload?.residente_altavilla,
+            genitori: item.payload?.genitori,
+            iscrizioni: item.payload?.iscrizioni,
+            numero: item.payload?.numero,
+          }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(to);
+        success = res.ok;
+        if (!success) errMsg = `HTTP ${res.status}`;
+      } catch (e: any) {
+        errMsg = e?.message || "Errore di rete";
       }
 
       // Update item + counters + log
       await a.from("invio_massivo_job_items").update({
         stato: success ? "sent" : "error",
-        error_message: success ? (cur.dry_run ? errMsg : null) : errMsg,
+        error_message: success ? null : errMsg,
         sent_at: new Date().toISOString(),
       }).eq("id", item.id);
 
@@ -370,7 +359,7 @@ async function runJob(jobId: string) {
         inviato_da: cur.created_by,
         inviato_da_nome: cur.created_by_nome,
         successo: success,
-        tipo: cur.dry_run ? "invio_massivo_dryrun" : "invio_massivo",
+        tipo: "invio_massivo",
         dettaglio,
       });
 
