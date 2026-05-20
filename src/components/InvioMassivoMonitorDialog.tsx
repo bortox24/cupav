@@ -109,7 +109,7 @@ export function InvioMassivoMonitorDialog({ open, onOpenChange, jobId }: Props) 
               )}
             </div>
 
-            <ScrollArea className="flex-1 border rounded-lg">
+            <div className="flex-1 min-h-0 border rounded-lg overflow-y-auto overscroll-contain">
               <div className="divide-y">
                 {items.map((it) => (
                   <div key={it.id} className="flex items-center gap-2 px-3 py-2 text-sm">
@@ -123,7 +123,7 @@ export function InvioMassivoMonitorDialog({ open, onOpenChange, jobId }: Props) 
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
 
             <div className="flex justify-between gap-2">
               <Button variant="outline" onClick={() => onOpenChange(false)}>Chiudi</Button>
