@@ -158,7 +158,7 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
 
       const ragazzo = items[i].ragazzo;
       const genitoreNome = ragazzo.genitori?.[0]?.nome_cognome || 'Genitore';
-      const htmlContent = buildEmailHtml(titolo, testo, genitoreNome);
+      const htmlContent = buildEmailHtml(titolo, testo, genitoreNome, ctaLabelTrim, ctaUrlTrim);
 
       let successo = false;
       let errorMsg = '';
@@ -169,6 +169,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
           body: JSON.stringify({
             titolo,
             testo,
+            cta_label: ctaLabelTrim || null,
+            cta_url: ctaUrlTrim || null,
             html: htmlContent,
             html_content: htmlContent,
             ragazzo_id: ragazzo.id,
