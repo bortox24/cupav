@@ -65,6 +65,8 @@ export function InviaComunicazioneWizard({ ragazzo, open, onOpenChange }: Props)
         body: JSON.stringify({
           titolo,
           testo,
+          cta_label: ctaLabelTrim || null,
+          cta_url: ctaUrlTrim || null,
           html: previewHtml,
           ragazzo_id: ragazzo.id,
           full_name: ragazzo.full_name,
