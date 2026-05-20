@@ -1,10 +1,45 @@
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-export const buildEmailHtml = (titolo: string, testo: string, genitoreNome: string) => {
+const isValidHttpUrl = (url: string) => {
+  const trimmed = url.trim();
+  return /^https?:\/\//i.test(trimmed);
+};
+
+export const buildEmailHtml = (
+  titolo: string,
+  testo: string,
+  genitoreNome: string,
+  ctaLabel?: string,
+  ctaUrl?: string,
+) => {
   const titoloSafe = escapeHtml(titolo);
   const testoSafe = escapeHtml(testo).replace(/\\n/g, '<br/>').replace(/\r\n|\r|\n/g, '<br/>');
   const genitoreSafe = escapeHtml(genitoreNome || 'Genitore');
+
+  const hasCta =
+    !!ctaLabel && !!ctaUrl && ctaLabel.trim().length > 0 && isValidHttpUrl(ctaUrl);
+  const ctaLabelSafe = hasCta ? escapeHtml(ctaLabel!.trim()) : '';
+  const ctaUrlSafe = hasCta ? escapeHtml(ctaUrl!.trim()) : '';
+
+  const ctaBlock = hasCta
+    ? `
+      <tr>
+        <td style="padding: 0 40px 32px 40px; text-align:center;">
+          <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+            <tr>
+              <td align="center" style="background-color:#1a5c2e; border-radius:6px;">
+                <a href="${ctaUrlSafe}" target="_blank" rel="noopener noreferrer"
+                   style="display:inline-block; padding:14px 32px; color:#ffffff; font-family: Arial, sans-serif; font-size:15px; font-weight:bold; text-decoration:none; border-radius:6px;">
+                  ${ctaLabelSafe}
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>`
+    : '';
+
   return `<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -34,6 +69,7 @@ export const buildEmailHtml = (titolo: string, testo: string, genitoreNome: stri
           <p style="color:#444444; font-size:15px; line-height:1.8; margin:0; font-family: Arial, sans-serif;">${testoSafe}</p>
         </td>
       </tr>
+      ${ctaBlock}
       <tr>
         <td style="padding: 0 40px 30px 40px; text-align:center;">
           <p style="color:#888888; font-size:13px; line-height:1.7; margin:0; font-family: Arial, sans-serif;">
