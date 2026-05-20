@@ -98,6 +98,8 @@ export function InvioMassivoDialog({ open, onOpenChange, ragazzi }: Props) {
       setStep('message');
       setTitolo('');
       setTesto('');
+      setCtaLabel('');
+      setCtaUrl('');
       setSelectedTurni([]);
       setFiltroNumero('tutti');
       setSelectedWebhookId('');
