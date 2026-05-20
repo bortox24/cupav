@@ -341,7 +341,7 @@ async function runJob(jobId: string) {
       // Update item + counters + log
       await a.from("invio_massivo_job_items").update({
         stato: success ? "sent" : "error",
-        error_message: success ? (cur.dry_run ? errMsg : null) : errMsg,
+        error_message: success ? null : errMsg,
         sent_at: new Date().toISOString(),
       }).eq("id", item.id);
 
