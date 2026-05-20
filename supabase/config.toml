@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.handle-preiscrizione]
 verify_jwt = false
+
+[functions.invio-massivo-runner]
+verify_jwt = false
