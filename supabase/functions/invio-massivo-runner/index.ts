@@ -438,6 +438,26 @@ async function routeAction(action: string, req: Request): Promise<Response> {
     case "start": return await handleStart(req);
     case "abort": return await handleAbort(req);
     case "resume": return await handleResume(req);
+    case "watchdog": return await handleWatchdog();
     default: return json({ error: `Azione sconosciuta: ${action}` }, 400);
   }
+}
+
+// --- WATCHDOG: ripristina job rimasti senza heartbeat ---
+async function handleWatchdog(): Promise<Response> {
+  const supa = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const cutoff = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+  const { data: stuck } = await supa
+    .from("invio_massivo_jobs")
+    .select("id, stato, last_heartbeat_at")
+    .in("stato", ["queued", "running"])
+    .or(`last_heartbeat_at.is.null,last_heartbeat_at.lt.${cutoff}`)
+    .limit(10);
+  const resumed: string[] = [];
+  for (const j of (stuck ?? [])) {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(runJob((j as any).id));
+    resumed.push((j as any).id);
+  }
+  return json({ ok: true, resumed });
 }
