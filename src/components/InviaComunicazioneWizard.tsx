@@ -192,7 +192,7 @@ export function InviaComunicazioneWizard({ ragazzo, open, onOpenChange }: Props)
               <Button variant="outline" onClick={() => handleClose(false)}>Annulla</Button>
               <Button
                 onClick={() => setStep(2)}
-                disabled={!titolo.trim() || !testo.trim()}
+                disabled={!titolo.trim() || !testo.trim() || !ctaOk}
                 className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
               >
                 Avanti <ArrowRight className="h-4 w-4 ml-2" />
