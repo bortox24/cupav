@@ -73,6 +73,17 @@ export default function TurnoMontaggioPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              if (items.length === 0) { toast.info('Nessuna iscrizione da esportare'); return; }
+              try { exportMontaggioPdf(items); toast.success('PDF generato'); }
+              catch (e: any) { toast.error('Errore generazione PDF', { description: e?.message }); }
+            }}
+          >
+            <FileDown className="h-4 w-4 mr-2" />Esporta PDF
+          </Button>
           <Button variant="outline" className="w-full sm:w-auto" onClick={() => setCalendarioOpen(true)}>
             <CalendarDays className="h-4 w-4 mr-2" />Calendario
           </Button>
