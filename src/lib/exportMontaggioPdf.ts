@@ -119,12 +119,12 @@ export function exportMontaggioPdf(items: IscrizioneMontaggio[]) {
     doc.text(f.label, margin, by + 12);
     doc.setFillColor(230, 230, 230);
     doc.roundedRect(barAreaX, by, barAreaW, 16, 3, 3, 'F');
-    const w = (f.val / maxFascia) * barAreaW;
+    const pct = totPers > 0 ? f.val / totPers : 0;
+    const w = pct * barAreaW;
     doc.setFillColor(...AMBER);
-    doc.roundedRect(barAreaX, by, Math.max(w, 1), 16, 3, 3, 'F');
-    const pct = totPers > 0 ? Math.round((f.val / totPers) * 100) : 0;
+    if (w > 0) doc.roundedRect(barAreaX, by, Math.max(w, 1), 16, 3, 3, 'F');
     doc.setTextColor(...DARK);
-    doc.text(`${f.val}  (${pct}%)`, barAreaX + barAreaW + 6, by + 12);
+    doc.text(`${f.val}  (${Math.round(pct * 100)}%)`, barAreaX + barAreaW + 6, by + 12);
   });
   y += fasce.length * 26 + 20;
 
