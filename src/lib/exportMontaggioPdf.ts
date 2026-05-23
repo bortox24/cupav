@@ -119,12 +119,12 @@ export function exportMontaggioPdf(items: IscrizioneMontaggio[]) {
     doc.text(f.label, margin, by + 12);
     doc.setFillColor(230, 230, 230);
     doc.roundedRect(barAreaX, by, barAreaW, 16, 3, 3, 'F');
-    const w = (f.val / maxFascia) * barAreaW;
+    const pct = totPers > 0 ? f.val / totPers : 0;
+    const w = pct * barAreaW;
     doc.setFillColor(...AMBER);
-    doc.roundedRect(barAreaX, by, Math.max(w, 1), 16, 3, 3, 'F');
-    const pct = totPers > 0 ? Math.round((f.val / totPers) * 100) : 0;
+    if (w > 0) doc.roundedRect(barAreaX, by, Math.max(w, 1), 16, 3, 3, 'F');
     doc.setTextColor(...DARK);
-    doc.text(`${f.val}  (${pct}%)`, barAreaX + barAreaW + 6, by + 12);
+    doc.text(`${f.val}  (${Math.round(pct * 100)}%)`, barAreaX + barAreaW + 6, by + 12);
   });
   y += fasce.length * 26 + 20;
 
@@ -180,12 +180,12 @@ export function exportMontaggioPdf(items: IscrizioneMontaggio[]) {
       return [g.label, p.adulti, p.figli10, p.b410, p.b03, { content: String(p.tot), styles: { fontStyle: 'bold' } }];
     }),
     foot: [[
-      'TOTALE COMPLESSIVO',
-      totAdulti,
-      totFigli10,
-      tot410,
-      tot03,
-      { content: String(totAdulti + totFigli10 + tot410 + tot03), styles: { fontStyle: 'bold' } },
+      { content: 'TOTALE COMPLESSIVO', styles: { halign: 'left' } },
+      { content: String(totAdulti), styles: { halign: 'center' } },
+      { content: String(totFigli10), styles: { halign: 'center' } },
+      { content: String(tot410), styles: { halign: 'center' } },
+      { content: String(tot03), styles: { halign: 'center' } },
+      { content: String(totAdulti + totFigli10 + tot410 + tot03), styles: { halign: 'center', fontStyle: 'bold' } },
     ]],
     headStyles: { fillColor: ORANGE, textColor: 255, fontStyle: 'bold' },
     footStyles: { fillColor: LIGHT, textColor: DARK, fontStyle: 'bold' },
