@@ -3,11 +3,13 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useIscrizioniMontaggio, IscrizioneMontaggio } from '@/hooks/useIscrizioniMontaggio';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Hammer, Users, MapPin, ArrowRight, Moon, CalendarDays } from 'lucide-react';
+import { Loader2, Hammer, Users, MapPin, ArrowRight, Moon, CalendarDays, FileDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { GIORNI_MONTAGGIO, formatEuro } from '@/lib/tariffeMontaggio';
 import { CalendarioPresenzeDialog, GiornoCalendario } from '@/components/CalendarioPresenzeDialog';
+import { exportMontaggioPdf } from '@/lib/exportMontaggioPdf';
+import { toast } from 'sonner';
 
 function totalePartecipanti(i: IscrizioneMontaggio) {
   return i.num_adulti + (i.num_figli_over10 ?? 0) + i.num_4_10_anni + i.num_0_3_anni;
@@ -71,6 +73,17 @@ export default function TurnoMontaggioPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              if (items.length === 0) { toast.info('Nessuna iscrizione da esportare'); return; }
+              try { exportMontaggioPdf(items); toast.success('PDF generato'); }
+              catch (e: any) { toast.error('Errore generazione PDF', { description: e?.message }); }
+            }}
+          >
+            <FileDown className="h-4 w-4 mr-2" />Esporta PDF
+          </Button>
           <Button variant="outline" className="w-full sm:w-auto" onClick={() => setCalendarioOpen(true)}>
             <CalendarDays className="h-4 w-4 mr-2" />Calendario
           </Button>
