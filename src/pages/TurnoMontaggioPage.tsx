@@ -88,17 +88,8 @@ export default function TurnoMontaggioPage() {
           <Button variant="outline" className="w-full sm:w-auto" onClick={() => setCalendarioOpen(true)}>
             <CalendarDays className="h-4 w-4 mr-2" />Calendario
           </Button>
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => {
-              if (invioRecipients.length === 0) { toast.info('Nessun iscritto con email'); return; }
-              setInvioOpen(true);
-            }}
-          >
-            <Megaphone className="h-4 w-4 mr-2" />Invio Massivo
-          </Button>
           <Link to="/anagrafica-montaggio-campeggio" className="w-full sm:w-auto">
+
             <Button variant="outline" className="w-full sm:w-auto">Apri anagrafica completa <ArrowRight className="h-4 w-4 ml-2" /></Button>
           </Link>
         </div>
