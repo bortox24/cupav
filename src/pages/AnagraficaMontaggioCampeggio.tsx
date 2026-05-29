@@ -472,6 +472,19 @@ export default function AnagraficaMontaggioCampeggio() {
   const [showArchived, setShowArchived] = useState(false);
   const [selected, setSelected] = useState<IscrizioneMontaggio | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [invioOpen, setInvioOpen] = useState(false);
+
+  const invioRecipients: GenericRecipient[] = items
+    .filter(i => !i.archiviato && i.email)
+    .map(i => ({
+      id: i.id,
+      full_name: `${i.cognome} ${i.nome}`.trim(),
+      badges: (i.giorni_selezionati ?? []).map(g => ({
+        label: GIORNI_MONTAGGIO.find(x => x.value === g)?.short ?? g,
+        variant: 'secondary' as const,
+      })),
+      tags: { giorni: i.giorni_selezionati ?? [] },
+    }));
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
