@@ -884,7 +884,7 @@ export default function TurnoPage() {
     let sectionsRendered = 0;
 
     if (dlIncludeRagazzi) {
-      const cols = RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]);
+      const cols = RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key] && (!restrictFields || ALLOWED_RAGAZZI_STAFF.includes(f.key)));
       if (cols.length > 0) {
         doc.setFontSize(16);
         doc.text(`Ragazzi — ${turnoLabel}`, 14, currentY);
