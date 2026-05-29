@@ -570,6 +570,17 @@ export default function AnagraficaMontaggioCampeggio() {
         )}
 
         <MontaggioDetailDrawer item={selected} open={drawerOpen} onOpenChange={setDrawerOpen} />
+
+        <InvioMassivoGenericDialog
+          open={invioOpen}
+          onOpenChange={setInvioOpen}
+          entityType="montaggio"
+          recipients={invioRecipients}
+          recipientsLabel="iscritti"
+          filterGroups={[
+            { key: 'giorni', label: 'Giorno', single: true, allLabel: 'Tutti', options: GIORNI_MONTAGGIO.map(g => ({ value: g.value, label: g.label })) },
+          ]}
+        />
       </div>
     </MainLayout>
   );
