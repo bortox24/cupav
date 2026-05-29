@@ -19,8 +19,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Loader2, Search, Users, Phone, Mail, MapPin, Calendar, Download, Pencil,
-  Archive, ArchiveRestore, Trash2, Save, X, Plus, Hammer, Moon, Check, XCircle,
+  Archive, ArchiveRestore, Trash2, Save, X, Plus, Hammer, Moon, Check, XCircle, Megaphone,
 } from 'lucide-react';
+import { InvioMassivoGenericDialog, GenericRecipient } from '@/components/InvioMassivoGenericDialog';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
