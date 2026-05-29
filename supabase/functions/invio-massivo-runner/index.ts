@@ -448,16 +448,37 @@ async function runJob(jobId: string) {
         last_heartbeat_at: new Date().toISOString(),
       } as any).eq("id", jobId);
 
-      // Log
+      // Log (per tipo)
       const dettaglio = `Webhook: ${cur.webhook_descrizione || "webhook"} — Titolo: ${cur.titolo} — ${(cur.testo || "").slice(0, 150)}${errMsg ? ` — ${errMsg}` : ""}`;
-      await a.from("anagrafica_invio_logs").insert({
-        ragazzo_id: item.ragazzo_id,
-        inviato_da: cur.created_by,
-        inviato_da_nome: cur.created_by_nome,
-        successo: success,
-        tipo: "invio_massivo",
-        dettaglio,
-      });
+      const entityType = cur.entity_type || "ragazzi";
+      const sourceId = item.payload?.source_id || item.ragazzo_id;
+      if (entityType === "animatori") {
+        await a.from("staff_activity_logs").insert({
+          animatore_id: sourceId,
+          eseguito_da: cur.created_by,
+          eseguito_da_nome: cur.created_by_nome,
+          azione: "invio_massivo",
+          dettaglio: `${success ? "OK" : "ERRORE"} — ${dettaglio}`,
+        });
+      } else if (entityType === "montaggio") {
+        await a.from("anagrafica_invio_logs").insert({
+          iscrizione_montaggio_id: sourceId,
+          inviato_da: cur.created_by,
+          inviato_da_nome: cur.created_by_nome,
+          successo: success,
+          tipo: "invio_massivo",
+          dettaglio,
+        });
+      } else {
+        await a.from("anagrafica_invio_logs").insert({
+          ragazzo_id: item.ragazzo_id,
+          inviato_da: cur.created_by,
+          inviato_da_nome: cur.created_by_nome,
+          successo: success,
+          tipo: "invio_massivo",
+          dettaglio,
+        });
+      }
 
       // Pausa, ma controllando abort/deadline
       const { count: remaining } = await a.from("invio_massivo_job_items")
