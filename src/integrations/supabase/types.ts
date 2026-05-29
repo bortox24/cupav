@@ -365,6 +365,7 @@ export type Database = {
           cta_url: string | null
           current_index: number
           dry_run: boolean
+          entity_type: string
           error_message: string | null
           falliti: number
           filtri: Json
@@ -392,6 +393,7 @@ export type Database = {
           cta_url?: string | null
           current_index?: number
           dry_run?: boolean
+          entity_type?: string
           error_message?: string | null
           falliti?: number
           filtri?: Json
@@ -419,6 +421,7 @@ export type Database = {
           cta_url?: string | null
           current_index?: number
           dry_run?: boolean
+          entity_type?: string
           error_message?: string | null
           falliti?: number
           filtri?: Json
