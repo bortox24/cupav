@@ -821,9 +821,15 @@ export default function AnagraficaAnimatori() {
         {/* Count + Add button */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{filtered.length} risultat{filtered.length === 1 ? 'o' : 'i'}</p>
-          <Button size="sm" className="gap-1.5 rounded-xl" onClick={() => setShowAddDrawer(true)}>
-            <Plus className="h-4 w-4" /> Nuovo
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5 rounded-xl" onClick={() => setShowInvioMassivo(true)}>
+              <Megaphone className="h-4 w-4" /> Invio Massivo
+            </Button>
+            <Button size="sm" className="gap-1.5 rounded-xl" onClick={() => setShowAddDrawer(true)}>
+              <Plus className="h-4 w-4" /> Nuovo
+            </Button>
+          </div>
+
         </div>
 
         {/* Grid */}
