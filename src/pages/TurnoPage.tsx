@@ -827,7 +827,7 @@ export default function TurnoPage() {
     { key: 'ruolo', label: 'Ruolo', get: (a) => RUOLO_LABELS[a.ruolo] || a.ruolo },
     { key: 'telefono', label: 'Telefono', get: (a) => a.telefono || '' },
     { key: 'email', label: 'Email', get: (a) => a.email || '' },
-    { key: 'data_nascita', label: 'Data di nascita', get: (a) => a.data_nascita || '' },
+    { key: 'data_nascita', label: 'Data di nascita', get: (a) => formatDob(a.data_nascita) },
   ];
 
   // Download PDF with sections — A4 portrait, columns adapt to selected fields
