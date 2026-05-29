@@ -843,6 +843,35 @@ export default function TurnoPage() {
     { key: 'data_nascita', label: 'Data di nascita', get: (a) => formatDob(a.data_nascita) },
   ];
 
+  // Field defs visible/selectable depending on account type
+  const visibleRagazziDefs = restrictFields
+    ? RAGAZZI_FIELD_DEFS.filter((f) => ALLOWED_RAGAZZI_STAFF.includes(f.key))
+    : RAGAZZI_FIELD_DEFS;
+  const visibleStaffDefs = restrictFields
+    ? STAFF_FIELD_DEFS.filter((f) => ALLOWED_STAFF_STAFF.includes(f.key))
+    : STAFF_FIELD_DEFS;
+
+  // For staff accounts, force selection to allowed fields only
+  useEffect(() => {
+    if (!restrictFields) return;
+    setDlRagazziFields((prev) => {
+      const next: Record<string, boolean> = {};
+      RAGAZZI_FIELD_DEFS.forEach((f) => {
+        next[f.key] = ALLOWED_RAGAZZI_STAFF.includes(f.key) ? (prev[f.key] ?? true) : false;
+      });
+      return next;
+    });
+    setDlStaffFields((prev) => {
+      const next: Record<string, boolean> = {};
+      STAFF_FIELD_DEFS.forEach((f) => {
+        next[f.key] = ALLOWED_STAFF_STAFF.includes(f.key) ? (prev[f.key] ?? true) : false;
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restrictFields]);
+
+
   // Download PDF with sections — A4 portrait, columns adapt to selected fields
   const handleDownloadPDF = async () => {
     if (!dlIncludeRagazzi && !dlIncludeStaff) return;
