@@ -67,16 +67,24 @@ async function verifyUser(authHeader: string | null, pagePath?: string): Promise
 
 // --- START ---
 async function handleStart(req: Request) {
-  const auth = await verifyUser(req.headers.get("Authorization"));
-  if (!auth) return json({ error: "Unauthorized" }, 401);
-
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
   const {
     titolo, testo, ctaLabel, ctaUrl,
-    ragazzi_ids, filtri,
+    ragazzi_ids, recipient_ids, filtri,
   } = body;
+
+  const entityType = ["ragazzi", "animatori", "montaggio"].includes(body.entity_type)
+    ? body.entity_type : "ragazzi";
+  const pagePath = PAGE_BY_ENTITY[entityType];
+
+  const auth = await verifyUser(req.headers.get("Authorization"), pagePath);
+  if (!auth) return json({ error: "Unauthorized" }, 401);
+
+  // id destinatari (retrocompat con ragazzi_ids)
+  const recIds: string[] = Array.isArray(recipient_ids) && recipient_ids.length > 0
+    ? recipient_ids : (Array.isArray(ragazzi_ids) ? ragazzi_ids : []);
 
   // Validazione
   if (!titolo?.trim() || !testo?.trim()) return json({ error: "Titolo e testo obbligatori" }, 400);
@@ -85,8 +93,8 @@ async function handleStart(req: Request) {
   const ctaU = (ctaUrl || "").trim();
   if ((ctaL.length > 0) !== (ctaU.length > 0)) return json({ error: "CTA incompleta" }, 400);
   if (ctaU && !/^https?:\/\//i.test(ctaU)) return json({ error: "CTA URL non valido" }, 400);
-  if (!Array.isArray(ragazzi_ids) || ragazzi_ids.length === 0) return json({ error: "Nessun destinatario" }, 400);
-  if (ragazzi_ids.length > 2000) return json({ error: "Troppi destinatari (max 2000)" }, 400);
+  if (recIds.length === 0) return json({ error: "Nessun destinatario" }, 400);
+  if (recIds.length > 2000) return json({ error: "Troppi destinatari (max 2000)" }, 400);
 
   const interval = 30;
 
@@ -108,21 +116,104 @@ async function handleStart(req: Request) {
     .from("webhook_config").select("*").eq("descrizione", FIXED_WEBHOOK_DESCRIZIONE).maybeSingle();
   if (whErr || !webhook) return json({ error: `Webhook '${FIXED_WEBHOOK_DESCRIZIONE}' non configurato` }, 400);
 
-  // Carica ragazzi (server-side, no fidarsi del client)
-  const { data: ragazzi, error: rErr } = await a
-    .from("ragazzi")
-    .select("id, full_name, data_nascita, residente_altavilla, numero, archiviato")
-    .in("id", ragazzi_ids);
-  if (rErr) return json({ error: "Errore caricamento ragazzi", detail: rErr.message }, 500);
-  const validRagazzi = (ragazzi || []).filter((r) => !r.archiviato);
-  if (validRagazzi.length === 0) return json({ error: "Nessun ragazzo valido" }, 400);
+  // Costruisce i destinatari (server-side, no fidarsi del client) in base al tipo
+  type Recipient = {
+    source_id: string;
+    recipient_full_name: string;
+    personalization_name: string;
+    payload: Record<string, unknown>;
+  };
+  let recipients: Recipient[] = [];
 
-  // Genitori + iscrizioni
-  const ids = validRagazzi.map((r) => r.id);
-  const [{ data: genitori }, { data: iscrizioni }] = await Promise.all([
-    a.from("ragazzi_genitori").select("*").in("ragazzo_id", ids),
-    a.from("ragazzi_iscrizioni").select("*").in("ragazzo_id", ids),
-  ]);
+  if (entityType === "ragazzi") {
+    const { data: ragazzi, error: rErr } = await a
+      .from("ragazzi")
+      .select("id, full_name, data_nascita, residente_altavilla, numero, archiviato")
+      .in("id", recIds);
+    if (rErr) return json({ error: "Errore caricamento ragazzi", detail: rErr.message }, 500);
+    const valid = (ragazzi || []).filter((r) => !r.archiviato);
+    const ids = valid.map((r) => r.id);
+    const [{ data: genitori }, { data: iscrizioni }] = await Promise.all([
+      a.from("ragazzi_genitori").select("*").in("ragazzo_id", ids),
+      a.from("ragazzi_iscrizioni").select("*").in("ragazzo_id", ids),
+    ]);
+    recipients = valid.map((r) => {
+      const gens = (genitori || []).filter((g: any) => g.ragazzo_id === r.id);
+      const iscr = (iscrizioni || []).filter((i: any) => i.ragazzo_id === r.id);
+      return {
+        source_id: r.id,
+        recipient_full_name: r.full_name,
+        personalization_name: gens[0]?.nome_cognome || "Genitore",
+        payload: {
+          full_name: r.full_name,
+          data_nascita: r.data_nascita,
+          residente_altavilla: r.residente_altavilla,
+          numero: r.numero,
+          genitori: gens,
+          iscrizioni: iscr,
+        },
+      };
+    });
+  } else if (entityType === "animatori") {
+    const { data: staff, error: sErr } = await a
+      .from("animatori")
+      .select("id, full_name, email, ruolo, archiviato")
+      .in("id", recIds);
+    if (sErr) return json({ error: "Errore caricamento staff", detail: sErr.message }, 500);
+    const valid = (staff || []).filter((s: any) => !s.archiviato && s.email);
+    const ids = valid.map((s: any) => s.id);
+    const { data: turni } = await a.from("animatori_turni").select("*").in("animatore_id", ids);
+    recipients = valid.map((s: any) => {
+      const tr = (turni || []).filter((t: any) => t.animatore_id === s.id);
+      return {
+        source_id: s.id,
+        recipient_full_name: s.full_name,
+        personalization_name: s.full_name || "Volontario",
+        payload: {
+          full_name: s.full_name,
+          email: s.email,
+          ruolo: s.ruolo,
+          turni: tr,
+          genitori: [{ nome_cognome: s.full_name, email: s.email }],
+        },
+      };
+    });
+  } else { // montaggio
+    const { data: rows, error: mErr } = await a
+      .from("iscrizioni_montaggio")
+      .select("id, nome, cognome, email, residente_a, via, recapiti_telefonici, giorni_selezionati, num_notti, num_adulti, num_figli_over10, num_4_10_anni, num_0_3_anni, importo_totale_calcolato, turno, archiviato")
+      .in("id", recIds);
+    if (mErr) return json({ error: "Errore caricamento montaggio", detail: mErr.message }, 500);
+    const valid = (rows || []).filter((r: any) => !r.archiviato && r.email);
+    recipients = valid.map((r: any) => {
+      const nome = `${r.cognome || ""} ${r.nome || ""}`.trim() || "Volontario";
+      return {
+        source_id: r.id,
+        recipient_full_name: nome,
+        personalization_name: nome,
+        payload: {
+          full_name: nome,
+          email: r.email,
+          cognome: r.cognome,
+          nome: r.nome,
+          residente_a: r.residente_a,
+          via: r.via,
+          recapiti_telefonici: r.recapiti_telefonici,
+          giorni_selezionati: r.giorni_selezionati,
+          num_notti: r.num_notti,
+          num_adulti: r.num_adulti,
+          num_figli_over10: r.num_figli_over10,
+          num_4_10_anni: r.num_4_10_anni,
+          num_0_3_anni: r.num_0_3_anni,
+          importo_totale_calcolato: r.importo_totale_calcolato,
+          turno: r.turno,
+          genitori: [{ nome_cognome: nome, email: r.email }],
+        },
+      };
+    });
+  }
+
+  if (recipients.length === 0) return json({ error: "Nessun destinatario valido" }, 400);
 
   // Crea job
   const { data: job, error: jobErr } = await a
@@ -130,6 +221,7 @@ async function handleStart(req: Request) {
     .insert({
       created_by: auth.userId,
       created_by_nome: auth.userName,
+      entity_type: entityType,
       titolo: titolo.trim(),
       testo,
       cta_label: ctaL || null,
@@ -141,35 +233,24 @@ async function handleStart(req: Request) {
       dry_run: false,
       send_interval_seconds: interval,
       stato: "queued",
-      totale: validRagazzi.length,
+      totale: recipients.length,
       last_heartbeat_at: new Date().toISOString(),
     })
     .select()
     .single();
   if (jobErr || !job) return json({ error: "Errore creazione job", detail: jobErr?.message }, 500);
 
-  // Crea items (ordina per full_name)
-  const sorted = [...validRagazzi].sort((x, y) => (x.full_name || "").localeCompare(y.full_name || ""));
-  const items = sorted.map((r, idx) => {
-    const gens = (genitori || []).filter((g: any) => g.ragazzo_id === r.id);
-    const iscr = (iscrizioni || []).filter((i: any) => i.ragazzo_id === r.id);
-    const genitoreNome = gens[0]?.nome_cognome || "Genitore";
-    return {
-      job_id: job.id,
-      position: idx,
-      ragazzo_id: r.id,
-      ragazzo_full_name: r.full_name,
-      genitore_nome: genitoreNome,
-      payload: {
-        full_name: r.full_name,
-        data_nascita: r.data_nascita,
-        residente_altavilla: r.residente_altavilla,
-        numero: r.numero,
-        genitori: gens,
-        iscrizioni: iscr,
-      },
-    };
-  });
+  // Crea items (ordina per nome destinatario)
+  const sorted = [...recipients].sort((x, y) => (x.recipient_full_name || "").localeCompare(y.recipient_full_name || ""));
+  const items = sorted.map((r, idx) => ({
+    job_id: job.id,
+    position: idx,
+    ragazzo_id: entityType === "ragazzi" ? r.source_id : null,
+    ragazzo_full_name: r.recipient_full_name,
+    genitore_nome: r.personalization_name,
+    payload: { ...r.payload, source_id: r.source_id, entity_type: entityType },
+  }));
+
 
   // Insert in batch da 500
   for (let i = 0; i < items.length; i += 500) {
