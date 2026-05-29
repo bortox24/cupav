@@ -126,6 +126,17 @@ export default function TurnoMontaggioPage() {
           colore="amber"
         />
 
+        <InvioMassivoGenericDialog
+          open={invioOpen}
+          onOpenChange={setInvioOpen}
+          entityType="montaggio"
+          recipients={invioRecipients}
+          recipientsLabel="iscritti"
+          filterGroups={[
+            { key: 'giorni', label: 'Giorno', single: true, allLabel: 'Tutti', options: GIORNI_MONTAGGIO.map(g => ({ value: g.value, label: g.label })) },
+          ]}
+        />
+
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : items.length === 0 ? (
