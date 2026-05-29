@@ -719,8 +719,42 @@ export default function AnagraficaAnimatori() {
   const [showArchived, setShowArchived] = useState(false);
   const [selectedAnimatoreId, setSelectedAnimatoreId] = useState<string | null>(null);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
+  const [showInvioMassivo, setShowInvioMassivo] = useState(false);
   const [roleFilter, setRoleFilter] = useState('all');
   const [turnoFilter, setTurnoFilter] = useState('all');
+
+  const invioRecipients: GenericRecipient[] = animatori
+    .filter((a) => !a.archiviato && !!a.email)
+    .map((a) => {
+      const turni = a.turni.filter((t) => t.anno === CURRENT_YEAR).map((t) => t.turno);
+      return {
+        id: a.id,
+        full_name: a.full_name,
+        badges: [
+          { label: RUOLO_LABELS[a.ruolo] || a.ruolo, variant: 'secondary' as const },
+          ...turni.map((t) => ({ label: t, variant: 'outline' as const })),
+        ],
+        tags: { ruoli: [a.ruolo], turni },
+      };
+    });
+
+  const invioFilterGroups = [
+    {
+      key: 'ruoli',
+      label: 'Ruolo',
+      options: [
+        { value: 'animatore', label: 'Animatore' },
+        { value: 'cuoco', label: 'Cuoco' },
+        { value: 'responsabile_campo', label: 'Resp. Campo' },
+        { value: 'responsabile_animatori', label: 'Resp. Animatori' },
+      ],
+    },
+    {
+      key: 'turni',
+      label: 'Turno assegnato',
+      options: TURNI_OPTIONS.map((t) => ({ value: t, label: t })),
+    },
+  ];
 
   const filtered = animatori
     .filter((a) => showArchived ? a.archiviato : !a.archiviato)
