@@ -501,6 +501,14 @@ export default function TurnoPage() {
   const [tendaSaving, setTendaSaving] = useState(false);
   const [dlIncludeRagazzi, setDlIncludeRagazzi] = useState(true);
   const [dlIncludeStaff, setDlIncludeStaff] = useState(true);
+  const [dlRagazziFields, setDlRagazziFields] = useState<Record<string, boolean>>({
+    cognome: true, nome: true, data_nascita: false, genitore: true,
+    telefono: true, email: false, residenza: false, indirizzo: false,
+    allergie: false, foto: false, doppione: true,
+  });
+  const [dlStaffFields, setDlStaffFields] = useState<Record<string, boolean>>({
+    nome_cognome: true, ruolo: true, telefono: true, email: true, data_nascita: false,
+  });
 
   const turnoInfo = TURNI.find(t => t.slug === turnoSlug);
   const turnoValue = turnoInfo?.value ?? '';
