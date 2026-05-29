@@ -270,7 +270,7 @@ async function handleStart(req: Request) {
   // @ts-ignore — EdgeRuntime is provided
   EdgeRuntime.waitUntil(runJob(job.id));
 
-  return json({ job_id: job.id, totale: validRagazzi.length }, 202);
+  return json({ job_id: job.id, totale: recipients.length }, 202);
 }
 
 // --- ABORT ---
