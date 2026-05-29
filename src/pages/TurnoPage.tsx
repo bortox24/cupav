@@ -790,70 +790,96 @@ export default function TurnoPage() {
     }
   };
 
-  // Download PDF with sections
+  // Field definitions for the customizable PDF list
+  const RAGAZZI_FIELD_DEFS: { key: string; label: string; get: (r: any) => string }[] = [
+    { key: 'cognome', label: 'Cognome', get: (r) => r.ragazzo_cognome || '' },
+    { key: 'nome', label: 'Nome', get: (r) => r.ragazzo_nome || '' },
+    { key: 'data_nascita', label: 'Data di nascita', get: (r) => r.ragazzo_data_nascita || '' },
+    { key: 'genitore', label: 'Genitore', get: (r) => `${r.genitore_nome || ''} ${r.genitore_cognome || ''}`.trim() },
+    { key: 'telefono', label: 'Telefono', get: (r) => r.recapiti_telefonici || '' },
+    { key: 'email', label: 'Email', get: (r) => r.email || '' },
+    { key: 'residenza', label: 'Residenza', get: (r) => r.ragazzo_residente || '' },
+    { key: 'indirizzo', label: 'Indirizzo', get: (r) => r.ragazzo_indirizzo || '' },
+    { key: 'allergie', label: 'Allergie/Patologie', get: (r) => (r.ha_allergie ? (r.allergie_dettaglio || r.patologie_dettaglio || 'Sì') : '') },
+    { key: 'foto', label: 'Consenso foto', get: (r) => (r.liberatoria_foto ? 'Sì' : 'No') },
+    { key: 'doppione', label: 'Segnalazione', get: (r) => (duplicateIscrizioneIds.has(r.id) ? 'DOPPIONE' : '') },
+  ];
+
+  const STAFF_FIELD_DEFS: { key: string; label: string; get: (a: AnimatoreCompleto) => string }[] = [
+    { key: 'nome_cognome', label: 'Nome e Cognome', get: (a) => a.full_name },
+    { key: 'ruolo', label: 'Ruolo', get: (a) => RUOLO_LABELS[a.ruolo] || a.ruolo },
+    { key: 'telefono', label: 'Telefono', get: (a) => a.telefono || '' },
+    { key: 'email', label: 'Email', get: (a) => a.email || '' },
+    { key: 'data_nascita', label: 'Data di nascita', get: (a) => a.data_nascita || '' },
+  ];
+
+  // Download PDF with sections — A4 portrait, columns adapt to selected fields
   const handleDownloadPDF = async () => {
     if (!dlIncludeRagazzi && !dlIncludeStaff) return;
 
     const { jsPDF } = await import('jspdf');
     const { autoTable } = await import('jspdf-autotable');
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     let currentY = 20;
+    let sectionsRendered = 0;
 
     if (dlIncludeRagazzi) {
-      doc.setFontSize(16);
-      doc.text(`Ragazzi — ${turnoLabel}`, 14, currentY);
+      const cols = RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]);
+      if (cols.length > 0) {
+        doc.setFontSize(16);
+        doc.text(`Ragazzi — ${turnoLabel}`, 14, currentY);
 
-      const rows = sortedIscrizioni.map((r: any) => [
-        `${r.ragazzo_cognome} ${r.ragazzo_nome}`,
-        `${r.genitore_nome} ${r.genitore_cognome}`,
-        r.recapiti_telefonici || '',
-        duplicateIscrizioneIds.has(r.id) ? 'DOPPIONE' : '',
-      ]);
+        const rows = sortedIscrizioni.map((r: any) => cols.map((c) => c.get(r)));
 
-      autoTable(doc, {
-        startY: currentY + 10,
-        head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono', 'Segnalazione']],
-        body: rows,
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [59, 130, 246] },
-      });
+        autoTable(doc, {
+          startY: currentY + 10,
+          head: [cols.map((c) => c.label)],
+          body: rows,
+          styles: { fontSize: 10, overflow: 'linebreak', cellWidth: 'auto' },
+          headStyles: { fillColor: [59, 130, 246] },
+          margin: { left: 14, right: 14 },
+          tableWidth: 'auto',
+        });
 
-      currentY = (doc as any).lastAutoTable?.finalY ?? currentY + 30;
+        currentY = (doc as any).lastAutoTable?.finalY ?? currentY + 30;
+        sectionsRendered++;
+      }
     }
 
     if (dlIncludeStaff) {
-      if (dlIncludeRagazzi) {
-        doc.addPage();
-        currentY = 20;
+      const cols = STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]);
+      if (cols.length > 0) {
+        if (sectionsRendered > 0) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        doc.setFontSize(16);
+        doc.text(`Staff — ${turnoLabel}`, 14, currentY);
+
+        const sortedStaff = [...animatoriTurno].sort((a, b) => {
+          const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
+          if (r !== 0) return r;
+          return a.full_name.toLowerCase().localeCompare(b.full_name.toLowerCase());
+        });
+        const staffRows = sortedStaff.map((a: AnimatoreCompleto) => cols.map((c) => c.get(a)));
+
+        autoTable(doc, {
+          startY: currentY + 10,
+          head: [cols.map((c) => c.label)],
+          body: staffRows,
+          styles: { fontSize: 10, overflow: 'linebreak', cellWidth: 'auto' },
+          headStyles: { fillColor: [59, 130, 246] },
+          margin: { left: 14, right: 14 },
+          tableWidth: 'auto',
+        });
       }
-
-      doc.setFontSize(16);
-      doc.text(`Staff — ${turnoLabel}`, 14, currentY);
-
-      const sortedStaff = [...animatoriTurno].sort((a, b) => {
-        const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
-        if (r !== 0) return r;
-        return a.full_name.toLowerCase().localeCompare(b.full_name.toLowerCase());
-      });
-      const staffRows = sortedStaff.map((a: AnimatoreCompleto) => [
-        a.full_name,
-        RUOLO_LABELS[a.ruolo] || a.ruolo,
-        a.telefono || '',
-        a.email || '',
-      ]);
-
-      autoTable(doc, {
-        startY: currentY + 10,
-        head: [['Nome e Cognome', 'Ruolo', 'Telefono', 'Email']],
-        body: staffRows,
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [59, 130, 246] },
-      });
     }
 
     doc.save(`lista-${turnoSlug}.pdf`);
   };
+
 
   const handleTabClick = (tab: TabType) => {
     setActiveTab(tab);
