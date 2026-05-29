@@ -862,6 +862,16 @@ export default function AnagraficaAnimatori() {
       })()}
 
       <AddAnimatoreDrawer open={showAddDrawer} onOpenChange={setShowAddDrawer} />
+
+      <InvioMassivoGenericDialog
+        open={showInvioMassivo}
+        onOpenChange={setShowInvioMassivo}
+        entityType="animatori"
+        recipients={invioRecipients}
+        filterGroups={invioFilterGroups}
+        recipientsLabel="membri staff"
+      />
+
     </MainLayout>
   );
 }
