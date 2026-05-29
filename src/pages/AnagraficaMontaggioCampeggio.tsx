@@ -19,8 +19,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Loader2, Search, Users, Phone, Mail, MapPin, Calendar, Download, Pencil,
-  Archive, ArchiveRestore, Trash2, Save, X, Plus, Hammer, Moon, Check, XCircle,
+  Archive, ArchiveRestore, Trash2, Save, X, Plus, Hammer, Moon, Check, XCircle, Megaphone,
 } from 'lucide-react';
+import { InvioMassivoGenericDialog, GenericRecipient } from '@/components/InvioMassivoGenericDialog';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -471,6 +472,19 @@ export default function AnagraficaMontaggioCampeggio() {
   const [showArchived, setShowArchived] = useState(false);
   const [selected, setSelected] = useState<IscrizioneMontaggio | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [invioOpen, setInvioOpen] = useState(false);
+
+  const invioRecipients: GenericRecipient[] = items
+    .filter(i => !i.archiviato && i.email)
+    .map(i => ({
+      id: i.id,
+      full_name: `${i.cognome} ${i.nome}`.trim(),
+      badges: (i.giorni_selezionati ?? []).map(g => ({
+        label: GIORNI_MONTAGGIO.find(x => x.value === g)?.short ?? g,
+        variant: 'secondary' as const,
+      })),
+      tags: { giorni: i.giorni_selezionati ?? [] },
+    }));
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -528,7 +542,18 @@ export default function AnagraficaMontaggioCampeggio() {
           <Button variant="outline" className="w-full sm:w-auto" onClick={exportCsv} disabled={filtered.length === 0}>
             <Download className="h-4 w-4 mr-2" />Export CSV
           </Button>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              if (invioRecipients.length === 0) { toast.info('Nessun iscritto con email'); return; }
+              setInvioOpen(true);
+            }}
+          >
+            <Megaphone className="h-4 w-4 mr-2" />Invio Massivo
+          </Button>
         </div>
+
 
         {isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
@@ -545,6 +570,17 @@ export default function AnagraficaMontaggioCampeggio() {
         )}
 
         <MontaggioDetailDrawer item={selected} open={drawerOpen} onOpenChange={setDrawerOpen} />
+
+        <InvioMassivoGenericDialog
+          open={invioOpen}
+          onOpenChange={setInvioOpen}
+          entityType="montaggio"
+          recipients={invioRecipients}
+          recipientsLabel="iscritti"
+          filterGroups={[
+            { key: 'giorni', label: 'Giorno', single: true, allLabel: 'Tutti', options: GIORNI_MONTAGGIO.map(g => ({ value: g.value, label: g.label })) },
+          ]}
+        />
       </div>
     </MainLayout>
   );

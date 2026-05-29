@@ -9,8 +9,6 @@ import { Button } from '@/components/ui/button';
 import { GIORNI_MONTAGGIO, formatEuro } from '@/lib/tariffeMontaggio';
 import { CalendarioPresenzeDialog, GiornoCalendario } from '@/components/CalendarioPresenzeDialog';
 import { exportMontaggioPdf } from '@/lib/exportMontaggioPdf';
-import { InvioMassivoGenericDialog, GenericRecipient } from '@/components/InvioMassivoGenericDialog';
-import { Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 function totalePartecipanti(i: IscrizioneMontaggio) {
@@ -28,19 +26,7 @@ export default function TurnoMontaggioPage() {
   const { data: allItems = [], isLoading } = useIscrizioniMontaggio();
   const items = allItems.filter(i => !i.archiviato);
   const [calendarioOpen, setCalendarioOpen] = useState(false);
-  const [invioOpen, setInvioOpen] = useState(false);
 
-  const invioRecipients: GenericRecipient[] = items
-    .filter(i => i.email)
-    .map(i => ({
-      id: i.id,
-      full_name: `${i.cognome} ${i.nome}`.trim(),
-      badges: (i.giorni_selezionati ?? []).map(g => ({
-        label: GIORNI_MONTAGGIO.find(x => x.value === g)?.short ?? g,
-        variant: 'secondary' as const,
-      })),
-      tags: { giorni: i.giorni_selezionati ?? [] },
-    }));
 
   const totalePersone = items.reduce((s, i) => s + totalePartecipanti(i), 0);
   const totaleImporto = items.reduce((s, i) => s + (i.importo_totale_calcolato ?? 0), 0);
@@ -102,17 +88,8 @@ export default function TurnoMontaggioPage() {
           <Button variant="outline" className="w-full sm:w-auto" onClick={() => setCalendarioOpen(true)}>
             <CalendarDays className="h-4 w-4 mr-2" />Calendario
           </Button>
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => {
-              if (invioRecipients.length === 0) { toast.info('Nessun iscritto con email'); return; }
-              setInvioOpen(true);
-            }}
-          >
-            <Megaphone className="h-4 w-4 mr-2" />Invio Massivo
-          </Button>
           <Link to="/anagrafica-montaggio-campeggio" className="w-full sm:w-auto">
+
             <Button variant="outline" className="w-full sm:w-auto">Apri anagrafica completa <ArrowRight className="h-4 w-4 ml-2" /></Button>
           </Link>
         </div>
@@ -126,16 +103,7 @@ export default function TurnoMontaggioPage() {
           colore="amber"
         />
 
-        <InvioMassivoGenericDialog
-          open={invioOpen}
-          onOpenChange={setInvioOpen}
-          entityType="montaggio"
-          recipients={invioRecipients}
-          recipientsLabel="iscritti"
-          filterGroups={[
-            { key: 'giorni', label: 'Giorno', single: true, allLabel: 'Tutti', options: GIORNI_MONTAGGIO.map(g => ({ value: g.value, label: g.label })) },
-          ]}
-        />
+
 
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
