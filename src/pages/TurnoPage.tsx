@@ -1166,37 +1166,84 @@ export default function TurnoPage() {
         {/* ─── Tab: Download lista ─── */}
         {activeTab === 'download-lista' && (
           <Card className="border-0 shadow-sm rounded-2xl">
-            <CardContent className="p-6 space-y-5">
-              <p className="text-sm text-muted-foreground">Seleziona cosa includere nel PDF:</p>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dlIncludeRagazzi}
-                    onChange={(e) => setDlIncludeRagazzi(e.target.checked)}
-                    className="h-5 w-5 rounded border-2 border-primary accent-primary"
-                  />
-                  <div>
+            <CardContent className="p-6 space-y-6">
+              <div>
+                <p className="text-sm text-muted-foreground mb-3">Seleziona quali sezioni includere nel PDF:</p>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={dlIncludeRagazzi}
+                      onChange={(e) => setDlIncludeRagazzi(e.target.checked)}
+                      className="h-5 w-5 rounded border-2 border-primary accent-primary"
+                    />
                     <p className="font-medium text-foreground">Ragazzi</p>
-                    <p className="text-xs text-muted-foreground">Nome, genitore e telefono</p>
-                  </div>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dlIncludeStaff}
-                    onChange={(e) => setDlIncludeStaff(e.target.checked)}
-                    className="h-5 w-5 rounded border-2 border-primary accent-primary"
-                  />
-                  <div>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={dlIncludeStaff}
+                      onChange={(e) => setDlIncludeStaff(e.target.checked)}
+                      className="h-5 w-5 rounded border-2 border-primary accent-primary"
+                    />
                     <p className="font-medium text-foreground">Staff</p>
-                    <p className="text-xs text-muted-foreground">Animatori, cuochi e responsabili di campo</p>
-                  </div>
-                </label>
+                  </label>
+                </div>
               </div>
+
+              {dlIncludeRagazzi && (
+                <div className="rounded-xl border p-4 space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Colonne lista Ragazzi</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {RAGAZZI_FIELD_DEFS.map((f) => (
+                      <label key={f.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={!!dlRagazziFields[f.key]}
+                          onChange={(e) => setDlRagazziFields((p) => ({ ...p, [f.key]: e.target.checked }))}
+                          className="h-4 w-4 rounded border-2 border-primary accent-primary"
+                        />
+                        {f.label}
+                      </label>
+                    ))}
+                  </div>
+                  {RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]).length === 0 && (
+                    <p className="text-xs text-destructive">Seleziona almeno una colonna.</p>
+                  )}
+                </div>
+              )}
+
+              {dlIncludeStaff && (
+                <div className="rounded-xl border p-4 space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Colonne lista Staff</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {STAFF_FIELD_DEFS.map((f) => (
+                      <label key={f.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={!!dlStaffFields[f.key]}
+                          onChange={(e) => setDlStaffFields((p) => ({ ...p, [f.key]: e.target.checked }))}
+                          className="h-4 w-4 rounded border-2 border-primary accent-primary"
+                        />
+                        {f.label}
+                      </label>
+                    ))}
+                  </div>
+                  {STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]).length === 0 && (
+                    <p className="text-xs text-destructive">Seleziona almeno una colonna.</p>
+                  )}
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground">Il PDF è in formato A4 verticale: le colonne si adattano automaticamente al numero di campi selezionati.</p>
+
               <Button
                 className="rounded-full gap-2"
-                disabled={!dlIncludeRagazzi && !dlIncludeStaff}
+                disabled={
+                  (!dlIncludeRagazzi && !dlIncludeStaff) ||
+                  (dlIncludeRagazzi && RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]).length === 0) ||
+                  (dlIncludeStaff && STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]).length === 0)
+                }
                 onClick={handleDownloadPDF}
               >
                 <Download className="h-4 w-4" /> Scarica PDF
@@ -1204,6 +1251,7 @@ export default function TurnoPage() {
             </CardContent>
           </Card>
         )}
+
 
 
         {activeTab === 'appello' && (
