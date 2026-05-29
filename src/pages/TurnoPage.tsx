@@ -907,7 +907,7 @@ export default function TurnoPage() {
     }
 
     if (dlIncludeStaff) {
-      const cols = STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]);
+      const cols = STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key] && (!restrictFields || ALLOWED_STAFF_STAFF.includes(f.key)));
       if (cols.length > 0) {
         if (sectionsRendered > 0) {
           doc.addPage();
