@@ -1254,7 +1254,7 @@ export default function TurnoPage() {
                 <div className="rounded-xl border p-4 space-y-3">
                   <p className="text-sm font-semibold text-foreground">Colonne lista Ragazzi</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {RAGAZZI_FIELD_DEFS.map((f) => (
+                    {visibleRagazziDefs.map((f) => (
                       <label key={f.key} className="flex items-center gap-2 cursor-pointer text-sm">
                         <input
                           type="checkbox"
@@ -1266,7 +1266,7 @@ export default function TurnoPage() {
                       </label>
                     ))}
                   </div>
-                  {RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]).length === 0 && (
+                  {visibleRagazziDefs.filter((f) => dlRagazziFields[f.key]).length === 0 && (
                     <p className="text-xs text-destructive">Seleziona almeno una colonna.</p>
                   )}
                 </div>
@@ -1276,7 +1276,7 @@ export default function TurnoPage() {
                 <div className="rounded-xl border p-4 space-y-3">
                   <p className="text-sm font-semibold text-foreground">Colonne lista Staff</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {STAFF_FIELD_DEFS.map((f) => (
+                    {visibleStaffDefs.map((f) => (
                       <label key={f.key} className="flex items-center gap-2 cursor-pointer text-sm">
                         <input
                           type="checkbox"
@@ -1288,7 +1288,7 @@ export default function TurnoPage() {
                       </label>
                     ))}
                   </div>
-                  {STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]).length === 0 && (
+                  {visibleStaffDefs.filter((f) => dlStaffFields[f.key]).length === 0 && (
                     <p className="text-xs text-destructive">Seleziona almeno una colonna.</p>
                   )}
                 </div>
@@ -1300,8 +1300,8 @@ export default function TurnoPage() {
                 className="rounded-full gap-2"
                 disabled={
                   (!dlIncludeRagazzi && !dlIncludeStaff) ||
-                  (dlIncludeRagazzi && RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]).length === 0) ||
-                  (dlIncludeStaff && STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]).length === 0)
+                  (dlIncludeRagazzi && visibleRagazziDefs.filter((f) => dlRagazziFields[f.key]).length === 0) ||
+                  (dlIncludeStaff && visibleStaffDefs.filter((f) => dlStaffFields[f.key]).length === 0)
                 }
                 onClick={handleDownloadPDF}
               >
