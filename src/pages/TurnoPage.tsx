@@ -28,6 +28,23 @@ const toTitleCase = (s?: string | null) =>
     .toLowerCase()
     .replace(/(^|[\s'’\-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase());
 
+// Format a birth date as dd/MM/yyyy. Accepts ISO (yyyy-MM-dd) or other parseable
+// values; falls back to the original text if it isn't a valid date.
+const formatDob = (v?: string | null): string => {
+  if (!v) return '';
+  const s = String(v).trim();
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return format(d, 'dd/MM/yyyy');
+  return s;
+};
+
+// Fields staff accounts are allowed to download
+const ALLOWED_RAGAZZI_STAFF = ['cognome', 'nome', 'data_nascita'];
+const ALLOWED_STAFF_STAFF = ['nome_cognome', 'data_nascita'];
+
 const normalizeDuplicateName = (name: string) =>
   name
     .normalize('NFD')
