@@ -29,8 +29,14 @@ function json(body: unknown, status = 200) {
   });
 }
 
+const PAGE_BY_ENTITY: Record<string, string> = {
+  ragazzi: "/anagrafica-ragazzi",
+  animatori: "/anagrafica-animatori",
+  montaggio: "/anagrafica-montaggio-campeggio",
+};
+
 // --- Auth helper: verifica utente + permesso pagina ---
-async function verifyUser(authHeader: string | null): Promise<
+async function verifyUser(authHeader: string | null, pagePath?: string): Promise<
   { userId: string; userName: string; userEmail: string } | null
 > {
   if (!authHeader?.startsWith("Bearer ")) return null;
@@ -44,11 +50,13 @@ async function verifyUser(authHeader: string | null): Promise<
   const userId = data.user.id;
 
   const a = admin();
-  const [{ data: isAdmin }, { data: hasPage }, { data: profile }] = await Promise.all([
+  const pagesToCheck = pagePath ? [pagePath] : Object.values(PAGE_BY_ENTITY);
+  const [{ data: isAdmin }, { data: profile }, ...pageResults] = await Promise.all([
     a.rpc("has_role", { _user_id: userId, _role: "admin" }),
-    a.rpc("has_page_access", { _user_id: userId, _page_path: "/anagrafica-ragazzi" }),
     a.from("profiles").select("full_name,email").eq("id", userId).maybeSingle(),
+    ...pagesToCheck.map((p) => a.rpc("has_page_access", { _user_id: userId, _page_path: p })),
   ]);
+  const hasPage = pageResults.some((r: any) => r?.data === true);
   if (!isAdmin && !hasPage) return null;
   return {
     userId,
