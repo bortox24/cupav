@@ -719,8 +719,42 @@ export default function AnagraficaAnimatori() {
   const [showArchived, setShowArchived] = useState(false);
   const [selectedAnimatoreId, setSelectedAnimatoreId] = useState<string | null>(null);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
+  const [showInvioMassivo, setShowInvioMassivo] = useState(false);
   const [roleFilter, setRoleFilter] = useState('all');
   const [turnoFilter, setTurnoFilter] = useState('all');
+
+  const invioRecipients: GenericRecipient[] = animatori
+    .filter((a) => !a.archiviato && !!a.email)
+    .map((a) => {
+      const turni = a.turni.filter((t) => t.anno === CURRENT_YEAR).map((t) => t.turno);
+      return {
+        id: a.id,
+        full_name: a.full_name,
+        badges: [
+          { label: RUOLO_LABELS[a.ruolo] || a.ruolo, variant: 'secondary' as const },
+          ...turni.map((t) => ({ label: t, variant: 'outline' as const })),
+        ],
+        tags: { ruoli: [a.ruolo], turni },
+      };
+    });
+
+  const invioFilterGroups = [
+    {
+      key: 'ruoli',
+      label: 'Ruolo',
+      options: [
+        { value: 'animatore', label: 'Animatore' },
+        { value: 'cuoco', label: 'Cuoco' },
+        { value: 'responsabile_campo', label: 'Resp. Campo' },
+        { value: 'responsabile_animatori', label: 'Resp. Animatori' },
+      ],
+    },
+    {
+      key: 'turni',
+      label: 'Turno assegnato',
+      options: TURNI_OPTIONS.map((t) => ({ value: t, label: t })),
+    },
+  ];
 
   const filtered = animatori
     .filter((a) => showArchived ? a.archiviato : !a.archiviato)
@@ -787,9 +821,15 @@ export default function AnagraficaAnimatori() {
         {/* Count + Add button */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{filtered.length} risultat{filtered.length === 1 ? 'o' : 'i'}</p>
-          <Button size="sm" className="gap-1.5 rounded-xl" onClick={() => setShowAddDrawer(true)}>
-            <Plus className="h-4 w-4" /> Nuovo
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5 rounded-xl" onClick={() => setShowInvioMassivo(true)}>
+              <Megaphone className="h-4 w-4" /> Invio Massivo
+            </Button>
+            <Button size="sm" className="gap-1.5 rounded-xl" onClick={() => setShowAddDrawer(true)}>
+              <Plus className="h-4 w-4" /> Nuovo
+            </Button>
+          </div>
+
         </div>
 
         {/* Grid */}
@@ -822,6 +862,16 @@ export default function AnagraficaAnimatori() {
       })()}
 
       <AddAnimatoreDrawer open={showAddDrawer} onOpenChange={setShowAddDrawer} />
+
+      <InvioMassivoGenericDialog
+        open={showInvioMassivo}
+        onOpenChange={setShowInvioMassivo}
+        entityType="animatori"
+        recipients={invioRecipients}
+        filterGroups={invioFilterGroups}
+        recipientsLabel="membri staff"
+      />
+
     </MainLayout>
   );
 }
