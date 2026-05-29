@@ -501,6 +501,14 @@ export default function TurnoPage() {
   const [tendaSaving, setTendaSaving] = useState(false);
   const [dlIncludeRagazzi, setDlIncludeRagazzi] = useState(true);
   const [dlIncludeStaff, setDlIncludeStaff] = useState(true);
+  const [dlRagazziFields, setDlRagazziFields] = useState<Record<string, boolean>>({
+    cognome: true, nome: true, data_nascita: false, genitore: true,
+    telefono: true, email: false, residenza: false, indirizzo: false,
+    allergie: false, foto: false, doppione: true,
+  });
+  const [dlStaffFields, setDlStaffFields] = useState<Record<string, boolean>>({
+    nome_cognome: true, ruolo: true, telefono: true, email: true, data_nascita: false,
+  });
 
   const turnoInfo = TURNI.find(t => t.slug === turnoSlug);
   const turnoValue = turnoInfo?.value ?? '';
@@ -782,70 +790,96 @@ export default function TurnoPage() {
     }
   };
 
-  // Download PDF with sections
+  // Field definitions for the customizable PDF list
+  const RAGAZZI_FIELD_DEFS: { key: string; label: string; get: (r: any) => string }[] = [
+    { key: 'cognome', label: 'Cognome', get: (r) => r.ragazzo_cognome || '' },
+    { key: 'nome', label: 'Nome', get: (r) => r.ragazzo_nome || '' },
+    { key: 'data_nascita', label: 'Data di nascita', get: (r) => r.ragazzo_data_nascita || '' },
+    { key: 'genitore', label: 'Genitore', get: (r) => `${r.genitore_nome || ''} ${r.genitore_cognome || ''}`.trim() },
+    { key: 'telefono', label: 'Telefono', get: (r) => r.recapiti_telefonici || '' },
+    { key: 'email', label: 'Email', get: (r) => r.email || '' },
+    { key: 'residenza', label: 'Residenza', get: (r) => r.ragazzo_residente || '' },
+    { key: 'indirizzo', label: 'Indirizzo', get: (r) => r.ragazzo_indirizzo || '' },
+    { key: 'allergie', label: 'Allergie/Patologie', get: (r) => (r.ha_allergie ? (r.allergie_dettaglio || r.patologie_dettaglio || 'Sì') : '') },
+    { key: 'foto', label: 'Consenso foto', get: (r) => (r.liberatoria_foto ? 'Sì' : 'No') },
+    { key: 'doppione', label: 'Segnalazione', get: (r) => (duplicateIscrizioneIds.has(r.id) ? 'DOPPIONE' : '') },
+  ];
+
+  const STAFF_FIELD_DEFS: { key: string; label: string; get: (a: AnimatoreCompleto) => string }[] = [
+    { key: 'nome_cognome', label: 'Nome e Cognome', get: (a) => a.full_name },
+    { key: 'ruolo', label: 'Ruolo', get: (a) => RUOLO_LABELS[a.ruolo] || a.ruolo },
+    { key: 'telefono', label: 'Telefono', get: (a) => a.telefono || '' },
+    { key: 'email', label: 'Email', get: (a) => a.email || '' },
+    { key: 'data_nascita', label: 'Data di nascita', get: (a) => a.data_nascita || '' },
+  ];
+
+  // Download PDF with sections — A4 portrait, columns adapt to selected fields
   const handleDownloadPDF = async () => {
     if (!dlIncludeRagazzi && !dlIncludeStaff) return;
 
     const { jsPDF } = await import('jspdf');
     const { autoTable } = await import('jspdf-autotable');
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     let currentY = 20;
+    let sectionsRendered = 0;
 
     if (dlIncludeRagazzi) {
-      doc.setFontSize(16);
-      doc.text(`Ragazzi — ${turnoLabel}`, 14, currentY);
+      const cols = RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]);
+      if (cols.length > 0) {
+        doc.setFontSize(16);
+        doc.text(`Ragazzi — ${turnoLabel}`, 14, currentY);
 
-      const rows = sortedIscrizioni.map((r: any) => [
-        `${r.ragazzo_cognome} ${r.ragazzo_nome}`,
-        `${r.genitore_nome} ${r.genitore_cognome}`,
-        r.recapiti_telefonici || '',
-        duplicateIscrizioneIds.has(r.id) ? 'DOPPIONE' : '',
-      ]);
+        const rows = sortedIscrizioni.map((r: any) => cols.map((c) => c.get(r)));
 
-      autoTable(doc, {
-        startY: currentY + 10,
-        head: [['Nome e Cognome Ragazzo', 'Nome e Cognome Genitore', 'Telefono', 'Segnalazione']],
-        body: rows,
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [59, 130, 246] },
-      });
+        autoTable(doc, {
+          startY: currentY + 10,
+          head: [cols.map((c) => c.label)],
+          body: rows,
+          styles: { fontSize: 10, overflow: 'linebreak', cellWidth: 'auto' },
+          headStyles: { fillColor: [59, 130, 246] },
+          margin: { left: 14, right: 14 },
+          tableWidth: 'auto',
+        });
 
-      currentY = (doc as any).lastAutoTable?.finalY ?? currentY + 30;
+        currentY = (doc as any).lastAutoTable?.finalY ?? currentY + 30;
+        sectionsRendered++;
+      }
     }
 
     if (dlIncludeStaff) {
-      if (dlIncludeRagazzi) {
-        doc.addPage();
-        currentY = 20;
+      const cols = STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]);
+      if (cols.length > 0) {
+        if (sectionsRendered > 0) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        doc.setFontSize(16);
+        doc.text(`Staff — ${turnoLabel}`, 14, currentY);
+
+        const sortedStaff = [...animatoriTurno].sort((a, b) => {
+          const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
+          if (r !== 0) return r;
+          return a.full_name.toLowerCase().localeCompare(b.full_name.toLowerCase());
+        });
+        const staffRows = sortedStaff.map((a: AnimatoreCompleto) => cols.map((c) => c.get(a)));
+
+        autoTable(doc, {
+          startY: currentY + 10,
+          head: [cols.map((c) => c.label)],
+          body: staffRows,
+          styles: { fontSize: 10, overflow: 'linebreak', cellWidth: 'auto' },
+          headStyles: { fillColor: [59, 130, 246] },
+          margin: { left: 14, right: 14 },
+          tableWidth: 'auto',
+        });
       }
-
-      doc.setFontSize(16);
-      doc.text(`Staff — ${turnoLabel}`, 14, currentY);
-
-      const sortedStaff = [...animatoriTurno].sort((a, b) => {
-        const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
-        if (r !== 0) return r;
-        return a.full_name.toLowerCase().localeCompare(b.full_name.toLowerCase());
-      });
-      const staffRows = sortedStaff.map((a: AnimatoreCompleto) => [
-        a.full_name,
-        RUOLO_LABELS[a.ruolo] || a.ruolo,
-        a.telefono || '',
-        a.email || '',
-      ]);
-
-      autoTable(doc, {
-        startY: currentY + 10,
-        head: [['Nome e Cognome', 'Ruolo', 'Telefono', 'Email']],
-        body: staffRows,
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [59, 130, 246] },
-      });
     }
 
     doc.save(`lista-${turnoSlug}.pdf`);
   };
+
 
   const handleTabClick = (tab: TabType) => {
     setActiveTab(tab);
@@ -1132,37 +1166,84 @@ export default function TurnoPage() {
         {/* ─── Tab: Download lista ─── */}
         {activeTab === 'download-lista' && (
           <Card className="border-0 shadow-sm rounded-2xl">
-            <CardContent className="p-6 space-y-5">
-              <p className="text-sm text-muted-foreground">Seleziona cosa includere nel PDF:</p>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dlIncludeRagazzi}
-                    onChange={(e) => setDlIncludeRagazzi(e.target.checked)}
-                    className="h-5 w-5 rounded border-2 border-primary accent-primary"
-                  />
-                  <div>
+            <CardContent className="p-6 space-y-6">
+              <div>
+                <p className="text-sm text-muted-foreground mb-3">Seleziona quali sezioni includere nel PDF:</p>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={dlIncludeRagazzi}
+                      onChange={(e) => setDlIncludeRagazzi(e.target.checked)}
+                      className="h-5 w-5 rounded border-2 border-primary accent-primary"
+                    />
                     <p className="font-medium text-foreground">Ragazzi</p>
-                    <p className="text-xs text-muted-foreground">Nome, genitore e telefono</p>
-                  </div>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dlIncludeStaff}
-                    onChange={(e) => setDlIncludeStaff(e.target.checked)}
-                    className="h-5 w-5 rounded border-2 border-primary accent-primary"
-                  />
-                  <div>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={dlIncludeStaff}
+                      onChange={(e) => setDlIncludeStaff(e.target.checked)}
+                      className="h-5 w-5 rounded border-2 border-primary accent-primary"
+                    />
                     <p className="font-medium text-foreground">Staff</p>
-                    <p className="text-xs text-muted-foreground">Animatori, cuochi e responsabili di campo</p>
-                  </div>
-                </label>
+                  </label>
+                </div>
               </div>
+
+              {dlIncludeRagazzi && (
+                <div className="rounded-xl border p-4 space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Colonne lista Ragazzi</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {RAGAZZI_FIELD_DEFS.map((f) => (
+                      <label key={f.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={!!dlRagazziFields[f.key]}
+                          onChange={(e) => setDlRagazziFields((p) => ({ ...p, [f.key]: e.target.checked }))}
+                          className="h-4 w-4 rounded border-2 border-primary accent-primary"
+                        />
+                        {f.label}
+                      </label>
+                    ))}
+                  </div>
+                  {RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]).length === 0 && (
+                    <p className="text-xs text-destructive">Seleziona almeno una colonna.</p>
+                  )}
+                </div>
+              )}
+
+              {dlIncludeStaff && (
+                <div className="rounded-xl border p-4 space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Colonne lista Staff</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {STAFF_FIELD_DEFS.map((f) => (
+                      <label key={f.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={!!dlStaffFields[f.key]}
+                          onChange={(e) => setDlStaffFields((p) => ({ ...p, [f.key]: e.target.checked }))}
+                          className="h-4 w-4 rounded border-2 border-primary accent-primary"
+                        />
+                        {f.label}
+                      </label>
+                    ))}
+                  </div>
+                  {STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]).length === 0 && (
+                    <p className="text-xs text-destructive">Seleziona almeno una colonna.</p>
+                  )}
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground">Il PDF è in formato A4 verticale: le colonne si adattano automaticamente al numero di campi selezionati.</p>
+
               <Button
                 className="rounded-full gap-2"
-                disabled={!dlIncludeRagazzi && !dlIncludeStaff}
+                disabled={
+                  (!dlIncludeRagazzi && !dlIncludeStaff) ||
+                  (dlIncludeRagazzi && RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]).length === 0) ||
+                  (dlIncludeStaff && STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]).length === 0)
+                }
                 onClick={handleDownloadPDF}
               >
                 <Download className="h-4 w-4" /> Scarica PDF
@@ -1170,6 +1251,7 @@ export default function TurnoPage() {
             </CardContent>
           </Card>
         )}
+
 
 
         {activeTab === 'appello' && (
