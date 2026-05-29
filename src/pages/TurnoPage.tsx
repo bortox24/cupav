@@ -505,6 +505,19 @@ export default function TurnoPage() {
   const { turnoSlug } = useParams<{ turnoSlug: string }>();
   const { user, isAdmin } = useAuth();
   const { data: myPerms = [], isLoading: permsLoading } = useMyTurnoPermissions();
+
+  // Determine if the current user is a staff account (created from Anagrafica Staff)
+  const { data: isStaffAccount = false } = useQuery({
+    queryKey: ['is-staff-account', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('is_staff_account');
+      if (error) throw error;
+      return !!data;
+    },
+    enabled: !!user,
+  });
+  // Staff accounts (non-admin) can only download a restricted set of fields
+  const restrictFields = isStaffAccount && !isAdmin;
   const queryClient = useQueryClient();
   const [selectedRagazzo, setSelectedRagazzo] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
