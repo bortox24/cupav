@@ -1,44 +1,46 @@
-## Export PDF — Turno Montaggio Campeggio
+## Obiettivo
 
-Aggiungo un pulsante **"Esporta PDF"** nella pagina `/turno/montaggio-campeggio` (accanto a "Calendario" e "Apri anagrafica completa") che genera un PDF completo con riepiloghi, suddivisioni per giorno ed elenco iscritti.
+Portare lo stesso pulsante **"Invio Massivo"** (wizard a 3 step → invio in background con banner di avanzamento, monitor, interruzione e log) — oggi presente solo in **Anagrafica Ragazzi** — anche in **Anagrafica Staff** e nella pagina **Montaggio Campeggio**, usando sempre lo stesso webhook `Invio comunicazione custom`.
 
-### Struttura del PDF
+## Comportamento confermato
 
-**Pagina 1 — Riepilogo generale**
+- **Webhook**: sempre `Invio comunicazione custom` per tutti e tre i tipi.
+- **Filtri Staff**: per ruolo (Animatore / Cuoco / Resp. Campo / Resp. Animatori) **e** per turno assegnato.
+- **Filtri Montaggio**: per giorno selezionato (Sab 30/05, Dom 31/05, Lun 01/06, Mar 02/06) con anche la voce **"Tutti"**.
 
-- Header arancione/ambra con titolo "Montaggio Campeggio 2026" e data di generazione
-- 3 card grandi con i totali: Iscrizioni, Persone totali, Totale da versare (€)
-- Grafico a barre orizzontali: **Suddivisione per fascia d'età** (Adulti / Figli >10 / Bambini 4–10 / Bambini 0–3) con valori assoluti e percentuali
-- Grafico a barre verticali: **Presenze per giornata** (Sab 30/05, Dom 31/05, Lun 01/06, Mar 02/06)
+## Come funziona oggi
 
-**Pagina 2 — Dettaglio giornaliero**
-Tabella con una riga per ciascuno dei 4 giorni e colonne:
-| Giorno | Adulti | Figli >10 | 4–10 anni | 0–3 anni | **Totale** |
+Il sistema è interamente legato ai ragazzi:
+- `InvioMassivoDialog` (filtri turni/numero, destinatari = ragazzi).
+- Edge function `invio-massivo-runner` carica da `ragazzi`/`ragazzi_genitori`, manda al webhook fisso e logga su `anagrafica_invio_logs` (con `ragazzo_id`).
+- Tabelle `invio_massivo_jobs` / `invio_massivo_job_items` + hook `useInvioMassivoJob` + `InvioMassivoBanner` + `InvioMassivoMonitorDialog` (già globali).
 
-I numeri coincidono esattamente con quelli mostrati nel Calendario presenze.
+Staff (`animatori`) e Montaggio (`iscrizioni_montaggio`) hanno l'**email direttamente sul record**, quindi sono più semplici dei ragazzi.
 
-**Pagine seguenti — Elenco iscritti**  
-Tabella paginata automaticamente (≈15–20 righe per pagina A4) con tutti gli iscritti non archiviati, ordinati per Cognome Nome. Colonne:  
-| Cognome Nome | Residenza | Giorni selezionati | Adulti | >10 | 4–10 | 0–3 | **Tot pers.** | Notti | **Importo €** |
+## Modifiche previste
 
-In fondo all'ultima pagina: riga riepilogo con **totale persone** e **totale importo** da versare.
+### 1. Database (migration)
+- Aggiungere colonna `entity_type text NOT NULL DEFAULT 'ragazzi'` a `invio_massivo_jobs` (valori: `ragazzi` | `animatori` | `montaggio`).
+- Allargare le RLS di `invio_massivo_jobs` e `invio_massivo_job_items` perché oggi consentono accesso solo a chi ha `/anagrafica-ragazzi`. Aggiungere `OR has_page_access(..., '/anagrafica-animatori')` e `OR has_page_access(..., '/anagrafica-montaggio-campeggio')` su SELECT/INSERT/UPDATE.
+- Nessuna nuova tabella: gli `job_items` riutilizzano `ragazzo_full_name` come nome destinatario, `genitore_nome` come nome di personalizzazione email, e `payload` (jsonb) per email + id origine.
 
-Footer su tutte le pagine: "CUPAV — Montaggio Campeggio" + numero pagina.
+### 2. Edge function `invio-massivo-runner`
+- Accettare `entity_type` e una lista generica di id (`recipient_ids`), mantenendo `ragazzi_ids` per retrocompatibilità.
+- `verifyUser`: autorizzare in base alla pagina coerente con `entity_type`.
+- Caricamento destinatari per tipo:
+  - `ragazzi`: logica attuale.
+  - `animatori`: da `animatori` (non archiviati, con email), filtrati per `ruolo` e per turno via `animatori_turni`. Nome personalizzazione = `full_name`.
+  - `montaggio`: da `iscrizioni_montaggio` (non archiviati, con email), filtrati per giorni selezionati.
+- Webhook sempre `Invio comunicazione custom`. Nel body, oltre ai campi attuali, includere `email` e un array compatibile `genitori: [{ nome_cognome, email }]` così l'attuale flusso n8n (che itera i destinatari) funziona anche per staff/montaggio, più `entity_type`.
+- Logging per tipo: `ragazzi` → `anagrafica_invio_logs.ragazzo_id`; `montaggio` → `anagrafica_invio_logs.iscrizione_montaggio_id`; `animatori` → `staff_activity_logs.animatore_id` (azione `invio_massivo`).
 
-### Dettagli tecnici
+### 3. Frontend
+- Refactor di `InvioMassivoDialog` per accettare una **configurazione** (`entity_type`, lista destinatari, UI filtri, come mostrare nome/badge destinatario), mantenendo identico il flusso a 3 step e l'anteprima email.
+- **Anagrafica Staff** (`AnagraficaAnimatori.tsx`): pulsante "Invio Massivo" (icona Megaphone) con filtri ruolo + turno.
+- **Montaggio Campeggio** (`TurnoMontaggioPage.tsx`): pulsante "Invio Massivo" accanto a Esporta PDF/Calendario, con filtro giorni + "Tutti".
+- Banner e monitor restano globali e già compatibili (lavorano su `invio_massivo_jobs` a prescindere dal tipo); funzionano grazie all'allargamento RLS.
 
-- Libreria: **jsPDF + jspdf-autotable** (già adatte a tabelle paginate; nessuna dipendenza nuova pesante). I "grafici" della pagina 1 sono disegnati direttamente con primitive `rect()` per restare leggeri e nitidi (no canvas/png).
-- Nuovo file `src/lib/exportMontaggioPdf.ts` che esporta `exportMontaggioPdf(items: IscrizioneMontaggio[])`:
-  - calcola aggregati per fascia d'età e per giorno (riusa `GIORNI_MONTAGGIO`, `totalePartecipanti`, `formatEuro`)
-  - genera le 3 sezioni descritte sopra
-  - salva con nome `montaggio-campeggio-YYYY-MM-DD.pdf`
-- Modifica `src/pages/TurnoMontaggioPage.tsx`:
-  - aggiungo pulsante `<Button variant="outline">Esporta PDF</Button>` con icona `FileDown` nella riga azioni
-  - onClick chiama `exportMontaggioPdf(items)` (solo iscritti non archiviati, stessi dati visibili in pagina)
-  - toast di conferma con `sonner`
-- Colori: palette ambra/arancione coerente con la pagina (`#f59e0b`, `#ea580c`) per header e barre.
-
-### Cosa NON cambia
-
-- Nessuna modifica al database o agli edge function.
-- L'anagrafica completa, il calendario e le card restano invariati.
+## Cosa NON cambia
+- Il webhook resta unico (`Invio comunicazione custom`).
+- I wizard di invio singolo esistenti restano invariati.
+- Nessuna modifica all'invio massivo ragazzi (resta retrocompatibile).
