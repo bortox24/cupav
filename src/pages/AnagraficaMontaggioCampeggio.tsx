@@ -542,7 +542,18 @@ export default function AnagraficaMontaggioCampeggio() {
           <Button variant="outline" className="w-full sm:w-auto" onClick={exportCsv} disabled={filtered.length === 0}>
             <Download className="h-4 w-4 mr-2" />Export CSV
           </Button>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              if (invioRecipients.length === 0) { toast.info('Nessun iscritto con email'); return; }
+              setInvioOpen(true);
+            }}
+          >
+            <Megaphone className="h-4 w-4 mr-2" />Invio Massivo
+          </Button>
         </div>
+
 
         {isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
