@@ -1340,6 +1340,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_staff_account: { Args: never; Returns: boolean }
       is_tesoriere: { Args: never; Returns: boolean }
       is_user_active: { Args: never; Returns: boolean }
       is_visualizzatore: { Args: never; Returns: boolean }

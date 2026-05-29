@@ -28,6 +28,23 @@ const toTitleCase = (s?: string | null) =>
     .toLowerCase()
     .replace(/(^|[\s'’\-])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase());
 
+// Format a birth date as dd/MM/yyyy. Accepts ISO (yyyy-MM-dd) or other parseable
+// values; falls back to the original text if it isn't a valid date.
+const formatDob = (v?: string | null): string => {
+  if (!v) return '';
+  const s = String(v).trim();
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return format(d, 'dd/MM/yyyy');
+  return s;
+};
+
+// Fields staff accounts are allowed to download
+const ALLOWED_RAGAZZI_STAFF = ['cognome', 'nome', 'data_nascita'];
+const ALLOWED_STAFF_STAFF = ['nome_cognome', 'data_nascita'];
+
 const normalizeDuplicateName = (name: string) =>
   name
     .normalize('NFD')
@@ -488,6 +505,19 @@ export default function TurnoPage() {
   const { turnoSlug } = useParams<{ turnoSlug: string }>();
   const { user, isAdmin } = useAuth();
   const { data: myPerms = [], isLoading: permsLoading } = useMyTurnoPermissions();
+
+  // Determine if the current user is a staff account (created from Anagrafica Staff)
+  const { data: isStaffAccount = false } = useQuery({
+    queryKey: ['is-staff-account', user?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)('is_staff_account');
+      if (error) throw error;
+      return !!data;
+    },
+    enabled: !!user,
+  });
+  // Staff accounts (non-admin) can only download a restricted set of fields
+  const restrictFields = isStaffAccount && !isAdmin;
   const queryClient = useQueryClient();
   const [selectedRagazzo, setSelectedRagazzo] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -794,7 +824,7 @@ export default function TurnoPage() {
   const RAGAZZI_FIELD_DEFS: { key: string; label: string; get: (r: any) => string }[] = [
     { key: 'cognome', label: 'Cognome', get: (r) => r.ragazzo_cognome || '' },
     { key: 'nome', label: 'Nome', get: (r) => r.ragazzo_nome || '' },
-    { key: 'data_nascita', label: 'Data di nascita', get: (r) => r.ragazzo_data_nascita || '' },
+    { key: 'data_nascita', label: 'Data di nascita', get: (r) => formatDob(r.ragazzo_data_nascita) },
     { key: 'genitore', label: 'Genitore', get: (r) => `${r.genitore_nome || ''} ${r.genitore_cognome || ''}`.trim() },
     { key: 'telefono', label: 'Telefono', get: (r) => r.recapiti_telefonici || '' },
     { key: 'email', label: 'Email', get: (r) => r.email || '' },
@@ -810,8 +840,37 @@ export default function TurnoPage() {
     { key: 'ruolo', label: 'Ruolo', get: (a) => RUOLO_LABELS[a.ruolo] || a.ruolo },
     { key: 'telefono', label: 'Telefono', get: (a) => a.telefono || '' },
     { key: 'email', label: 'Email', get: (a) => a.email || '' },
-    { key: 'data_nascita', label: 'Data di nascita', get: (a) => a.data_nascita || '' },
+    { key: 'data_nascita', label: 'Data di nascita', get: (a) => formatDob(a.data_nascita) },
   ];
+
+  // Field defs visible/selectable depending on account type
+  const visibleRagazziDefs = restrictFields
+    ? RAGAZZI_FIELD_DEFS.filter((f) => ALLOWED_RAGAZZI_STAFF.includes(f.key))
+    : RAGAZZI_FIELD_DEFS;
+  const visibleStaffDefs = restrictFields
+    ? STAFF_FIELD_DEFS.filter((f) => ALLOWED_STAFF_STAFF.includes(f.key))
+    : STAFF_FIELD_DEFS;
+
+  // For staff accounts, force selection to allowed fields only
+  useEffect(() => {
+    if (!restrictFields) return;
+    setDlRagazziFields((prev) => {
+      const next: Record<string, boolean> = {};
+      RAGAZZI_FIELD_DEFS.forEach((f) => {
+        next[f.key] = ALLOWED_RAGAZZI_STAFF.includes(f.key) ? (prev[f.key] ?? true) : false;
+      });
+      return next;
+    });
+    setDlStaffFields((prev) => {
+      const next: Record<string, boolean> = {};
+      STAFF_FIELD_DEFS.forEach((f) => {
+        next[f.key] = ALLOWED_STAFF_STAFF.includes(f.key) ? (prev[f.key] ?? true) : false;
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restrictFields]);
+
 
   // Download PDF with sections — A4 portrait, columns adapt to selected fields
   const handleDownloadPDF = async () => {
@@ -825,7 +884,7 @@ export default function TurnoPage() {
     let sectionsRendered = 0;
 
     if (dlIncludeRagazzi) {
-      const cols = RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]);
+      const cols = RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key] && (!restrictFields || ALLOWED_RAGAZZI_STAFF.includes(f.key)));
       if (cols.length > 0) {
         doc.setFontSize(16);
         doc.text(`Ragazzi — ${turnoLabel}`, 14, currentY);
@@ -848,7 +907,7 @@ export default function TurnoPage() {
     }
 
     if (dlIncludeStaff) {
-      const cols = STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]);
+      const cols = STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key] && (!restrictFields || ALLOWED_STAFF_STAFF.includes(f.key)));
       if (cols.length > 0) {
         if (sectionsRendered > 0) {
           doc.addPage();
@@ -1195,7 +1254,7 @@ export default function TurnoPage() {
                 <div className="rounded-xl border p-4 space-y-3">
                   <p className="text-sm font-semibold text-foreground">Colonne lista Ragazzi</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {RAGAZZI_FIELD_DEFS.map((f) => (
+                    {visibleRagazziDefs.map((f) => (
                       <label key={f.key} className="flex items-center gap-2 cursor-pointer text-sm">
                         <input
                           type="checkbox"
@@ -1207,7 +1266,7 @@ export default function TurnoPage() {
                       </label>
                     ))}
                   </div>
-                  {RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]).length === 0 && (
+                  {visibleRagazziDefs.filter((f) => dlRagazziFields[f.key]).length === 0 && (
                     <p className="text-xs text-destructive">Seleziona almeno una colonna.</p>
                   )}
                 </div>
@@ -1217,7 +1276,7 @@ export default function TurnoPage() {
                 <div className="rounded-xl border p-4 space-y-3">
                   <p className="text-sm font-semibold text-foreground">Colonne lista Staff</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {STAFF_FIELD_DEFS.map((f) => (
+                    {visibleStaffDefs.map((f) => (
                       <label key={f.key} className="flex items-center gap-2 cursor-pointer text-sm">
                         <input
                           type="checkbox"
@@ -1229,7 +1288,7 @@ export default function TurnoPage() {
                       </label>
                     ))}
                   </div>
-                  {STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]).length === 0 && (
+                  {visibleStaffDefs.filter((f) => dlStaffFields[f.key]).length === 0 && (
                     <p className="text-xs text-destructive">Seleziona almeno una colonna.</p>
                   )}
                 </div>
@@ -1241,8 +1300,8 @@ export default function TurnoPage() {
                 className="rounded-full gap-2"
                 disabled={
                   (!dlIncludeRagazzi && !dlIncludeStaff) ||
-                  (dlIncludeRagazzi && RAGAZZI_FIELD_DEFS.filter((f) => dlRagazziFields[f.key]).length === 0) ||
-                  (dlIncludeStaff && STAFF_FIELD_DEFS.filter((f) => dlStaffFields[f.key]).length === 0)
+                  (dlIncludeRagazzi && visibleRagazziDefs.filter((f) => dlRagazziFields[f.key]).length === 0) ||
+                  (dlIncludeStaff && visibleStaffDefs.filter((f) => dlStaffFields[f.key]).length === 0)
                 }
                 onClick={handleDownloadPDF}
               >

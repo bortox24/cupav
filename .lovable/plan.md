@@ -1,46 +1,56 @@
 ## Obiettivo
 
-Portare lo stesso pulsante **"Invio Massivo"** (wizard a 3 step → invio in background con banner di avanzamento, monitor, interruzione e log) — oggi presente solo in **Anagrafica Ragazzi** — anche in **Anagrafica Staff** e nella pagina **Montaggio Campeggio**, usando sempre lo stesso webhook `Invio comunicazione custom`.
+1. Limitare il download delle liste per gli **account staff** (creati dalla pagina Anagrafica Staff): potranno scaricare solo **Nome, Cognome e Data di nascita**. Gli **utenti reali** e gli **admin** mantengono il download completo con tutti i campi e i filtri attuali.
+2. Nel PDF, la **Data di nascita** deve essere sempre formattata in **giorno/mese/anno (dd/MM/yyyy)**, non anno-mese-giorno.
 
-## Comportamento confermato
+## Come distinguere staff da utente reale
 
-- **Webhook**: sempre `Invio comunicazione custom` per tutti e tre i tipi.
-- **Filtri Staff**: per ruolo (Animatore / Cuoco / Resp. Campo / Resp. Animatori) **e** per turno assegnato.
-- **Filtri Montaggio**: per giorno selezionato (Sab 30/05, Dom 31/05, Lun 01/06, Mar 02/06) con anche la voce **"Tutti"**.
+Gli account staff hanno una riga nella tabella `staff_accounts` (collegata al loro `user_id`). Le policy attuali permettono di leggere quella tabella solo agli admin, quindi un account staff non può verificare il proprio stato direttamente. Serve quindi una funzione lato database che restituisca se l'utente corrente è un account staff.
 
-## Come funziona oggi
+## Passi
 
-Il sistema è interamente legato ai ragazzi:
-- `InvioMassivoDialog` (filtri turni/numero, destinatari = ragazzi).
-- Edge function `invio-massivo-runner` carica da `ragazzi`/`ragazzi_genitori`, manda al webhook fisso e logga su `anagrafica_invio_logs` (con `ragazzo_id`).
-- Tabelle `invio_massivo_jobs` / `invio_massivo_job_items` + hook `useInvioMassivoJob` + `InvioMassivoBanner` + `InvioMassivoMonitorDialog` (già globali).
+### 1. Database
+- Creare la funzione `public.is_staff_account()` (security definer) che restituisce `true` se `auth.uid()` esiste in `staff_accounts`. Permette al client di sapere in modo sicuro se l'utente corrente è un account staff, senza esporre i dati della tabella.
 
-Staff (`animatori`) e Montaggio (`iscrizioni_montaggio`) hanno l'**email direttamente sul record**, quindi sono più semplici dei ragazzi.
+### 2. Pagina Turno (`src/pages/TurnoPage.tsx`)
 
-## Modifiche previste
+**Restrizione campi per staff**
+- Chiamare la nuova funzione via RPC all'avvio per ottenere `isStaffAccount`.
+- Campi consentiti agli staff:
+  - Ragazzi: `cognome`, `nome`, `data_nascita`
+  - Staff: `nome_cognome`, `data_nascita`
+- Quando l'utente è account staff (e non admin): mostrare nella tab "Download lista" solo le checkbox dei campi consentiti (gli altri nascosti) e forzare i default coerenti.
+- Utenti reali/admin: nessun cambiamento, tutti i campi e filtri restano disponibili.
+- In `handleDownloadPDF` riapplicare il filtro di sicurezza che, per gli staff, esclude qualsiasi campo non consentito anche con stati manipolati.
 
-### 1. Database (migration)
-- Aggiungere colonna `entity_type text NOT NULL DEFAULT 'ragazzi'` a `invio_massivo_jobs` (valori: `ragazzi` | `animatori` | `montaggio`).
-- Allargare le RLS di `invio_massivo_jobs` e `invio_massivo_job_items` perché oggi consentono accesso solo a chi ha `/anagrafica-ragazzi`. Aggiungere `OR has_page_access(..., '/anagrafica-animatori')` e `OR has_page_access(..., '/anagrafica-montaggio-campeggio')` su SELECT/INSERT/UPDATE.
-- Nessuna nuova tabella: gli `job_items` riutilizzano `ragazzo_full_name` come nome destinatario, `genitore_nome` come nome di personalizzazione email, e `payload` (jsonb) per email + id origine.
+**Formato Data di nascita nel PDF**
+- Nelle funzioni `get` dei campi `data_nascita` (ragazzi e staff), formattare il valore in `dd/MM/yyyy` invece di restituire la stringa grezza (oggi `yyyy-MM-dd`).
+- Usare una formattazione robusta: se il valore è già in formato data valido lo si converte in `dd/MM/yyyy`, altrimenti si lascia il testo originale (i campi `data_nascita` di staff/ragazzi sono `text` e potrebbero non essere sempre date ISO).
 
-### 2. Edge function `invio-massivo-runner`
-- Accettare `entity_type` e una lista generica di id (`recipient_ids`), mantenendo `ragazzi_ids` per retrocompatibilità.
-- `verifyUser`: autorizzare in base alla pagina coerente con `entity_type`.
-- Caricamento destinatari per tipo:
-  - `ragazzi`: logica attuale.
-  - `animatori`: da `animatori` (non archiviati, con email), filtrati per `ruolo` e per turno via `animatori_turni`. Nome personalizzazione = `full_name`.
-  - `montaggio`: da `iscrizioni_montaggio` (non archiviati, con email), filtrati per giorni selezionati.
-- Webhook sempre `Invio comunicazione custom`. Nel body, oltre ai campi attuali, includere `email` e un array compatibile `genitori: [{ nome_cognome, email }]` così l'attuale flusso n8n (che itera i destinatari) funziona anche per staff/montaggio, più `entity_type`.
-- Logging per tipo: `ragazzi` → `anagrafica_invio_logs.ragazzo_id`; `montaggio` → `anagrafica_invio_logs.iscrizione_montaggio_id`; `animatori` → `staff_activity_logs.animatore_id` (azione `invio_massivo`).
+## Dettagli tecnici
 
-### 3. Frontend
-- Refactor di `InvioMassivoDialog` per accettare una **configurazione** (`entity_type`, lista destinatari, UI filtri, come mostrare nome/badge destinatario), mantenendo identico il flusso a 3 step e l'anteprima email.
-- **Anagrafica Staff** (`AnagraficaAnimatori.tsx`): pulsante "Invio Massivo" (icona Megaphone) con filtri ruolo + turno.
-- **Montaggio Campeggio** (`TurnoMontaggioPage.tsx`): pulsante "Invio Massivo" accanto a Esporta PDF/Calendario, con filtro giorni + "Tutti".
-- Banner e monitor restano globali e già compatibili (lavorano su `invio_massivo_jobs` a prescindere dal tipo); funzionano grazie all'allargamento RLS.
+```sql
+CREATE OR REPLACE FUNCTION public.is_staff_account()
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.staff_accounts WHERE user_id = auth.uid()
+  )
+$$;
+```
 
-## Cosa NON cambia
-- Il webhook resta unico (`Invio comunicazione custom`).
-- I wizard di invio singolo esistenti restano invariati.
-- Nessuna modifica all'invio massivo ragazzi (resta retrocompatibile).
+Nel componente:
+```text
+ALLOWED_RAGAZZI_STAFF = ['cognome','nome','data_nascita']
+ALLOWED_STAFF_STAFF   = ['nome_cognome','data_nascita']
+```
+Helper di formattazione data (es.):
+```text
+formatDob(v) -> v ISO/Date valido ? format(date,'dd/MM/yyyy') : v
+```
+applicato nei `get` di `data_nascita` per ragazzi (`ragazzo_data_nascita`) e staff (`data_nascita`).
+
+## Nota
+
+La restrizione campi è lato interfaccia: i dati grezzi restano accessibili via le query esistenti (le policy RLS non cambiano). Se vuoi nascondere i campi sensibili anche a livello di dati servirà un intervento sulle policy/viste — fammelo sapere.
