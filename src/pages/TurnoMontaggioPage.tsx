@@ -26,19 +26,7 @@ export default function TurnoMontaggioPage() {
   const { data: allItems = [], isLoading } = useIscrizioniMontaggio();
   const items = allItems.filter(i => !i.archiviato);
   const [calendarioOpen, setCalendarioOpen] = useState(false);
-  const [invioOpen, setInvioOpen] = useState(false);
 
-  const invioRecipients: GenericRecipient[] = items
-    .filter(i => i.email)
-    .map(i => ({
-      id: i.id,
-      full_name: `${i.cognome} ${i.nome}`.trim(),
-      badges: (i.giorni_selezionati ?? []).map(g => ({
-        label: GIORNI_MONTAGGIO.find(x => x.value === g)?.short ?? g,
-        variant: 'secondary' as const,
-      })),
-      tags: { giorni: i.giorni_selezionati ?? [] },
-    }));
 
   const totalePersone = items.reduce((s, i) => s + totalePartecipanti(i), 0);
   const totaleImporto = items.reduce((s, i) => s + (i.importo_totale_calcolato ?? 0), 0);
