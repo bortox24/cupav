@@ -27,8 +27,9 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Loader2, Search, Phone, Mail, Pencil, Plus, Trash2, X, Save,
   Archive, ArchiveRestore, GraduationCap, StickyNote, AlertTriangle, UserPlus, Copy, Check,
-  History, ChevronDown,
+  History, ChevronDown, Megaphone,
 } from 'lucide-react';
+import { InvioMassivoGenericDialog, GenericRecipient } from '@/components/InvioMassivoGenericDialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
