@@ -811,7 +811,7 @@ export default function TurnoPage() {
   const RAGAZZI_FIELD_DEFS: { key: string; label: string; get: (r: any) => string }[] = [
     { key: 'cognome', label: 'Cognome', get: (r) => r.ragazzo_cognome || '' },
     { key: 'nome', label: 'Nome', get: (r) => r.ragazzo_nome || '' },
-    { key: 'data_nascita', label: 'Data di nascita', get: (r) => r.ragazzo_data_nascita || '' },
+    { key: 'data_nascita', label: 'Data di nascita', get: (r) => formatDob(r.ragazzo_data_nascita) },
     { key: 'genitore', label: 'Genitore', get: (r) => `${r.genitore_nome || ''} ${r.genitore_cognome || ''}`.trim() },
     { key: 'telefono', label: 'Telefono', get: (r) => r.recapiti_telefonici || '' },
     { key: 'email', label: 'Email', get: (r) => r.email || '' },
