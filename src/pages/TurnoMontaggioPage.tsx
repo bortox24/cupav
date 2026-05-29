@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { GIORNI_MONTAGGIO, formatEuro } from '@/lib/tariffeMontaggio';
 import { CalendarioPresenzeDialog, GiornoCalendario } from '@/components/CalendarioPresenzeDialog';
 import { exportMontaggioPdf } from '@/lib/exportMontaggioPdf';
+import { InvioMassivoGenericDialog, GenericRecipient } from '@/components/InvioMassivoGenericDialog';
+import { Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 function totalePartecipanti(i: IscrizioneMontaggio) {
