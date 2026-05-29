@@ -510,7 +510,7 @@ export default function TurnoPage() {
   const { data: isStaffAccount = false } = useQuery({
     queryKey: ['is-staff-account', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('is_staff_account');
+      const { data, error } = await (supabase.rpc as any)('is_staff_account');
       if (error) throw error;
       return !!data;
     },
