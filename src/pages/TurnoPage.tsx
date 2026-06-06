@@ -1049,7 +1049,7 @@ export default function TurnoPage() {
         </div>
 
         {/* ─── Tab: Dettagli ragazzi ─── */}
-        {activeTab === 'dettagli' && (
+        {!isAnimatoreLimitato && activeTab === 'dettagli' && (
           <>
             <Card className="border-0 shadow-sm rounded-2xl bg-muted/30">
               <CardContent className="p-4 space-y-3">
