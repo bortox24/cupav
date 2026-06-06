@@ -1183,7 +1183,7 @@ export default function TurnoPage() {
         )}
 
         {/* ─── Tab: Animatori ─── */}
-        {activeTab === 'animatori' && (
+        {!isAnimatoreLimitato && activeTab === 'animatori' && (
           <>
             {animatoriLoading ? (
               <div className="flex justify-center py-8">
