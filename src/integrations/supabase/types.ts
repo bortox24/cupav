@@ -1344,6 +1344,7 @@ export type Database = {
       is_tesoriere: { Args: never; Returns: boolean }
       is_user_active: { Args: never; Returns: boolean }
       is_visualizzatore: { Args: never; Returns: boolean }
+      my_staff_ruolo: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "tesoriere" | "visualizzatore"
