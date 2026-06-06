@@ -957,6 +957,13 @@ export default function TurnoPage() {
     setActiveTab(tab);
   };
 
+  // Per gli account staff "animatore": se la tab attiva non è consentita, riportala su Appello
+  useEffect(() => {
+    if (isAnimatoreLimitato && (activeTab === 'dettagli' || activeTab === 'animatori')) {
+      setActiveTab('appello');
+    }
+  }, [isAnimatoreLimitato, activeTab]);
+
   // ─── Render guards ─────────
 
   if (!turnoInfo) {
