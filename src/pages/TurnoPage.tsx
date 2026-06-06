@@ -1028,14 +1028,16 @@ export default function TurnoPage() {
           >
             <LayoutGrid className="h-4 w-4" /> Tende
           </Button>
-          <Button
-            variant={activeTab === 'animatori' ? 'default' : 'outline'}
-            size="sm"
-            className="rounded-full gap-1.5"
-            onClick={() => handleTabClick('animatori')}
-          >
-            <UserPlus className="h-4 w-4" /> Staff
-          </Button>
+          {!isAnimatoreLimitato && (
+            <Button
+              variant={activeTab === 'animatori' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full gap-1.5"
+              onClick={() => handleTabClick('animatori')}
+            >
+              <UserPlus className="h-4 w-4" /> Staff
+            </Button>
+          )}
           <Button
             variant={activeTab === 'download-lista' ? 'default' : 'outline'}
             size="sm"
