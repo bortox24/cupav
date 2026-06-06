@@ -518,6 +518,19 @@ export default function TurnoPage() {
   });
   // Staff accounts (non-admin) can only download a restricted set of fields
   const restrictFields = isStaffAccount && !isAdmin;
+
+  // Ruolo dell'account staff corrente (animatore, cuoco, responsabile_*)
+  const { data: staffRuolo = null } = useQuery({
+    queryKey: ['my-staff-ruolo', user?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)('my_staff_ruolo');
+      if (error) throw error;
+      return (data as string | null) ?? null;
+    },
+    enabled: !!user && isStaffAccount && !isAdmin,
+  });
+  // Gli account staff con ruolo "animatore" vedono solo Appello, Tende e Download lista
+  const isAnimatoreLimitato = isStaffAccount && !isAdmin && staffRuolo === 'animatore';
   const queryClient = useQueryClient();
   const [selectedRagazzo, setSelectedRagazzo] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
