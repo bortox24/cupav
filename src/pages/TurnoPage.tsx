@@ -1002,14 +1002,16 @@ export default function TurnoPage() {
       <div className="space-y-6">
         {/* Tab pills */}
         <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            variant={activeTab === 'dettagli' ? 'default' : 'outline'}
-            size="sm"
-            className="rounded-full gap-1.5"
-            onClick={() => handleTabClick('dettagli')}
-          >
-            <Users className="h-4 w-4" /> Dettagli ragazzi
-          </Button>
+          {!isAnimatoreLimitato && (
+            <Button
+              variant={activeTab === 'dettagli' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full gap-1.5"
+              onClick={() => handleTabClick('dettagli')}
+            >
+              <Users className="h-4 w-4" /> Dettagli ragazzi
+            </Button>
+          )}
           <Button
             variant={activeTab === 'appello' ? 'default' : 'outline'}
             size="sm"
