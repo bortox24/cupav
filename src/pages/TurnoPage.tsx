@@ -518,6 +518,19 @@ export default function TurnoPage() {
   });
   // Staff accounts (non-admin) can only download a restricted set of fields
   const restrictFields = isStaffAccount && !isAdmin;
+
+  // Ruolo dell'account staff corrente (animatore, cuoco, responsabile_*)
+  const { data: staffRuolo = null } = useQuery({
+    queryKey: ['my-staff-ruolo', user?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)('my_staff_ruolo');
+      if (error) throw error;
+      return (data as string | null) ?? null;
+    },
+    enabled: !!user && isStaffAccount && !isAdmin,
+  });
+  // Gli account staff con ruolo "animatore" vedono solo Appello, Tende e Download lista
+  const isAnimatoreLimitato = isStaffAccount && !isAdmin && staffRuolo === 'animatore';
   const queryClient = useQueryClient();
   const [selectedRagazzo, setSelectedRagazzo] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -944,6 +957,13 @@ export default function TurnoPage() {
     setActiveTab(tab);
   };
 
+  // Per gli account staff "animatore": se la tab attiva non è consentita, riportala su Appello
+  useEffect(() => {
+    if (isAnimatoreLimitato && (activeTab === 'dettagli' || activeTab === 'animatori')) {
+      setActiveTab('appello');
+    }
+  }, [isAnimatoreLimitato, activeTab]);
+
   // ─── Render guards ─────────
 
   if (!turnoInfo) {
@@ -982,14 +1002,16 @@ export default function TurnoPage() {
       <div className="space-y-6">
         {/* Tab pills */}
         <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            variant={activeTab === 'dettagli' ? 'default' : 'outline'}
-            size="sm"
-            className="rounded-full gap-1.5"
-            onClick={() => handleTabClick('dettagli')}
-          >
-            <Users className="h-4 w-4" /> Dettagli ragazzi
-          </Button>
+          {!isAnimatoreLimitato && (
+            <Button
+              variant={activeTab === 'dettagli' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full gap-1.5"
+              onClick={() => handleTabClick('dettagli')}
+            >
+              <Users className="h-4 w-4" /> Dettagli ragazzi
+            </Button>
+          )}
           <Button
             variant={activeTab === 'appello' ? 'default' : 'outline'}
             size="sm"
@@ -1006,14 +1028,16 @@ export default function TurnoPage() {
           >
             <LayoutGrid className="h-4 w-4" /> Tende
           </Button>
-          <Button
-            variant={activeTab === 'animatori' ? 'default' : 'outline'}
-            size="sm"
-            className="rounded-full gap-1.5"
-            onClick={() => handleTabClick('animatori')}
-          >
-            <UserPlus className="h-4 w-4" /> Staff
-          </Button>
+          {!isAnimatoreLimitato && (
+            <Button
+              variant={activeTab === 'animatori' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full gap-1.5"
+              onClick={() => handleTabClick('animatori')}
+            >
+              <UserPlus className="h-4 w-4" /> Staff
+            </Button>
+          )}
           <Button
             variant={activeTab === 'download-lista' ? 'default' : 'outline'}
             size="sm"
@@ -1025,7 +1049,7 @@ export default function TurnoPage() {
         </div>
 
         {/* ─── Tab: Dettagli ragazzi ─── */}
-        {activeTab === 'dettagli' && (
+        {!isAnimatoreLimitato && activeTab === 'dettagli' && (
           <>
             <Card className="border-0 shadow-sm rounded-2xl bg-muted/30">
               <CardContent className="p-4 space-y-3">
@@ -1159,7 +1183,7 @@ export default function TurnoPage() {
         )}
 
         {/* ─── Tab: Animatori ─── */}
-        {activeTab === 'animatori' && (
+        {!isAnimatoreLimitato && activeTab === 'animatori' && (
           <>
             {animatoriLoading ? (
               <div className="flex justify-center py-8">

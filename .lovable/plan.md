@@ -1,56 +1,51 @@
 ## Obiettivo
 
-1. Limitare il download delle liste per gli **account staff** (creati dalla pagina Anagrafica Staff): potranno scaricare solo **Nome, Cognome e Data di nascita**. Gli **utenti reali** e gli **admin** mantengono il download completo con tutti i campi e i filtri attuali.
-2. Nel PDF, la **Data di nascita** deve essere sempre formattata in **giorno/mese/anno (dd/MM/yyyy)**, non anno-mese-giorno.
+Limitare ulteriormente gli **account staff** in base al **ruolo** assegnato nella card di Anagrafica Staff (campo `ruolo` della tabella `animatori`):
 
-## Come distinguere staff da utente reale
+- Ruolo **`animatore`** (Animatore): vede Home, Regolamento e, **dentro il turno assegnato**, solo le tab **Appello**, **Tende** e **Download lista** (già limitata a Nome, Cognome, Data di nascita). Le tab **Dettagli ragazzi** e **Staff** vengono nascoste.
+- Ruoli **`cuoco`**, **`responsabile_campo`**, **`responsabile_animatori`**: nessuna nuova restrizione, vedono tutto il turno come adesso.
+- Admin e utenti reali: nessun cambiamento.
 
-Gli account staff hanno una riga nella tabella `staff_accounts` (collegata al loro `user_id`). Le policy attuali permettono di leggere quella tabella solo agli admin, quindi un account staff non può verificare il proprio stato direttamente. Serve quindi una funzione lato database che restituisca se l'utente corrente è un account staff.
+## Come ricavare il ruolo in modo sicuro
 
-## Passi
+Gli account staff hanno una riga in `staff_accounts` con `animatore_id` che punta alla riga `animatori`. Le policy non consentono allo staff di leggere `animatori` direttamente, quindi serve una funzione lato database `security definer`.
 
 ### 1. Database
-- Creare la funzione `public.is_staff_account()` (security definer) che restituisce `true` se `auth.uid()` esiste in `staff_accounts`. Permette al client di sapere in modo sicuro se l'utente corrente è un account staff, senza esporre i dati della tabella.
+Creare la funzione:
+
+```text
+public.my_staff_ruolo() -> text
+```
+
+che, per `auth.uid()`, trova la riga in `staff_accounts`, fa join con `animatori` su `id = animatore_id` e restituisce `ruolo` (NULL se non è un account staff). `STABLE SECURITY DEFINER`, `search_path = public`.
 
 ### 2. Pagina Turno (`src/pages/TurnoPage.tsx`)
 
-**Restrizione campi per staff**
-- Chiamare la nuova funzione via RPC all'avvio per ottenere `isStaffAccount`.
-- Campi consentiti agli staff:
-  - Ragazzi: `cognome`, `nome`, `data_nascita`
-  - Staff: `nome_cognome`, `data_nascita`
-- Quando l'utente è account staff (e non admin): mostrare nella tab "Download lista" solo le checkbox dei campi consentiti (gli altri nascosti) e forzare i default coerenti.
-- Utenti reali/admin: nessun cambiamento, tutti i campi e filtri restano disponibili.
-- In `handleDownloadPDF` riapplicare il filtro di sicurezza che, per gli staff, esclude qualsiasi campo non consentito anche con stati manipolati.
-
-**Formato Data di nascita nel PDF**
-- Nelle funzioni `get` dei campi `data_nascita` (ragazzi e staff), formattare il valore in `dd/MM/yyyy` invece di restituire la stringa grezza (oggi `yyyy-MM-dd`).
-- Usare una formattazione robusta: se il valore è già in formato data valido lo si converte in `dd/MM/yyyy`, altrimenti si lascia il testo originale (i campi `data_nascita` di staff/ragazzi sono `text` e potrebbero non essere sempre date ISO).
+- Aggiungere una query RPC a `my_staff_ruolo()` per ottenere il ruolo dell'utente corrente.
+- Calcolare un flag, es. `isAnimatoreLimitato = isStaffAccount && !isAdmin && ruolo === 'animatore'`.
+- Quando `isAnimatoreLimitato` è true:
+  - Nascondere i pulsanti tab **Dettagli ragazzi** e **Staff** (rendering condizionale dei due `<Button>`).
+  - Impostare la tab iniziale di default su `'appello'` invece di `'dettagli'`.
+  - Proteggere il rendering dei blocchi `activeTab === 'dettagli'` e `activeTab === 'animatori'` in modo che non vengano mostrati anche se lo stato venisse forzato.
+- Le tab **Appello**, **Tende** e **Download lista** restano visibili; il Download lista mantiene la restrizione campi già esistente (`restrictFields`).
+- Per cuoco / responsabili: il flag è false, quindi tutto resta invariato.
 
 ## Dettagli tecnici
 
 ```sql
-CREATE OR REPLACE FUNCTION public.is_staff_account()
-RETURNS boolean
+CREATE OR REPLACE FUNCTION public.my_staff_ruolo()
+RETURNS text
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.staff_accounts WHERE user_id = auth.uid()
-  )
+  SELECT a.ruolo
+  FROM public.staff_accounts sa
+  JOIN public.animatori a ON a.id = sa.animatore_id
+  WHERE sa.user_id = auth.uid()
+  LIMIT 1
 $$;
 ```
 
-Nel componente:
-```text
-ALLOWED_RAGAZZI_STAFF = ['cognome','nome','data_nascita']
-ALLOWED_STAFF_STAFF   = ['nome_cognome','data_nascita']
-```
-Helper di formattazione data (es.):
-```text
-formatDob(v) -> v ISO/Date valido ? format(date,'dd/MM/yyyy') : v
-```
-applicato nei `get` di `data_nascita` per ragazzi (`ragazzo_data_nascita`) e staff (`data_nascita`).
+Nel componente: nuova query React Query (come quella `is-staff-account`), flag derivato, rendering condizionale delle tab e guardia sul contenuto.
 
 ## Nota
-
-La restrizione campi è lato interfaccia: i dati grezzi restano accessibili via le query esistenti (le policy RLS non cambiano). Se vuoi nascondere i campi sensibili anche a livello di dati servirà un intervento sulle policy/viste — fammelo sapere.
+La restrizione è a livello di interfaccia (come l'attuale limitazione campi). I dati grezzi restano accessibili tramite le query esistenti regolate da RLS; se serve nascondere i dati anche a livello DB occorrerà un intervento separato sulle policy.
