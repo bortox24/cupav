@@ -28,6 +28,7 @@ import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { useState, useEffect } from 'react';
 import { useMyTurnoPermissions, TURNI } from '@/hooks/useTurnoPermissions';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useIsStaffAccount } from '@/hooks/useIsStaffAccount';
 
 // Countdown Component
 function CountdownBox({ value, label }: { value: number; label: string }) {
@@ -300,6 +301,7 @@ export default function Home() {
   const { canAccessPage, isLoading } = useMyPagePermissions();
   const { data: myTurnoPerms = [], isLoading: turnoPermsLoading } = useMyTurnoPermissions();
   const { data: siteSettings } = useSiteSettings();
+  const { isStaffAccount } = useIsStaffAccount();
 
   // Fetch iscrizioni counts per turno
   const { data: turnoCountsRaw = [] } = useQuery({
@@ -392,38 +394,40 @@ export default function Home() {
               </div>
             </div>
             <CampingCountdown />
-            <div className="mt-4 flex flex-wrap gap-3">
-              {siteSettings?.iscrizione_enabled !== 'false' && (
-                <Link to="/iscrizione" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
-                  <Tent className="h-5 w-5" />
-                  Iscrizioni
-                </Link>
-              )}
-              {siteSettings?.iscrizione_montaggio_enabled !== 'false' && (
-                <Link to="/iscrizione-montaggio" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
-                  <Tent className="h-5 w-5" />
-                  Montaggio Campeggio
-                </Link>
-              )}
-              {siteSettings?.iscrizione_famiglie_enabled !== 'false' && (
-                <Link to="/iscrizione-famiglie" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
-                  <Users className="h-5 w-5" />
-                  Iscrizione Famiglie
-                </Link>
-              )}
-              {siteSettings?.preiscrizione_enabled !== 'false' && (
-                <Link to="/preiscrizione-cupav" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
-                  <FileText className="h-5 w-5" />
-                  Preiscrizioni
-                </Link>
-              )}
-              {siteSettings?.modulo_staff_enabled !== 'false' && (
-                <Link to="/modulo-staff" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
-                  <UserPlus className="h-5 w-5" />
-                  Registrazione Staff
-                </Link>
-              )}
-            </div>
+            {!isStaffAccount && (
+              <div className="mt-4 flex flex-wrap gap-3">
+                {siteSettings?.iscrizione_enabled !== 'false' && (
+                  <Link to="/iscrizione" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                    <Tent className="h-5 w-5" />
+                    Iscrizioni
+                  </Link>
+                )}
+                {siteSettings?.iscrizione_montaggio_enabled !== 'false' && (
+                  <Link to="/iscrizione-montaggio" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                    <Tent className="h-5 w-5" />
+                    Montaggio Campeggio
+                  </Link>
+                )}
+                {siteSettings?.iscrizione_famiglie_enabled !== 'false' && (
+                  <Link to="/iscrizione-famiglie" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                    <Users className="h-5 w-5" />
+                    Iscrizione Famiglie
+                  </Link>
+                )}
+                {siteSettings?.preiscrizione_enabled !== 'false' && (
+                  <Link to="/preiscrizione-cupav" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                    <FileText className="h-5 w-5" />
+                    Preiscrizioni
+                  </Link>
+                )}
+                {siteSettings?.modulo_staff_enabled !== 'false' && (
+                  <Link to="/modulo-staff" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg">
+                    <UserPlus className="h-5 w-5" />
+                    Registrazione Staff
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
