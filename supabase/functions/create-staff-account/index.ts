@@ -52,16 +52,28 @@ serve(async (req) => {
       );
     }
 
-    // Verify caller is admin
+    // Authorization: allow admins OR users with access to the Anagrafica Staff page
     const { data: roleData } = await adminClient
       .from('user_roles')
       .select('role')
       .eq('user_id', callingUser.id)
       .eq('role', 'admin')
       .maybeSingle();
-    if (!roleData) {
+
+    let isAuthorized = !!roleData;
+
+    if (!isAuthorized) {
+      // Check page permission for /anagrafica-animatori (uses is_active aware function)
+      const { data: hasPage } = await adminClient.rpc('has_page_access', {
+        _user_id: callingUser.id,
+        _page_path: '/anagrafica-animatori',
+      });
+      isAuthorized = hasPage === true;
+    }
+
+    if (!isAuthorized) {
       return new Response(
-        JSON.stringify({ error: "Forbidden: solo gli admin possono creare account staff" }),
+        JSON.stringify({ error: "Forbidden: non hai i permessi per creare account staff" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
