@@ -301,6 +301,7 @@ export default function Home() {
   const { canAccessPage, isLoading } = useMyPagePermissions();
   const { data: myTurnoPerms = [], isLoading: turnoPermsLoading } = useMyTurnoPermissions();
   const { data: siteSettings } = useSiteSettings();
+  const { isStaffAccount } = useIsStaffAccount();
 
   // Fetch iscrizioni counts per turno
   const { data: turnoCountsRaw = [] } = useQuery({
