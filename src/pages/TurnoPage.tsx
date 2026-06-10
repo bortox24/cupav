@@ -1267,7 +1267,7 @@ export default function TurnoPage() {
 
                         {isExpanded && (
                           <div className="space-y-3 pt-1">
-                            {a.data_nascita && (
+                            {a.data_nascita && !isNaN(new Date(a.data_nascita).getTime()) && (
                               <p className="text-sm flex items-center gap-1.5 text-muted-foreground">
                                 <CalendarDays className="h-3.5 w-3.5" />
                                 {format(new Date(a.data_nascita), 'dd/MM/yyyy')}
