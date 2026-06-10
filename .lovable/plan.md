@@ -1,51 +1,40 @@
-## Obiettivo
+# Revisione presentazione "Account Staff CUPAV"
 
-Limitare ulteriormente gli **account staff** in base al **ruolo** assegnato nella card di Anagrafica Staff (campo `ruolo` della tabella `animatori`):
+Aggiorno il PDF esistente (`presentazione-account-staff-cupav.pdf`) salvando una nuova versione (`presentazione-account-staff-cupav_v2.pdf`) con le correzioni richieste.
 
-- Ruolo **`animatore`** (Animatore): vede Home, Regolamento e, **dentro il turno assegnato**, solo le tab **Appello**, **Tende** e **Download lista** (già limitata a Nome, Cognome, Data di nascita). Le tab **Dettagli ragazzi** e **Staff** vengono nascoste.
-- Ruoli **`cuoco`**, **`responsabile_campo`**, **`responsabile_animatori`**: nessuna nuova restrizione, vedono tutto il turno come adesso.
-- Admin e utenti reali: nessun cambiamento.
+## Modifiche
 
-## Come ricavare il ruolo in modo sicuro
+1. **Rimuovere la slide "Chi vede cosa a colpo d'occhio"** (la tabella comparativa dei permessi). Mostrare tutto subito è fuorviante.
 
-Gli account staff hanno una riga in `staff_accounts` con `animatore_id` che punta alla riga `animatori`. Le policy non consentono allo staff di leggere `animatori` direttamente, quindi serve una funzione lato database `security definer`.
+2. **Pulire la slide della Home / vista staff** — eliminare il blocco esplicativo in basso ("lo staff vede solo il saluto, il countdown, niente pulsanti di gestione, solo i turni assegnati"). Questi confronti "account vs staff" non servono: la piattaforma è già riservata solo allo staff.
 
-### 1. Database
-Creare la funzione:
+3. **Download lista identico per tutti** — chiarire che animatori e responsabili scaricano la **stessa** lista. Le opzioni di download non cambiano tra i ruoli staff.
 
-```text
-public.my_staff_ruolo() -> text
-```
+4. **Rimuovere la slide del "download lista completa"** (era una vista admin). Nessun account staff vede l'export completo: è riservato solo a chi ha un profilo admin reale.
 
-che, per `auth.uid()`, trova la riga in `staff_accounts`, fa join con `animatori` su `id = animatore_id` e restituisce `ruolo` (NULL se non è un account staff). `STABLE SECURITY DEFINER`, `search_path = public`.
+5. **Correggere la distinzione tra ruoli** (no admin, solo account staff):
+   - **Animatore**: vede solo le tab **Appello**, **Tende** e **Download lista**.
+   - **Responsabili (campo/animatori) e Cuochi**: vedono in più i **Dettagli Ragazzi** (con allergie) e i **Dettagli Staff** (con dati interni e allergie).
+   Mantengo le slide che illustrano questi dettagli, già impostate bene.
 
-### 2. Pagina Turno (`src/pages/TurnoPage.tsx`)
+6. **Nuova ultima slide con QR code** ad alta definizione che punta a `https://cupav.lovable.app`. QR generato in alta risoluzione, grande e ben leggibile anche da lontano, con testo invito a scansionare per entrare nella piattaforma (e nota che seguiranno istruzioni per aggiungerlo alla home del telefono).
 
-- Aggiungere una query RPC a `my_staff_ruolo()` per ottenere il ruolo dell'utente corrente.
-- Calcolare un flag, es. `isAnimatoreLimitato = isStaffAccount && !isAdmin && ruolo === 'animatore'`.
-- Quando `isAnimatoreLimitato` è true:
-  - Nascondere i pulsanti tab **Dettagli ragazzi** e **Staff** (rendering condizionale dei due `<Button>`).
-  - Impostare la tab iniziale di default su `'appello'` invece di `'dettagli'`.
-  - Proteggere il rendering dei blocchi `activeTab === 'dettagli'` e `activeTab === 'animatori'` in modo che non vengano mostrati anche se lo stato venisse forzato.
-- Le tab **Appello**, **Tende** e **Download lista** restano visibili; il Download lista mantiene la restrizione campi già esistente (`restrictFields`).
-- Per cuoco / responsabili: il flag è false, quindi tutto resta invariato.
+## Struttura finale (indicativa)
+1. Copertina
+2. Perché gli account staff
+3. Vista Home / piattaforma riservata (senza blocco confronto)
+4. ANIMATORE — solo Appello, Tende, Download lista
+5. Appello (screenshot)
+6. Tende (screenshot)
+7. Download lista (uguale per tutti i ruoli)
+8. RESPONSABILI / CUOCHI — in più Dettagli Ragazzi e Dettagli Staff
+9. Dettagli Ragazzi (allergie)
+10. Dettagli Staff (dati interni / allergie)
+11. Privacy / dati sensibili
+12. QR code → cupav.lovable.app
 
-## Dettagli tecnici
-
-```sql
-CREATE OR REPLACE FUNCTION public.my_staff_ruolo()
-RETURNS text
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT a.ruolo
-  FROM public.staff_accounts sa
-  JOIN public.animatori a ON a.id = sa.animatore_id
-  WHERE sa.user_id = auth.uid()
-  LIMIT 1
-$$;
-```
-
-Nel componente: nuova query React Query (come quella `is-staff-account`), flag derivato, rendering condizionale delle tab e guardia sul contenuto.
-
-## Nota
-La restrizione è a livello di interfaccia (come l'attuale limitazione campi). I dati grezzi restano accessibili tramite le query esistenti regolate da RLS; se serve nascondere i dati anche a livello DB occorrerà un intervento separato sulle policy.
+## Note tecniche
+- Riuso gli screenshot e lo stile/branding CUPAV già prodotti (logo, colori verde/arancio/blu, font Poppins).
+- QR generato con `qrcode` (Python) ad alta risoluzione (box grandi, error correction H), inserito su slide dedicata.
+- QA visiva di ogni pagina (conversione in immagini) prima della consegna; correggo e ri-verifico finché pulito.
+- Output salvato in `/mnt/documents/presentazione-account-staff-cupav_v2.pdf`.
