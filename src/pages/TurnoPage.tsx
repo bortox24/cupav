@@ -538,6 +538,7 @@ export default function TurnoPage() {
   const [filterFoto, setFilterFoto] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('dettagli');
   const [presentSet, setPresentSet] = useState<Set<string>>(new Set());
+  const [expandedStaff, setExpandedStaff] = useState<Set<string>>(new Set());
   const [showConfirm, setShowConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedTenda, setSelectedTenda] = useState<TendaData | null>(null);
