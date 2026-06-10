@@ -1329,100 +1329,54 @@ export default function TurnoPage() {
               </Card>
             ) : (
               <div className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  {animatoriTurno.length} staff assegnat{animatoriTurno.length === 1 ? 'o' : 'i'}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[...animatoriTurno].sort((a, b) => {
-                    const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
-                    if (r !== 0) return r;
-                    const nameA = a.full_name.toLowerCase();
-                    const nameB = b.full_name.toLowerCase();
-                    return nameA.localeCompare(nameB);
-                  }).map((a: AnimatoreCompleto) => {
-                    const isExpanded = expandedStaff.has(a.id);
+                <Card className="border-0 shadow-sm rounded-2xl bg-muted/30">
+                  <CardContent className="p-4 flex items-center gap-2 flex-wrap">
+                    <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Button variant={filterStaffAllergie === true ? 'default' : 'outline'} size="sm" className="rounded-full text-xs h-7 gap-1" onClick={() => setFilterStaffAllergie(filterStaffAllergie === true ? null : true)}>
+                      <AlertTriangle className="h-3 w-3" /> Con allergie
+                    </Button>
+                    <Button variant={filterStaffAllergie === false ? 'default' : 'outline'} size="sm" className="rounded-full text-xs h-7 gap-1" onClick={() => setFilterStaffAllergie(filterStaffAllergie === false ? null : false)}>
+                      <Check className="h-3 w-3" /> Senza allergie
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {(() => {
+                  const sorted = [...animatoriTurno]
+                    .filter((a) => filterStaffAllergie === null || a.ha_allergie === filterStaffAllergie)
+                    .sort((a, b) => {
+                      const r = (RUOLO_ORDER[a.ruolo] || 99) - (RUOLO_ORDER[b.ruolo] || 99);
+                      if (r !== 0) return r;
+                      return a.full_name.toLowerCase().localeCompare(b.full_name.toLowerCase());
+                    });
+                  if (sorted.length === 0) {
                     return (
-                    <Card key={a.id} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden">
-                      <div className={`h-1 bg-gradient-to-r ${a.ha_allergie ? 'from-red-500 to-orange-500' : 'from-primary to-primary/60'}`} />
-                      <CardContent className="p-4 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-bold text-base">{a.full_name}</p>
-                          <Badge className={`text-[11px] border-0 rounded-full px-2.5 py-0.5 pointer-events-none ${RUOLO_COLORS[a.ruolo] || 'bg-muted text-muted-foreground'}`}>
-                            {RUOLO_LABELS[a.ruolo] || a.ruolo}
-                          </Badge>
-                        </div>
-                        {a.telefono && (
-                          <a 
-                            href={`tel:${a.telefono.replace(/[^0-9+]/g, '')}`}
-                            className="text-sm text-primary flex items-center gap-1.5 hover:underline w-fit"
-                          >
-                            <Phone className="h-3.5 w-3.5" />
-                            {a.telefono}
-                          </a>
-                        )}
-                        {a.email && (
-                          <a 
-                            href={`mailto:${a.email}`}
-                            className="text-sm text-muted-foreground flex items-center gap-1.5 hover:underline w-fit"
-                          >
-                            <Mail className="h-3.5 w-3.5" />
-                            {a.email}
-                          </a>
-                        )}
-
-                        {/* Stato allergie + toggle dettagli */}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedStaff((prev) => {
-                              const next = new Set(prev);
-                              next.has(a.id) ? next.delete(a.id) : next.add(a.id);
-                              return next;
-                            })
-                          }
-                          className="w-full flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60 text-left"
-                        >
-                          {a.ha_allergie ? (
-                            <Badge className="gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-2.5 py-0.5 text-[11px] pointer-events-none">
-                              <AlertTriangle className="h-3 w-3" /> Allergie/Patologie
-                            </Badge>
-                          ) : (
-                            <Badge className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-2.5 py-0.5 text-[11px] pointer-events-none">
-                              <Check className="h-3 w-3" /> Nessuna allergia
-                            </Badge>
-                          )}
-                          <ChevronDown className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {isExpanded && (
-                          <div className="space-y-3 pt-1">
-                            {a.data_nascita && !isNaN(new Date(a.data_nascita).getTime()) && (
-                              <p className="text-sm flex items-center gap-1.5 text-muted-foreground">
-                                <CalendarDays className="h-3.5 w-3.5" />
-                                {format(new Date(a.data_nascita), 'dd/MM/yyyy')}
-                              </p>
-                            )}
-                            {a.ha_allergie ? (
-                              <div className="bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2.5 space-y-1.5">
-                                {a.allergie_dettaglio && <p className="text-sm"><span className="font-medium">Allergie:</span> {a.allergie_dettaglio}</p>}
-                                {a.patologie_dettaglio && <p className="text-sm"><span className="font-medium">Patologie:</span> {a.patologie_dettaglio}</p>}
-                                <FarmacoLine nome={a.farmaco_1_nome} posologia={a.farmaco_1_posologia} />
-                                <FarmacoLine nome={a.farmaco_2_nome} posologia={a.farmaco_2_posologia} />
-                                <FarmacoLine nome={a.farmaco_3_nome} posologia={a.farmaco_3_posologia} />
-                              </div>
-                            ) : (
-                              <p className="text-sm text-muted-foreground">Nessuna allergia o patologia segnalata.</p>
-                            )}
-                            {a.note && (
-                              <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Note:</span> {a.note}</p>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                      <Card>
+                        <CardContent className="py-8 text-center">
+                          <p className="text-muted-foreground">Nessun risultato per questo filtro.</p>
+                        </CardContent>
+                      </Card>
                     );
-                  })}
-                </div>
+                  }
+                  return (
+                    <>
+                      <div className="text-sm text-muted-foreground">
+                        {sorted.length} staff{filterStaffAllergie !== null ? ' filtrat' + (sorted.length === 1 ? 'o' : 'i') : ' assegnat' + (sorted.length === 1 ? 'o' : 'i')}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {sorted.map((a: AnimatoreCompleto) => (
+                          <StaffCompactCard key={a.id} a={a} onClick={() => setSelectedStaff(a)} />
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+
+                <StaffDetailDrawer
+                  a={selectedStaff}
+                  open={!!selectedStaff}
+                  onOpenChange={(v) => { if (!v) setSelectedStaff(null); }}
+                />
               </div>
             )}
           </>
