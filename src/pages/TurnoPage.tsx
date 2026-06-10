@@ -1210,9 +1210,11 @@ export default function TurnoPage() {
                     const nameA = a.full_name.toLowerCase();
                     const nameB = b.full_name.toLowerCase();
                     return nameA.localeCompare(nameB);
-                  }).map((a: AnimatoreCompleto) => (
+                  }).map((a: AnimatoreCompleto) => {
+                    const isExpanded = expandedStaff.has(a.id);
+                    return (
                     <Card key={a.id} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden">
-                      <div className="h-1 bg-gradient-to-r from-primary to-primary/60" />
+                      <div className={`h-1 bg-gradient-to-r ${a.ha_allergie ? 'from-red-500 to-orange-500' : 'from-primary to-primary/60'}`} />
                       <CardContent className="p-4 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <p className="font-bold text-base">{a.full_name}</p>
@@ -1238,9 +1240,59 @@ export default function TurnoPage() {
                             {a.email}
                           </a>
                         )}
+
+                        {/* Stato allergie + toggle dettagli */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedStaff((prev) => {
+                              const next = new Set(prev);
+                              next.has(a.id) ? next.delete(a.id) : next.add(a.id);
+                              return next;
+                            })
+                          }
+                          className="w-full flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60 text-left"
+                        >
+                          {a.ha_allergie ? (
+                            <Badge className="gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-2.5 py-0.5 text-[11px] pointer-events-none">
+                              <AlertTriangle className="h-3 w-3" /> Allergie/Patologie
+                            </Badge>
+                          ) : (
+                            <Badge className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-2.5 py-0.5 text-[11px] pointer-events-none">
+                              <Check className="h-3 w-3" /> Nessuna allergia
+                            </Badge>
+                          )}
+                          <ChevronDown className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isExpanded && (
+                          <div className="space-y-3 pt-1">
+                            {a.data_nascita && (
+                              <p className="text-sm flex items-center gap-1.5 text-muted-foreground">
+                                <CalendarDays className="h-3.5 w-3.5" />
+                                {format(new Date(a.data_nascita), 'dd/MM/yyyy')}
+                              </p>
+                            )}
+                            {a.ha_allergie ? (
+                              <div className="bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2.5 space-y-1.5">
+                                {a.allergie_dettaglio && <p className="text-sm"><span className="font-medium">Allergie:</span> {a.allergie_dettaglio}</p>}
+                                {a.patologie_dettaglio && <p className="text-sm"><span className="font-medium">Patologie:</span> {a.patologie_dettaglio}</p>}
+                                <FarmacoLine nome={a.farmaco_1_nome} posologia={a.farmaco_1_posologia} />
+                                <FarmacoLine nome={a.farmaco_2_nome} posologia={a.farmaco_2_posologia} />
+                                <FarmacoLine nome={a.farmaco_3_nome} posologia={a.farmaco_3_posologia} />
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">Nessuna allergia o patologia segnalata.</p>
+                            )}
+                            {a.note && (
+                              <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Note:</span> {a.note}</p>
+                            )}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
