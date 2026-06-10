@@ -475,6 +475,134 @@ function RagazzoDetailDrawer({ r, open, onOpenChange, isDuplicate }: { r: any; o
   );
 }
 
+// ─── Staff compact card (stesso design dei ragazzi) ────
+
+function StaffCompactCard({ a, onClick }: { a: AnimatoreCompleto; onClick: () => void }) {
+  const parts = (a.full_name || '').trim().split(/\s+/);
+  const initials = `${(parts[0]?.[0] || '').toUpperCase()}${(parts[1]?.[0] || '').toUpperCase()}`;
+  const phoneNumber = a.telefono?.replace(/[^0-9+]/g, '') || '';
+
+  return (
+    <Card
+      className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] overflow-hidden bg-card rounded-2xl [-webkit-tap-highlight-color:transparent]"
+      onClick={onClick}
+    >
+      <CardContent className="p-0">
+        <div className={`px-4 py-3.5 flex items-center gap-3 ${a.ha_allergie ? 'bg-gradient-to-r from-red-500/10 to-orange-500/10' : 'bg-gradient-to-r from-primary/10 to-blue-500/10'}`}>
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md ${a.ha_allergie ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-gradient-to-br from-primary to-blue-500'}`}>
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="font-bold text-[15px] leading-tight truncate text-foreground">
+              {a.full_name}
+            </h4>
+            <Badge className={`mt-1 text-[11px] border-0 rounded-full px-2.5 py-0.5 pointer-events-none ${RUOLO_COLORS[a.ruolo] || 'bg-muted text-muted-foreground'}`}>
+              {RUOLO_LABELS[a.ruolo] || a.ruolo}
+            </Badge>
+          </div>
+        </div>
+        <div className="px-4 py-3.5 space-y-3">
+          {a.telefono && (
+            <div className="flex items-center gap-2 text-sm">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Phone className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <a
+                href={`tel:${phoneNumber}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium text-primary hover:underline active:opacity-70 transition-opacity"
+              >
+                {a.telefono}
+              </a>
+            </div>
+          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {a.ha_allergie ? (
+              <Badge className="text-[11px] gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
+                <AlertTriangle className="h-3 w-3" /> Allergie
+              </Badge>
+            ) : (
+              <Badge className="text-[11px] gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
+                <Check className="h-3 w-3" /> OK
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StaffDetailDrawer({ a, open, onOpenChange }: { a: AnimatoreCompleto | null; open: boolean; onOpenChange: (v: boolean) => void }) {
+  if (!a) return null;
+  const parts = (a.full_name || '').trim().split(/\s+/);
+  const initials = `${(parts[0]?.[0] || '').toUpperCase()}${(parts[1]?.[0] || '').toUpperCase()}`;
+  const dob = formatDob(a.data_nascita);
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[92vh]">
+        <div className="overflow-y-auto px-5 pb-8">
+          <DrawerHeader className="px-0 pb-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-lg shrink-0 ${a.ha_allergie ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-gradient-to-br from-primary to-blue-500'}`}>
+                {initials}
+              </div>
+              <div>
+                <DrawerTitle className="text-xl text-left">{a.full_name}</DrawerTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">{RUOLO_LABELS[a.ruolo] || a.ruolo}</p>
+              </div>
+            </div>
+          </DrawerHeader>
+          <div className="flex items-center gap-2 flex-wrap mb-5">
+            {a.ha_allergie ? (
+              <Badge className="gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-0 rounded-full px-3 py-1.5 text-xs pointer-events-none">
+                <AlertTriangle className="h-3.5 w-3.5" /> Allergie/Patologie
+              </Badge>
+            ) : (
+              <Badge className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-3 py-1.5 text-xs pointer-events-none">
+                <Check className="h-3.5 w-3.5" /> Nessuna allergia
+              </Badge>
+            )}
+          </div>
+          {(dob || a.telefono || a.email) && (
+            <div className="space-y-1">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Dati e Contatti</h4>
+              <div className="bg-muted/30 rounded-2xl px-3 divide-y divide-border">
+                {dob && <InfoRow icon={<CalendarDays className="h-4 w-4 text-muted-foreground" />} label="Data di nascita" value={dob} />}
+                {a.telefono && <InfoRow icon={<Phone className="h-4 w-4 text-muted-foreground" />} label="Telefono" value={a.telefono} isLink />}
+                {a.email && <InfoRow icon={<Mail className="h-4 w-4 text-muted-foreground" />} label="Email" value={a.email} />}
+              </div>
+            </div>
+          )}
+          {a.ha_allergie && (
+            <div className="space-y-1 mt-5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Allergie e Patologie</h4>
+              <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl px-4 py-3 space-y-2">
+                {a.allergie_dettaglio && <p className="text-sm"><span className="font-medium">Allergie:</span> {a.allergie_dettaglio}</p>}
+                {a.patologie_dettaglio && <p className="text-sm"><span className="font-medium">Patologie:</span> {a.patologie_dettaglio}</p>}
+                <FarmacoLine nome={a.farmaco_1_nome} posologia={a.farmaco_1_posologia} />
+                <FarmacoLine nome={a.farmaco_2_nome} posologia={a.farmaco_2_posologia} />
+                <FarmacoLine nome={a.farmaco_3_nome} posologia={a.farmaco_3_posologia} />
+              </div>
+            </div>
+          )}
+          {a.note && (
+            <div className="space-y-1 mt-5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Note</h4>
+              <div className="bg-muted/30 rounded-2xl px-4 py-3">
+                <p className="text-sm">{a.note}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+
+
 // ─── Appello Card ──────────────────────────────────────
 
 function AppelloCard({ r, isPresent, onToggle, isDuplicate }: { r: any; isPresent: boolean; onToggle: () => void; isDuplicate?: boolean }) {
