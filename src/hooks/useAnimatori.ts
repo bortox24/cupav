@@ -166,8 +166,20 @@ export function useUpdateAnimatore() {
         })
         .eq('id', data.id);
       if (error) throw error;
+
+      // Sync name to linked staff account (best effort)
+      try {
+        await supabase.functions.invoke('sync-staff-account', {
+          body: { animatoreId: data.id, fullName: data.full_name },
+        });
+      } catch (e) {
+        console.error('sync-staff-account failed:', e);
+      }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['animatori'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['animatori'] });
+      qc.invalidateQueries({ queryKey: ['staff-accounts'] });
+    },
   });
 }
 
