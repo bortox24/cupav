@@ -1,40 +1,37 @@
-# Revisione presentazione "Account Staff CUPAV"
+## Obiettivo
 
-Aggiorno il PDF esistente (`presentazione-account-staff-cupav.pdf`) salvando una nuova versione (`presentazione-account-staff-cupav_v2.pdf`) con le correzioni richieste.
+Quando modifichi un membro dello staff dall'Anagrafica Staff (es. da "LoBrutto Angela" a "Lo Brutto Angela"), il nome aggiornato deve riflettersi anche nell'account staff collegato — cioè quello che la persona vede dentro il proprio profilo dopo il login.
 
-## Modifiche
+## Il problema oggi
 
-1. **Rimuovere la slide "Chi vede cosa a colpo d'occhio"** (la tabella comparativa dei permessi). Mostrare tutto subito è fuorviante.
+La modifica aggiorna solo la tabella `animatori`. L'account di accesso della persona invece legge il nome da un'altra parte (la scheda profilo dell'utente, creata al momento della generazione dell'account). Quella scheda resta col vecchio nome, quindi la persona continua a vedere "LoBruttoAngela" attaccato.
 
-2. **Pulire la slide della Home / vista staff** — eliminare il blocco esplicativo in basso ("lo staff vede solo il saluto, il countdown, niente pulsanti di gestione, solo i turni assegnati"). Questi confronti "account vs staff" non servono: la piattaforma è già riservata solo allo staff.
+## Soluzione
 
-3. **Download lista identico per tutti** — chiarire che animatori e responsabili scaricano la **stessa** lista. Le opzioni di download non cambiano tra i ruoli staff.
+Quando salvi una modifica su un animatore che ha già un account staff, propaghiamo automaticamente il nome aggiornato all'account.
 
-4. **Rimuovere la slide del "download lista completa"** (era una vista admin). Nessun account staff vede l'export completo: è riservato solo a chi ha un profilo admin reale.
+### Cosa viene sincronizzato
+- Il nome completo (`full_name`) — è il dato visibile dopo il login.
+- Manteniamo allineata anche la copia del nome salvata nell'elenco account staff.
 
-5. **Correggere la distinzione tra ruoli** (no admin, solo account staff):
-   - **Animatore**: vede solo le tab **Appello**, **Tende** e **Download lista**.
-   - **Responsabili (campo/animatori) e Cuochi**: vedono in più i **Dettagli Ragazzi** (con allergie) e i **Dettagli Staff** (con dati interni e allergie).
-   Mantengo le slide che illustrano questi dettagli, già impostate bene.
+L'aggiornamento del profilo di accesso di un altro utente richiede privilegi elevati, quindi va fatto tramite una Edge Function (con service role), non dal client.
 
-6. **Nuova ultima slide con QR code** ad alta definizione che punta a `https://cupav.lovable.app`. QR generato in alta risoluzione, grande e ben leggibile anche da lontano, con testo invito a scansionare per entrare nella piattaforma (e nota che seguiranno istruzioni per aggiungerlo alla home del telefono).
+## Passi tecnici
 
-## Struttura finale (indicativa)
-1. Copertina
-2. Perché gli account staff
-3. Vista Home / piattaforma riservata (senza blocco confronto)
-4. ANIMATORE — solo Appello, Tende, Download lista
-5. Appello (screenshot)
-6. Tende (screenshot)
-7. Download lista (uguale per tutti i ruoli)
-8. RESPONSABILI / CUOCHI — in più Dettagli Ragazzi e Dettagli Staff
-9. Dettagli Ragazzi (allergie)
-10. Dettagli Staff (dati interni / allergie)
-11. Privacy / dati sensibili
-12. QR code → cupav.lovable.app
+1. **Nuova Edge Function `sync-staff-account`**
+   - Input: `animatoreId`, `fullName`.
+   - Verifica che il chiamante sia admin oppure abbia accesso alla pagina `/anagrafica-animatori` (stesso controllo già usato in `create-staff-account`).
+   - Trova la riga in `staff_accounts` con `animatore_id = animatoreId`. Se non esiste (l'animatore non ha account), termina senza fare nulla.
+   - Con il service role:
+     - aggiorna `profiles.full_name` per il `user_id` collegato;
+     - aggiorna i metadati dell'utente in Auth (`user_metadata.full_name`);
+     - aggiorna `staff_accounts.full_name`.
 
-## Note tecniche
-- Riuso gli screenshot e lo stile/branding CUPAV già prodotti (logo, colori verde/arancio/blu, font Poppins).
-- QR generato con `qrcode` (Python) ad alta risoluzione (box grandi, error correction H), inserito su slide dedicata.
-- QA visiva di ogni pagina (conversione in immagini) prima della consegna; correggo e ri-verifico finché pulito.
-- Output salvato in `/mnt/documents/presentazione-account-staff-cupav_v2.pdf`.
+2. **Collegamento dal frontend**
+   - In `useUpdateAnimatore` (o nella `onSuccess` del salvataggio in `AnagraficaAnimatori.tsx`), dopo l'update dell'animatore richiamare `supabase.functions.invoke('sync-staff-account', { body: { animatoreId, fullName } })`.
+   - L'operazione è "best effort": se l'animatore non ha account, non mostra errori; in caso di errore reale logghiamo senza bloccare il salvataggio dei dati anagrafici.
+   - Invalidare le query `['animatori']` e `['staff-accounts']`.
+
+## Note
+- La persona vedrà il nome aggiornato al successivo refresh/login (i dati di sessione vengono ricaricati al login).
+- Sincronizziamo il nome perché è l'unico dato dell'account staff visibile dalla persona; email/telefono dell'anagrafica restano sull'anagrafica e non toccano le credenziali di accesso.
