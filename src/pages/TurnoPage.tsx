@@ -164,7 +164,7 @@ function TendaDrawer({
 
   if (!tenda) return null;
 
-  const isStaffTent = colore === 'grigio';
+  const isStaffTent = colore === 'verde';
 
   const handleAdd = (nome: string) => {
     if (assegnati.length >= 4) return;
