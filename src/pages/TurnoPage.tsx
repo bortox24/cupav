@@ -287,7 +287,7 @@ function TendaDrawer({
           </div>
 
           {/* Add ragazzi (only for blu/rosa tents) */}
-          {!isStaffTent && assegnati.length < 4 && selectableRagazzi.length > 0 && (
+          {!isStaffTent && colore !== 'grigio' && assegnati.length < 4 && selectableRagazzi.length > 0 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Aggiungi ragazzo/a</p>
               <Select onValueChange={handleAdd}>
