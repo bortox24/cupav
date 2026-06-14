@@ -1261,7 +1261,7 @@ export default function TurnoPage() {
                 <div className="flex items-center gap-4 flex-wrap">
                   {Object.entries(COLORE_STYLES).map(([key, s]) => (
                     <div key={key} className="flex items-center gap-1.5 text-xs">
-                      <div className={`w-3 h-3 rounded-full ${key === 'blu' ? 'bg-blue-500' : key === 'rosa' ? 'bg-pink-400' : 'bg-gray-400'}`} />
+                      <div className={`w-3 h-3 rounded-full ${key === 'blu' ? 'bg-blue-600' : key === 'rosa' ? 'bg-pink-600' : key === 'verde' ? 'bg-emerald-600' : 'bg-slate-400'}`} />
                       <span className="text-muted-foreground">{s.label}</span>
                     </div>
                   ))}
