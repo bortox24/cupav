@@ -93,17 +93,24 @@ type TendaData = {
 };
 
 const COLORE_STYLES: Record<string, { border: string; bg: string; text: string; label: string }> = {
-  blu: { border: 'border-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/30', text: 'text-blue-700 dark:text-blue-300', label: 'Maschile' },
-  rosa: { border: 'border-pink-400', bg: 'bg-pink-50 dark:bg-pink-950/30', text: 'text-pink-700 dark:text-pink-300', label: 'Femminile' },
-  grigio: { border: 'border-muted-foreground/40', bg: 'bg-muted/30', text: 'text-muted-foreground', label: 'Animatori' },
+  blu: { border: 'border-blue-500', bg: 'bg-blue-100 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', label: 'Maschile' },
+  rosa: { border: 'border-pink-500', bg: 'bg-pink-100 dark:bg-pink-950/40', text: 'text-pink-700 dark:text-pink-300', label: 'Femminile' },
+  verde: { border: 'border-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300', label: 'Animatori' },
+  grigio: { border: 'border-slate-400', bg: 'bg-slate-100 dark:bg-slate-800/40', text: 'text-slate-500 dark:text-slate-400', label: 'Nessuno' },
+};
+
+// Colore -> classi SVG (riempimenti vivaci)
+const TENDA_SVG_STYLES: Record<string, { fill: string; stroke: string; text: string; flag: string; dot: string }> = {
+  blu: { fill: 'fill-blue-200 dark:fill-blue-900/60', stroke: 'stroke-blue-600', text: 'fill-blue-800 dark:fill-blue-200', flag: 'fill-blue-600', dot: 'bg-blue-600' },
+  rosa: { fill: 'fill-pink-200 dark:fill-pink-900/60', stroke: 'stroke-pink-600', text: 'fill-pink-800 dark:fill-pink-200', flag: 'fill-pink-600', dot: 'bg-pink-600' },
+  verde: { fill: 'fill-emerald-200 dark:fill-emerald-900/60', stroke: 'stroke-emerald-600', text: 'fill-emerald-800 dark:fill-emerald-200', flag: 'fill-emerald-600', dot: 'bg-emerald-600' },
+  grigio: { fill: 'fill-slate-200 dark:fill-slate-800/60', stroke: 'stroke-slate-400', text: 'fill-slate-600 dark:fill-slate-300', flag: 'fill-slate-400', dot: 'bg-slate-400' },
 };
 
 // ─── Tent card ─────────────────────────────────────────
 
 function TendaCard({ tenda, onClick }: { tenda: TendaData; onClick: () => void }) {
-  const fillClass = tenda.colore === 'blu' ? 'fill-blue-100 dark:fill-blue-900/40' : tenda.colore === 'rosa' ? 'fill-pink-100 dark:fill-pink-900/40' : 'fill-gray-100 dark:fill-gray-800/40';
-  const strokeClass = tenda.colore === 'blu' ? 'stroke-blue-500' : tenda.colore === 'rosa' ? 'stroke-pink-400' : 'stroke-gray-400';
-  const fillText = tenda.colore === 'blu' ? 'fill-blue-700 dark:fill-blue-300' : tenda.colore === 'rosa' ? 'fill-pink-700 dark:fill-pink-300' : 'fill-gray-500';
+  const sty = TENDA_SVG_STYLES[tenda.colore] || TENDA_SVG_STYLES.grigio;
   const n = tenda.assegnati.length;
 
   return (
@@ -111,17 +118,16 @@ function TendaCard({ tenda, onClick }: { tenda: TendaData; onClick: () => void }
       className="cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95 [-webkit-tap-highlight-color:transparent]"
       onClick={onClick}
     >
-      <svg viewBox="0 0 120 100" className={`w-full h-auto ${fillClass} ${strokeClass}`} preserveAspectRatio="xMidYMid meet">
+      <svg viewBox="0 0 120 100" className={`w-full h-auto ${sty.fill} ${sty.stroke}`} preserveAspectRatio="xMidYMid meet">
         {/* Tent body */}
         <path d="M60 8 L110 50 L110 95 L10 95 L10 50 Z" strokeWidth="2.5" strokeLinejoin="round" />
-        <path d="M60 8 L60 95" strokeWidth="1" className="stroke-current opacity-15" fill="none" />
         {/* Flag */}
         <path d="M60 8 L60 2" strokeWidth="2" fill="none" />
-        <path d="M60 2 L70 5 L60 8" className={tenda.colore === 'blu' ? 'fill-blue-500' : tenda.colore === 'rosa' ? 'fill-pink-400' : 'fill-gray-400'} stroke="none" />
+        <path d="M60 2 L70 5 L60 8" className={sty.flag} stroke="none" />
 
         {/* Number + count */}
-        <text x="55" y="52" textAnchor="middle" className={fillText} fontSize="18" fontWeight="bold">{tenda.numero}</text>
-        <text x="60" y="72" textAnchor="middle" className="fill-gray-400" fontSize="11">({n}/4)</text>
+        <text x="55" y="52" textAnchor="middle" className={sty.text} fontSize="18" fontWeight="bold">{tenda.numero}</text>
+        <text x="60" y="72" textAnchor="middle" className="fill-muted-foreground" fontSize="11">({n}/4)</text>
       </svg>
     </div>
   );

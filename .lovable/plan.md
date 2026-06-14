@@ -1,37 +1,42 @@
-## Obiettivo
+# Redesign tab Tende
 
-Quando modifichi un membro dello staff dall'Anagrafica Staff (es. da "LoBrutto Angela" a "Lo Brutto Angela"), il nome aggiornato deve riflettersi anche nell'account staff collegato — cioè quello che la persona vede dentro il proprio profilo dopo il login.
+Mantengo la **forma attuale** della tenda (la stessa sagoma di adesso), con tre modifiche mirate richieste.
 
-## Il problema oggi
+## Cosa cambia
 
-La modifica aggiorna solo la tabella `animatori`. L'account di accesso della persona invece legge il nome da un'altra parte (la scheda profilo dell'utente, creata al momento della generazione dell'account). Quella scheda resta col vecchio nome, quindi la persona continua a vedere "LoBruttoAngela" attaccato.
+### 1. Forma tenda invariata, senza riga centrale
+- Resta la sagoma attuale dell'icona tenda.
+- **Rimuovo la riga verticale centrale** (il tratto che divide a metà la tenda) — non serve e non piace.
 
-## Soluzione
+### 2. Colori più vivaci
+Rendo le tende più colorate e leggibili, alzando la saturazione/intensità rispetto alle tinte tenui attuali (es. riempimenti più pieni invece dei `-100` chiari, bordi e numeri più decisi), sempre via token/classi Tailwind e con resa corretta in dark mode.
 
-Quando salvi una modifica su un animatore che ha già un account staff, propaghiamo automaticamente il nome aggiornato all'account.
+### 3. Colori e categorie
+Schema aggiornato:
 
-### Cosa viene sincronizzato
-- Il nome completo (`full_name`) — è il dato visibile dopo il login.
-- Manteniamo allineata anche la copia del nome salvata nell'elenco account staff.
+```text
+Maschile   -> blu     (assegnazione ragazzi)
+Femminile  -> rosa    (assegnazione ragazze)
+Animatori  -> verde   (assegnazione staff, prefisso §)
+Nessuno    -> grigio  (default, tenda non assegnata)
+```
 
-L'aggiornamento del profilo di accesso di un altro utente richiede privilegi elevati, quindi va fatto tramite una Edge Function (con service role), non dal client.
+- "Animatori" passa da grigio a **verde**.
+- Aggiungo l'opzione **"Nessuno"** (grigio), default per le tende non ancora assegnate.
+- Le tende già salvate come `grigio` restano grigie (= "Nessuno"); per renderle tende staff si seleziona "Animatori" (verde).
 
-## Passi tecnici
+### 4. Drawer di assegnazione
+- Selettore colore con le 4 opzioni (Maschile / Femminile / Animatori / Nessuno) e pallini coerenti.
+- L'aggiunta **staff** resta abilitata solo per le tende **Animatori** (verde); l'aggiunta **ragazzi** per Maschile/Femminile. Con "Nessuno" la tenda resta vuota/non assegnata.
 
-1. **Nuova Edge Function `sync-staff-account`**
-   - Input: `animatoreId`, `fullName`.
-   - Verifica che il chiamante sia admin oppure abbia accesso alla pagina `/anagrafica-animatori` (stesso controllo già usato in `create-staff-account`).
-   - Trova la riga in `staff_accounts` con `animatore_id = animatoreId`. Se non esiste (l'animatore non ha account), termina senza fare nulla.
-   - Con il service role:
-     - aggiorna `profiles.full_name` per il `user_id` collegato;
-     - aggiorna i metadati dell'utente in Auth (`user_metadata.full_name`);
-     - aggiorna `staff_accounts.full_name`.
+### 5. Legenda
+Aggiorno la legenda della tab con le 4 voci e i colori più vivaci.
 
-2. **Collegamento dal frontend**
-   - In `useUpdateAnimatore` (o nella `onSuccess` del salvataggio in `AnagraficaAnimatori.tsx`), dopo l'update dell'animatore richiamare `supabase.functions.invoke('sync-staff-account', { body: { animatoreId, fullName } })`.
-   - L'operazione è "best effort": se l'animatore non ha account, non mostra errori; in caso di errore reale logghiamo senza bloccare il salvataggio dei dati anagrafici.
-   - Invalidare le query `['animatori']` e `['staff-accounts']`.
-
-## Note
-- La persona vedrà il nome aggiornato al successivo refresh/login (i dati di sessione vengono ricaricati al login).
-- Sincronizziamo il nome perché è l'unico dato dell'account staff visibile dalla persona; email/telefono dell'anagrafica restano sull'anagrafica e non toccano le credenziali di accesso.
+## Dettagli tecnici
+- File: `src/pages/TurnoPage.tsx`.
+  - `TendaCard`: rimuovo la `<path>` della riga verticale centrale; aggiorno i mapping `fill/stroke/text` con colori più vivaci e aggiungo `verde` e `grigio`.
+  - `COLORE_STYLES`: aggiungo `verde` (Animatori) e mantengo `grigio` (Nessuno), label aggiornate.
+  - `TendaDrawer`: `isStaffTent` diventa `colore === 'verde'`; selettore colore a 4 opzioni; default `grigio`.
+  - Legenda nella sezione `activeTab === 'tende'` aggiornata.
+- Il campo DB `colore` resta una stringa: aggiungo i valori `verde`/`grigio`. Nessuna migrazione necessaria.
+- Aggiorno la memoria `mem://features/gestione-tende-campeggio` con la nuova semantica colori.
