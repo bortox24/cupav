@@ -320,6 +320,12 @@ function TendaDrawer({
             </div>
           )}
 
+          {colore === 'grigio' && (
+            <p className="text-sm text-muted-foreground italic">
+              Tenda non assegnata: seleziona Maschile, Femminile o Animatori per aggiungere persone.
+            </p>
+          )}
+
           {assegnati.length >= 4 && (
             <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
               ⚠️ Tenda piena (max 4 posti)
