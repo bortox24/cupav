@@ -225,7 +225,7 @@ function TendaDrawer({
           {/* Color selector */}
           <div className="mb-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Colore tenda</p>
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2">
               {Object.entries(COLORE_STYLES).map(([key, s]) => {
                 const isSelected = colore === key;
                 const selectedClass = key === 'blu'
@@ -241,7 +241,7 @@ function TendaDrawer({
                     key={key}
                     variant="ghost"
                     size="sm"
-                    className={`rounded-full gap-1.5 border ${isSelected ? selectedClass : `${s.border} ${s.text} hover:bg-transparent hover:text-current`}`}
+                    className={`rounded-full gap-1 sm:gap-1.5 border flex-1 justify-center px-2 sm:px-3 text-xs sm:text-sm ${isSelected ? selectedClass : `${s.border} ${s.text} hover:bg-transparent hover:text-current`}`}
                     onClick={() => handleColorChange(key)}
                   >
                     <div className={`w-3 h-3 rounded-full ${dotClass} ${isSelected ? 'border border-white/50' : ''}`} />
