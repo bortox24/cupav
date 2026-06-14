@@ -225,10 +225,13 @@ function TendaDrawer({
               {Object.entries(COLORE_STYLES).map(([key, s]) => {
                 const isSelected = colore === key;
                 const selectedClass = key === 'blu'
-                  ? 'bg-blue-500 text-white hover:bg-blue-600 hover:text-white border-blue-500'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600'
                   : key === 'rosa'
-                    ? 'bg-pink-400 text-white hover:bg-pink-500 hover:text-white border-pink-400'
-                    : 'bg-gray-500 text-white hover:bg-gray-600 hover:text-white border-gray-500';
+                    ? 'bg-pink-600 text-white hover:bg-pink-700 hover:text-white border-pink-600'
+                    : key === 'verde'
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white border-emerald-600'
+                      : 'bg-slate-500 text-white hover:bg-slate-600 hover:text-white border-slate-500';
+                const dotClass = key === 'blu' ? 'bg-blue-600' : key === 'rosa' ? 'bg-pink-600' : key === 'verde' ? 'bg-emerald-600' : 'bg-slate-400';
                 return (
                   <Button
                     key={key}
@@ -237,7 +240,7 @@ function TendaDrawer({
                     className={`rounded-full gap-1.5 border ${isSelected ? selectedClass : `${s.border} ${s.text} hover:bg-transparent hover:text-current`}`}
                     onClick={() => handleColorChange(key)}
                   >
-                    <div className={`w-3 h-3 rounded-full ${key === 'blu' ? 'bg-blue-500' : key === 'rosa' ? 'bg-pink-400' : 'bg-gray-400'} ${isSelected ? 'border border-white/50' : ''}`} />
+                    <div className={`w-3 h-3 rounded-full ${dotClass} ${isSelected ? 'border border-white/50' : ''}`} />
                     {s.label}
                   </Button>
                 );
