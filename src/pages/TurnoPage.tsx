@@ -189,8 +189,12 @@ function TendaDrawer({
 
   const handleColorChange = (c: string) => {
     setColore(c);
-    // When switching color, clear staff or ragazzi that don't belong
-    // Keep all for now — user can manually remove
+    // "Nessuno" (grigio): tenda non assegnata -> svuota gli occupanti
+    if (c === 'grigio') {
+      setAssegnati([]);
+      onSave({ ...tenda, colore: c, assegnati: [] });
+      return;
+    }
     onSave({ ...tenda, colore: c, assegnati });
   };
 
