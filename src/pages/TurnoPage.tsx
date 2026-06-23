@@ -1756,7 +1756,95 @@ export default function TurnoPage() {
             </AlertDialog>
           </>
         )}
+
+        {/* ─── Tab: Giornata genitori ─── */}
+        {showGiornataGenitori && activeTab === 'giornata-genitori' && (
+          <div className="space-y-6">
+            {/* Link condivisibile */}
+            <Card className="border-0 shadow-sm rounded-2xl bg-muted/30">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <LinkIcon className="h-3.5 w-3.5" /> Link modulo da condividere
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input readOnly value={giornataLink} className="rounded-xl bg-background text-sm" onFocus={(e) => e.target.select()} />
+                  <Button size="sm" className="rounded-xl gap-1.5 shrink-0" onClick={handleCopyLink}>
+                    {linkCopied ? <><Check className="h-4 w-4" /> Copiato</> : <><Copy className="h-4 w-4" /> Copia</>}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* KPI */}
+            <div className={`grid grid-cols-2 gap-3 ${ggCanSeeMoney ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+              <Card className="border-0 shadow-sm rounded-2xl">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-rose-600">{ggStats.adulti}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Adulti</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm rounded-2xl">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-pink-600">{ggStats.minori}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Minori</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm rounded-2xl">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-foreground">{ggStats.persone}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Persone totali</p>
+                </CardContent>
+              </Card>
+              {ggCanSeeMoney && (
+                <Card className="border-0 shadow-sm rounded-2xl bg-rose-50 dark:bg-rose-950/30">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-rose-600 flex items-center justify-center gap-1">
+                      {ggStats.soldi}<Euro className="h-5 w-5" />
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Totale raccolto</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Cards */}
+            {genitoriLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : genitoriRows.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <CalendarHeart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Nessuna adesione ricevuta per questo turno.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Condividi il link del modulo con i genitori.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {genitoriRows.map((g) => (
+                  <GenitoreCard
+                    key={g.id}
+                    g={g}
+                    clickable={ggCanOpen}
+                    onClick={() => setSelectedGenitore(g)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {ggCanOpen && (
+              <GenitoreDetailDrawer
+                g={selectedGenitore}
+                open={!!selectedGenitore}
+                onOpenChange={(v) => { if (!v) setSelectedGenitore(null); }}
+                showCosto={ggCanSeeMoney}
+              />
+            )}
+          </div>
+        )}
       </div>
+
     </MainLayout>
   );
 }
