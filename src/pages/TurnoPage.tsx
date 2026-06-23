@@ -825,6 +825,50 @@ export default function TurnoPage() {
   const turnoLabel = turnoInfo?.label ?? '';
   const hasAccess = isAdmin || myPerms.some(p => p.turno === turnoValue);
 
+  // Giornata genitori: solo per 4ª e 5ª elementare
+  const showGiornataGenitori = turnoSlug === '4-elementare' || turnoSlug === '5-elementare';
+  // Permessi: gli animatori vedono solo le card e KPI base (no costi, no apertura)
+  const ggCanOpen = !isAnimatoreLimitato;
+  const ggCanSeeMoney = !isAnimatoreLimitato;
+  const giornataLink = `${window.location.origin}/giornata-genitori`;
+
+  // Load giornata genitori per questo turno
+  const { data: genitoriRows = [], isLoading: genitoriLoading } = useQuery({
+    queryKey: ['giornata-genitori', turnoValue],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('giornata_genitori' as any)
+        .select('*')
+        .eq('turno', turnoValue)
+        .order('figlio_cognome', { ascending: true })
+        .order('figlio_nome', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as GenitoreRow[];
+    },
+    enabled: !!user && hasAccess && showGiornataGenitori && !!turnoValue,
+  });
+
+  const ggStats = useMemo(() => {
+    let adulti = 0, minori = 0, soldi = 0;
+    for (const g of genitoriRows) {
+      if (!g.partecipa) continue;
+      adulti += g.num_adulti || 0;
+      minori += g.num_minori || 0;
+      soldi += g.contributo || 0;
+    }
+    return { adulti, minori, persone: adulti + minori, soldi };
+  }, [genitoriRows]);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(giornataLink);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      toast({ title: 'Impossibile copiare', description: 'Copia il link manualmente.', variant: 'destructive' });
+    }
+  };
+
   // Load iscrizioni
   const { data: iscrizioni = [], isLoading: iscrizioniLoading } = useQuery({
     queryKey: ['turno-iscrizioni', turnoValue],
