@@ -620,6 +620,122 @@ function StaffDetailDrawer({ a, open, onOpenChange }: { a: AnimatoreCompleto | n
   );
 }
 
+// ─── Giornata genitori card & drawer ───────────────────
+
+type GenitoreRow = {
+  id: string;
+  genitore_nome: string;
+  genitore_cognome: string;
+  genitore_email: string;
+  figlio_nome: string;
+  figlio_cognome: string;
+  turno: string;
+  partecipa: boolean;
+  num_adulti: number;
+  num_minori: number;
+  contributo: number;
+};
+
+function GenitoreCard({ g, onClick, clickable }: { g: GenitoreRow; onClick: () => void; clickable: boolean }) {
+  const initials = `${(g.figlio_cognome?.[0] || '').toUpperCase()}${(g.figlio_nome?.[0] || '').toUpperCase()}`;
+  return (
+    <Card
+      className={`border-0 shadow-sm transition-all duration-300 overflow-hidden bg-card rounded-2xl [-webkit-tap-highlight-color:transparent] ${clickable ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02]' : ''}`}
+      onClick={clickable ? onClick : undefined}
+    >
+      <CardContent className="p-0">
+        <div className={`px-4 py-3.5 flex items-center gap-3 ${g.partecipa ? 'bg-gradient-to-r from-rose-500/10 to-pink-500/10' : 'bg-gradient-to-r from-muted to-muted/40'}`}>
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md ${g.partecipa ? 'bg-gradient-to-br from-rose-500 to-pink-500' : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="font-bold text-[15px] leading-tight truncate text-foreground">
+              {toTitleCase(g.figlio_cognome)} {toTitleCase(g.figlio_nome)}
+            </h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {toTitleCase(g.genitore_nome)} {toTitleCase(g.genitore_cognome)}
+            </p>
+          </div>
+        </div>
+        <div className="px-4 py-3.5 space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Mail className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <span className="font-medium text-foreground truncate">{g.genitore_email}</span>
+          </div>
+          {g.partecipa ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              {g.num_adulti > 0 && (
+                <Badge className="text-[11px] gap-1 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
+                  <Users className="h-3 w-3" /> {g.num_adulti} adult{g.num_adulti === 1 ? 'o' : 'i'}
+                </Badge>
+              )}
+              {g.num_minori > 0 && (
+                <Badge className="text-[11px] gap-1 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
+                  <Users className="h-3 w-3" /> {g.num_minori} minor{g.num_minori === 1 ? 'e' : 'i'}
+                </Badge>
+              )}
+            </div>
+          ) : (
+            <Badge className="text-[11px] gap-1 bg-muted text-muted-foreground border-0 rounded-full px-2.5 py-1 pointer-events-none">
+              <X className="h-3 w-3" /> Non partecipa
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GenitoreDetailDrawer({ g, open, onOpenChange, showCosto }: { g: GenitoreRow | null; open: boolean; onOpenChange: (v: boolean) => void; showCosto: boolean }) {
+  if (!g) return null;
+  const initials = `${(g.figlio_cognome?.[0] || '').toUpperCase()}${(g.figlio_nome?.[0] || '').toUpperCase()}`;
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[92vh]">
+        <div className="overflow-y-auto px-5 pb-8">
+          <DrawerHeader className="px-0 pb-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-lg shrink-0 ${g.partecipa ? 'bg-gradient-to-br from-rose-500 to-pink-500' : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
+                {initials}
+              </div>
+              <div>
+                <DrawerTitle className="text-xl text-left">{toTitleCase(g.figlio_cognome)} {toTitleCase(g.figlio_nome)}</DrawerTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">{toTitleCase(g.genitore_nome)} {toTitleCase(g.genitore_cognome)}</p>
+              </div>
+            </div>
+          </DrawerHeader>
+          <div className="space-y-1">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Dati</h4>
+            <div className="bg-muted/30 rounded-2xl px-3 divide-y divide-border">
+              <InfoRow icon={<Mail className="h-4 w-4 text-muted-foreground" />} label="Email genitore" value={g.genitore_email} />
+              <InfoRow icon={<CalendarHeart className="h-4 w-4 text-muted-foreground" />} label="Partecipa sabato" value={g.partecipa ? 'Sì' : 'No'} />
+            </div>
+          </div>
+          {g.partecipa && (
+            <div className="space-y-1 mt-5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Partecipanti</h4>
+              <div className="bg-muted/30 rounded-2xl px-3 divide-y divide-border">
+                <InfoRow icon={<Users className="h-4 w-4 text-muted-foreground" />} label="Adulti (≥18)" value={String(g.num_adulti)} />
+                <InfoRow icon={<Users className="h-4 w-4 text-muted-foreground" />} label="Minori di 18" value={String(g.num_minori)} />
+              </div>
+            </div>
+          )}
+          {g.partecipa && showCosto && (
+            <div className="mt-5 flex items-center justify-between rounded-2xl bg-rose-50 dark:bg-rose-950/30 px-4 py-3.5">
+              <span className="font-semibold text-foreground">Contributo da versare</span>
+              <span className="text-xl font-bold text-rose-600">{g.contributo}€</span>
+            </div>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+
+
 
 
 // ─── Appello Card ──────────────────────────────────────
