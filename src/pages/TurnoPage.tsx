@@ -807,6 +807,8 @@ export default function TurnoPage() {
   const [saving, setSaving] = useState(false);
   const [selectedTenda, setSelectedTenda] = useState<TendaData | null>(null);
   const [tendaSaving, setTendaSaving] = useState(false);
+  const [selectedGenitore, setSelectedGenitore] = useState<GenitoreRow | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [dlIncludeRagazzi, setDlIncludeRagazzi] = useState(true);
   const [dlIncludeStaff, setDlIncludeStaff] = useState(true);
   const [dlRagazziFields, setDlRagazziFields] = useState<Record<string, boolean>>({
