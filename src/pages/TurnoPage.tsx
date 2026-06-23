@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen, Filter, Users, ClipboardCheck, Download, LayoutGrid, X, UserPlus, ChevronDown } from 'lucide-react';
+import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen, Filter, Users, ClipboardCheck, Download, LayoutGrid, X, UserPlus, ChevronDown, CalendarHeart, Copy, Link as LinkIcon, Euro } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
@@ -620,6 +620,122 @@ function StaffDetailDrawer({ a, open, onOpenChange }: { a: AnimatoreCompleto | n
   );
 }
 
+// ─── Giornata genitori card & drawer ───────────────────
+
+type GenitoreRow = {
+  id: string;
+  genitore_nome: string;
+  genitore_cognome: string;
+  genitore_email: string;
+  figlio_nome: string;
+  figlio_cognome: string;
+  turno: string;
+  partecipa: boolean;
+  num_adulti: number;
+  num_minori: number;
+  contributo: number;
+};
+
+function GenitoreCard({ g, onClick, clickable }: { g: GenitoreRow; onClick: () => void; clickable: boolean }) {
+  const initials = `${(g.figlio_cognome?.[0] || '').toUpperCase()}${(g.figlio_nome?.[0] || '').toUpperCase()}`;
+  return (
+    <Card
+      className={`border-0 shadow-sm transition-all duration-300 overflow-hidden bg-card rounded-2xl [-webkit-tap-highlight-color:transparent] ${clickable ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02]' : ''}`}
+      onClick={clickable ? onClick : undefined}
+    >
+      <CardContent className="p-0">
+        <div className={`px-4 py-3.5 flex items-center gap-3 ${g.partecipa ? 'bg-gradient-to-r from-rose-500/10 to-pink-500/10' : 'bg-gradient-to-r from-muted to-muted/40'}`}>
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md ${g.partecipa ? 'bg-gradient-to-br from-rose-500 to-pink-500' : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="font-bold text-[15px] leading-tight truncate text-foreground">
+              {toTitleCase(g.figlio_cognome)} {toTitleCase(g.figlio_nome)}
+            </h4>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {toTitleCase(g.genitore_nome)} {toTitleCase(g.genitore_cognome)}
+            </p>
+          </div>
+        </div>
+        <div className="px-4 py-3.5 space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Mail className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <span className="font-medium text-foreground truncate">{g.genitore_email}</span>
+          </div>
+          {g.partecipa ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              {g.num_adulti > 0 && (
+                <Badge className="text-[11px] gap-1 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
+                  <Users className="h-3 w-3" /> {g.num_adulti} adult{g.num_adulti === 1 ? 'o' : 'i'}
+                </Badge>
+              )}
+              {g.num_minori > 0 && (
+                <Badge className="text-[11px] gap-1 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
+                  <Users className="h-3 w-3" /> {g.num_minori} minor{g.num_minori === 1 ? 'e' : 'i'}
+                </Badge>
+              )}
+            </div>
+          ) : (
+            <Badge className="text-[11px] gap-1 bg-muted text-muted-foreground border-0 rounded-full px-2.5 py-1 pointer-events-none">
+              <X className="h-3 w-3" /> Non partecipa
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GenitoreDetailDrawer({ g, open, onOpenChange, showCosto }: { g: GenitoreRow | null; open: boolean; onOpenChange: (v: boolean) => void; showCosto: boolean }) {
+  if (!g) return null;
+  const initials = `${(g.figlio_cognome?.[0] || '').toUpperCase()}${(g.figlio_nome?.[0] || '').toUpperCase()}`;
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[92vh]">
+        <div className="overflow-y-auto px-5 pb-8">
+          <DrawerHeader className="px-0 pb-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-lg shrink-0 ${g.partecipa ? 'bg-gradient-to-br from-rose-500 to-pink-500' : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
+                {initials}
+              </div>
+              <div>
+                <DrawerTitle className="text-xl text-left">{toTitleCase(g.figlio_cognome)} {toTitleCase(g.figlio_nome)}</DrawerTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">{toTitleCase(g.genitore_nome)} {toTitleCase(g.genitore_cognome)}</p>
+              </div>
+            </div>
+          </DrawerHeader>
+          <div className="space-y-1">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Dati</h4>
+            <div className="bg-muted/30 rounded-2xl px-3 divide-y divide-border">
+              <InfoRow icon={<Mail className="h-4 w-4 text-muted-foreground" />} label="Email genitore" value={g.genitore_email} />
+              <InfoRow icon={<CalendarHeart className="h-4 w-4 text-muted-foreground" />} label="Partecipa sabato" value={g.partecipa ? 'Sì' : 'No'} />
+            </div>
+          </div>
+          {g.partecipa && (
+            <div className="space-y-1 mt-5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Partecipanti</h4>
+              <div className="bg-muted/30 rounded-2xl px-3 divide-y divide-border">
+                <InfoRow icon={<Users className="h-4 w-4 text-muted-foreground" />} label="Adulti (≥18)" value={String(g.num_adulti)} />
+                <InfoRow icon={<Users className="h-4 w-4 text-muted-foreground" />} label="Minori di 18" value={String(g.num_minori)} />
+              </div>
+            </div>
+          )}
+          {g.partecipa && showCosto && (
+            <div className="mt-5 flex items-center justify-between rounded-2xl bg-rose-50 dark:bg-rose-950/30 px-4 py-3.5">
+              <span className="font-semibold text-foreground">Contributo da versare</span>
+              <span className="text-xl font-bold text-rose-600">{g.contributo}€</span>
+            </div>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+
+
 
 
 // ─── Appello Card ──────────────────────────────────────
@@ -646,7 +762,7 @@ function AppelloCard({ r, isPresent, onToggle, isDuplicate }: { r: any; isPresen
 
 // ─── Main Component ────────────────────────────────────
 
-type TabType = 'dettagli' | 'appello' | 'tende' | 'animatori' | 'download-lista';
+type TabType = 'dettagli' | 'appello' | 'tende' | 'animatori' | 'download-lista' | 'giornata-genitori';
 
 export default function TurnoPage() {
   const { turnoSlug } = useParams<{ turnoSlug: string }>();
@@ -691,6 +807,8 @@ export default function TurnoPage() {
   const [saving, setSaving] = useState(false);
   const [selectedTenda, setSelectedTenda] = useState<TendaData | null>(null);
   const [tendaSaving, setTendaSaving] = useState(false);
+  const [selectedGenitore, setSelectedGenitore] = useState<GenitoreRow | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [dlIncludeRagazzi, setDlIncludeRagazzi] = useState(true);
   const [dlIncludeStaff, setDlIncludeStaff] = useState(true);
   const [dlRagazziFields, setDlRagazziFields] = useState<Record<string, boolean>>({
@@ -706,6 +824,50 @@ export default function TurnoPage() {
   const turnoValue = turnoInfo?.value ?? '';
   const turnoLabel = turnoInfo?.label ?? '';
   const hasAccess = isAdmin || myPerms.some(p => p.turno === turnoValue);
+
+  // Giornata genitori: solo per 4ª e 5ª elementare
+  const showGiornataGenitori = turnoSlug === '4-elementare' || turnoSlug === '5-elementare';
+  // Permessi: gli animatori vedono solo le card e KPI base (no costi, no apertura)
+  const ggCanOpen = !isAnimatoreLimitato;
+  const ggCanSeeMoney = !isAnimatoreLimitato;
+  const giornataLink = `${window.location.origin}/giornata-genitori`;
+
+  // Load giornata genitori per questo turno
+  const { data: genitoriRows = [], isLoading: genitoriLoading } = useQuery({
+    queryKey: ['giornata-genitori', turnoValue],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('giornata_genitori' as any)
+        .select('*')
+        .eq('turno', turnoValue)
+        .order('figlio_cognome', { ascending: true })
+        .order('figlio_nome', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as GenitoreRow[];
+    },
+    enabled: !!user && hasAccess && showGiornataGenitori && !!turnoValue,
+  });
+
+  const ggStats = useMemo(() => {
+    let adulti = 0, minori = 0, soldi = 0;
+    for (const g of genitoriRows) {
+      if (!g.partecipa) continue;
+      adulti += g.num_adulti || 0;
+      minori += g.num_minori || 0;
+      soldi += g.contributo || 0;
+    }
+    return { adulti, minori, persone: adulti + minori, soldi };
+  }, [genitoriRows]);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(giornataLink);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      toast({ title: 'Impossibile copiare', description: 'Copia il link manualmente.', variant: 'destructive' });
+    }
+  };
 
   // Load iscrizioni
   const { data: iscrizioni = [], isLoading: iscrizioniLoading } = useQuery({
@@ -1195,6 +1357,16 @@ export default function TurnoPage() {
           >
             <Download className="h-4 w-4" /> Download lista
           </Button>
+          {showGiornataGenitori && (
+            <Button
+              variant={activeTab === 'giornata-genitori' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full gap-1.5"
+              onClick={() => handleTabClick('giornata-genitori')}
+            >
+              <CalendarHeart className="h-4 w-4" /> Giornata genitori
+            </Button>
+          )}
         </div>
 
         {/* ─── Tab: Dettagli ragazzi ─── */}
@@ -1584,7 +1756,95 @@ export default function TurnoPage() {
             </AlertDialog>
           </>
         )}
+
+        {/* ─── Tab: Giornata genitori ─── */}
+        {showGiornataGenitori && activeTab === 'giornata-genitori' && (
+          <div className="space-y-6">
+            {/* Link condivisibile */}
+            <Card className="border-0 shadow-sm rounded-2xl bg-muted/30">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <LinkIcon className="h-3.5 w-3.5" /> Link modulo da condividere
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input readOnly value={giornataLink} className="rounded-xl bg-background text-sm" onFocus={(e) => e.target.select()} />
+                  <Button size="sm" className="rounded-xl gap-1.5 shrink-0" onClick={handleCopyLink}>
+                    {linkCopied ? <><Check className="h-4 w-4" /> Copiato</> : <><Copy className="h-4 w-4" /> Copia</>}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* KPI */}
+            <div className={`grid grid-cols-2 gap-3 ${ggCanSeeMoney ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+              <Card className="border-0 shadow-sm rounded-2xl">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-rose-600">{ggStats.adulti}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Adulti</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm rounded-2xl">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-pink-600">{ggStats.minori}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Minori</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm rounded-2xl">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-foreground">{ggStats.persone}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Persone totali</p>
+                </CardContent>
+              </Card>
+              {ggCanSeeMoney && (
+                <Card className="border-0 shadow-sm rounded-2xl bg-rose-50 dark:bg-rose-950/30">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-rose-600 flex items-center justify-center gap-1">
+                      {ggStats.soldi}<Euro className="h-5 w-5" />
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Totale raccolto</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Cards */}
+            {genitoriLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : genitoriRows.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <CalendarHeart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Nessuna adesione ricevuta per questo turno.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Condividi il link del modulo con i genitori.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {genitoriRows.map((g) => (
+                  <GenitoreCard
+                    key={g.id}
+                    g={g}
+                    clickable={ggCanOpen}
+                    onClick={() => setSelectedGenitore(g)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {ggCanOpen && (
+              <GenitoreDetailDrawer
+                g={selectedGenitore}
+                open={!!selectedGenitore}
+                onOpenChange={(v) => { if (!v) setSelectedGenitore(null); }}
+                showCosto={ggCanSeeMoney}
+              />
+            )}
+          </div>
+        )}
       </div>
+
     </MainLayout>
   );
 }

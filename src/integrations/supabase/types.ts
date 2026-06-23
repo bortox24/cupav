@@ -305,6 +305,54 @@ export type Database = {
           },
         ]
       }
+      giornata_genitori: {
+        Row: {
+          contributo: number
+          created_at: string
+          figlio_cognome: string
+          figlio_nome: string
+          genitore_cognome: string
+          genitore_email: string
+          genitore_nome: string
+          id: string
+          num_adulti: number
+          num_minori: number
+          partecipa: boolean
+          turno: string
+          updated_at: string
+        }
+        Insert: {
+          contributo?: number
+          created_at?: string
+          figlio_cognome: string
+          figlio_nome: string
+          genitore_cognome: string
+          genitore_email: string
+          genitore_nome: string
+          id?: string
+          num_adulti?: number
+          num_minori?: number
+          partecipa?: boolean
+          turno: string
+          updated_at?: string
+        }
+        Update: {
+          contributo?: number
+          created_at?: string
+          figlio_cognome?: string
+          figlio_nome?: string
+          genitore_cognome?: string
+          genitore_email?: string
+          genitore_nome?: string
+          id?: string
+          num_adulti?: number
+          num_minori?: number
+          partecipa?: boolean
+          turno?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invio_massivo_job_items: {
         Row: {
           created_at: string

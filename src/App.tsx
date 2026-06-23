@@ -24,6 +24,7 @@ import IscrizioneCampeggio from "./pages/public/IscrizioneCampeggio";
 import IscrizioneFamiglie from "./pages/public/IscrizioneFamiglie";
 import IscrizioneMontaggio from "./pages/public/IscrizioneMontaggio";
 import ModuloStaff from "./pages/public/ModuloStaff";
+import GiornataGenitori from "./pages/public/GiornataGenitori";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
 import AnagraficaTurnoFamiglie from "./pages/AnagraficaTurnoFamiglie";
 import TurnoPage from "./pages/TurnoPage";
@@ -221,6 +222,7 @@ function AppRoutes() {
       <Route path="/preiscrizione-cupav" element={<PreiscrizioneCupav />} />
       <Route path="/iscrizione" element={<IscrizioneCampeggio />} />
       <Route path="/iscrizione-famiglie" element={<IscrizioneFamiglie />} />
+      <Route path="/giornata-genitori" element={<GiornataGenitori />} />
       <Route path="/iscrizione-montaggio" element={<IscrizioneMontaggio />} />
       <Route path="/modulo/:slug" element={<ModuloForm />} />
       <Route path="/modulo-staff" element={<ModuloStaff />} />
