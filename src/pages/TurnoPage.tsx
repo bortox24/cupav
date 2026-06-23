@@ -1357,6 +1357,16 @@ export default function TurnoPage() {
           >
             <Download className="h-4 w-4" /> Download lista
           </Button>
+          {showGiornataGenitori && (
+            <Button
+              variant={activeTab === 'giornata-genitori' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full gap-1.5"
+              onClick={() => handleTabClick('giornata-genitori')}
+            >
+              <CalendarHeart className="h-4 w-4" /> Giornata genitori
+            </Button>
+          )}
         </div>
 
         {/* ─── Tab: Dettagli ragazzi ─── */}
