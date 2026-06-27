@@ -108,9 +108,16 @@
     @apply border-border;
   }
 
+  html {
+    height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -126,5 +133,12 @@
 
   input[type="date"]::-webkit-date-and-time-value {
     text-align: left;
+  }
+}
+
+/* Scroll padding for mobile keyboard */
+@layer base {
+  html {
+    scroll-padding-bottom: 280px;
   }
 }

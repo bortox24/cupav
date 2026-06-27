@@ -37,6 +37,7 @@ import AnagraficaAnimatori from "./pages/AnagraficaAnimatori";
 import Regolamento from "./pages/Regolamento";
 import NotFound from "./pages/NotFound";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { useMobileKeyboardScroll } from "./hooks/useMobileKeyboardScroll";
 
 const queryClient = new QueryClient();
 
@@ -237,7 +238,9 @@ function AppRoutes() {
   );
 }
 
-const App = () => (
+const App = () => {
+  useMobileKeyboardScroll();
+  return (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <TooltipProvider>
@@ -252,6 +255,7 @@ const App = () => (
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
