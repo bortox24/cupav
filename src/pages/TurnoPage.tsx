@@ -1501,7 +1501,20 @@ export default function TurnoPage() {
               isDuplicate={selectedRagazzo ? duplicateIscrizioneIds.has(selectedRagazzo.id) : false}
               open={!!selectedRagazzo}
               onOpenChange={(v) => { if (!v) setSelectedRagazzo(null); }}
+              canEditNote={!isAnimatoreLimitato}
+              onSaveNote={async (id, note) => {
+                const { error } = await supabase.from('iscrizioni').update({ note }).eq('id', id);
+                if (error) {
+                  toast({ title: 'Errore', description: 'Impossibile salvare la nota.', variant: 'destructive' });
+                  throw error;
+                }
+                setSelectedRagazzo((prev: any) => (prev && prev.id === id ? { ...prev, note } : prev));
+                queryClient.invalidateQueries({ queryKey: ['turno-iscrizioni', turnoValue] });
+                await queryClient.refetchQueries({ queryKey: ['turno-iscrizioni', turnoValue] });
+                toast({ title: 'Nota salvata' });
+              }}
             />
+
           </>
         )}
 
