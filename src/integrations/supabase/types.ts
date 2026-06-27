@@ -509,6 +509,7 @@ export type Database = {
           ha_allergie: boolean
           id: string
           liberatoria_foto: boolean
+          note: string | null
           patologie_dettaglio: string | null
           ragazzo_cognome: string
           ragazzo_data_nascita: string
@@ -538,6 +539,7 @@ export type Database = {
           ha_allergie?: boolean
           id?: string
           liberatoria_foto?: boolean
+          note?: string | null
           patologie_dettaglio?: string | null
           ragazzo_cognome: string
           ragazzo_data_nascita: string
@@ -567,6 +569,7 @@ export type Database = {
           ha_allergie?: boolean
           id?: string
           liberatoria_foto?: boolean
+          note?: string | null
           patologie_dettaglio?: string | null
           ragazzo_cognome?: string
           ragazzo_data_nascita?: string
