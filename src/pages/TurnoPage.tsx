@@ -419,7 +419,16 @@ function InfoRow({ icon, label, value, isLink }: { icon: React.ReactNode; label:
   );
 }
 
-function RagazzoDetailDrawer({ r, open, onOpenChange, isDuplicate }: { r: any; open: boolean; onOpenChange: (v: boolean) => void; isDuplicate?: boolean }) {
+function RagazzoDetailDrawer({ r, open, onOpenChange, isDuplicate, canEditNote, onSaveNote }: { r: any; open: boolean; onOpenChange: (v: boolean) => void; isDuplicate?: boolean; canEditNote?: boolean; onSaveNote?: (id: string, note: string) => Promise<void> }) {
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+
+  useEffect(() => {
+    setEditingNote(false);
+    setNoteDraft(r?.note || '');
+  }, [r?.id, r?.note]);
+
   if (!r) return null;
   const initials = `${(r.ragazzo_cognome?.[0] || '').toUpperCase()}${(r.ragazzo_nome?.[0] || '').toUpperCase()}`;
 
