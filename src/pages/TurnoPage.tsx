@@ -21,6 +21,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 // ─── Helpers ───────────────────────────────────────────
 
@@ -514,16 +515,30 @@ function RagazzoDetailDrawer({ r, open, onOpenChange, isDuplicate, canEditNote, 
                 </Button>
               )}
             </div>
-            {editingNote ? (
-              <div className="space-y-2">
+            <div className="bg-muted/30 rounded-2xl px-4 py-3">
+              {r.note ? (
+                <p className="text-sm whitespace-pre-wrap">{r.note}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Nessuna nota</p>
+              )}
+            </div>
+
+            <Dialog open={editingNote} onOpenChange={(v) => { if (!savingNote) { setEditingNote(v); if (!v) setNoteDraft(r.note || ''); } }}>
+              <DialogContent className="max-w-md rounded-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-1.5">
+                    <StickyNote className="h-4 w-4" /> Note
+                  </DialogTitle>
+                </DialogHeader>
                 <Textarea
+                  autoFocus
                   value={noteDraft}
                   onChange={(e) => setNoteDraft(e.target.value)}
                   placeholder="Scrivi una nota (es. richieste dei genitori alla partenza)..."
-                  rows={4}
+                  rows={6}
                   className="rounded-2xl resize-none"
                 />
-                <div className="flex gap-2 justify-end">
+                <DialogFooter className="gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -550,17 +565,9 @@ function RagazzoDetailDrawer({ r, open, onOpenChange, isDuplicate, canEditNote, 
                   >
                     {savingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Salva
                   </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-muted/30 rounded-2xl px-4 py-3">
-                {r.note ? (
-                  <p className="text-sm whitespace-pre-wrap">{r.note}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">Nessuna nota</p>
-                )}
-              </div>
-            )}
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
