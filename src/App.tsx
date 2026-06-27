@@ -37,6 +37,7 @@ import AnagraficaAnimatori from "./pages/AnagraficaAnimatori";
 import Regolamento from "./pages/Regolamento";
 import NotFound from "./pages/NotFound";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { useMobileKeyboardScroll } from "./hooks/useMobileKeyboardScroll";
 
 const queryClient = new QueryClient();
 
