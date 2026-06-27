@@ -498,7 +498,72 @@ function RagazzoDetailDrawer({ r, open, onOpenChange, isDuplicate, canEditNote, 
               )}
             </div>
           </div>
+          <div className="space-y-1 mt-5">
+            <div className="flex items-center justify-between mb-1">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <StickyNote className="h-3.5 w-3.5" /> Note
+              </h4>
+              {canEditNote && !editingNote && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 gap-1.5 text-xs"
+                  onClick={() => { setNoteDraft(r.note || ''); setEditingNote(true); }}
+                >
+                  <Pencil className="h-3.5 w-3.5" /> Modifica
+                </Button>
+              )}
+            </div>
+            {editingNote ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.target.value)}
+                  placeholder="Scrivi una nota (es. richieste dei genitori alla partenza)..."
+                  rows={4}
+                  className="rounded-2xl resize-none"
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl"
+                    disabled={savingNote}
+                    onClick={() => { setEditingNote(false); setNoteDraft(r.note || ''); }}
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="rounded-xl gap-1.5"
+                    disabled={savingNote}
+                    onClick={async () => {
+                      if (!onSaveNote) return;
+                      setSavingNote(true);
+                      try {
+                        await onSaveNote(r.id, noteDraft.trim());
+                        setEditingNote(false);
+                      } finally {
+                        setSavingNote(false);
+                      }
+                    }}
+                  >
+                    {savingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Salva
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-muted/30 rounded-2xl px-4 py-3">
+                {r.note ? (
+                  <p className="text-sm whitespace-pre-wrap">{r.note}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Nessuna nota</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+
       </DrawerContent>
     </Drawer>
   );
