@@ -91,28 +91,62 @@ export default function GiornataGenitori() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    const payload = {
+      genitore_nome: capitalizeWords(genitoreNome.trim()),
+      genitore_cognome: capitalizeWords(genitoreCognome.trim()),
+      genitore_email: genitoreEmail.trim(),
+      figlio_nome: capitalizeWords(figlioNome.trim()),
+      figlio_cognome: capitalizeWords(figlioCognome.trim()),
+      turno,
+      partecipa: partecipaBool,
+      num_adulti: partecipaBool ? numAdulti : 0,
+      num_minori: partecipaBool ? numMinori : 0,
+      contributo: partecipaBool ? contributo : 0,
+    };
+
+    const isTransientError = (err: any) => {
+      const name = err?.name ?? "";
+      const msg = (err?.message ?? "").toLowerCase();
+      return (
+        name === "AbortError" ||
+        msg.includes("aborted") ||
+        msg.includes("failed to fetch") ||
+        msg.includes("network") ||
+        msg.includes("load failed")
+      );
+    };
+
+    const maxAttempts = 3;
     try {
-      const payload = {
-        genitore_nome: capitalizeWords(genitoreNome.trim()),
-        genitore_cognome: capitalizeWords(genitoreCognome.trim()),
-        genitore_email: genitoreEmail.trim(),
-        figlio_nome: capitalizeWords(figlioNome.trim()),
-        figlio_cognome: capitalizeWords(figlioCognome.trim()),
-        turno,
-        partecipa: partecipaBool,
-        num_adulti: partecipaBool ? numAdulti : 0,
-        num_minori: partecipaBool ? numMinori : 0,
-        contributo: partecipaBool ? contributo : 0,
-      };
-      const { error } = await supabase.from("giornata_genitori" as any).insert(payload as any);
-      if (error) throw error;
-      setSubmitted(true);
-    } catch (err: any) {
-      toast({ title: "Errore durante l'invio", description: err.message, variant: "destructive" });
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const { error } = await supabase.from("giornata_genitori" as any).insert(payload as any);
+          if (error) throw error;
+          setSubmitted(true);
+          return;
+        } catch (err: any) {
+          // Riprova solo per interruzioni di rete temporanee
+          if (isTransientError(err) && attempt < maxAttempts) {
+            await new Promise((r) => setTimeout(r, attempt * 800));
+            continue;
+          }
+          if (isTransientError(err)) {
+            toast({
+              title: "Connessione interrotta",
+              description: "L'invio non è andato a buon fine. Controlla la connessione e premi di nuovo Invia.",
+              variant: "destructive",
+            });
+          } else {
+            toast({ title: "Errore durante l'invio", description: err.message, variant: "destructive" });
+          }
+          return;
+        }
+      }
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (submitted) {
     return (
