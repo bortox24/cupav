@@ -1,32 +1,19 @@
-# Campo "Note" sulle card dei ragazzi
+# Fix invio "Giornata Genitori" — AbortError su mobile
 
-Aggiungere un campo **Note** in ogni card di iscrizione (dettaglio ragazzo) all'interno della pagina del turno. Serve per annotare cose dette dai genitori alla partenza. È **visibile a tutti** quelli che fanno parte del turno; è **modificabile solo** da cuochi, responsabili campo, responsabili animatori e dagli account "veri" (login admin/utenti, non gli account animatore).
+## Diagnosi
+- La tabella `giornata_genitori` riceve correttamente gli invii (43 righe, due salvate oggi). Quindi **non** è un problema di database, permessi o RLS.
+- L'errore mostrato (`AbortError: signal is aborted without reason`) significa che **il browser ha annullato la richiesta di rete** prima che completasse. Su iPhone/Safari e nelle PWA questo capita per rete instabile, schermo che si spegne, app messa in background, oppure interferenza del service worker. È intermittente: per questo alcuni genitori riescono a inviare e altri no.
 
-## Comportamento
+## Obiettivo
+Far sì che l'invio non fallisca per un'interruzione temporanea, riprovando in automatico e mostrando un messaggio chiaro solo se proprio non riesce.
 
-- Nel drawer di dettaglio del ragazzo, sotto la sezione "Altro" (sotto la Firma), compare un blocco **Note**.
-- In sola visualizzazione mostra il testo della nota (o "Nessuna nota" se vuoto). Visibile a chiunque acceda al turno, compresi gli animatori.
-- Accanto al campo Note compare una **pennetta (icona matita)** solo per i ruoli abilitati. Cliccandola il campo diventa una textarea con pulsanti Salva / Annulla.
-- Ruoli che possono scrivere:
-  - account "veri" con login (admin e utenti normali non-staff)
-  - account staff con ruolo `cuoco`, `responsabile_campo`, `responsabile_animatori`
-  - **esclusi** gli account staff con ruolo `animatore` (solo lettura)
-- Il salvataggio aggiorna in tempo reale (l'app già ha il realtime sulle iscrizioni), quindi tutti vedono subito la nota.
+## Interventi (solo `src/pages/public/GiornataGenitori.tsx`)
+1. **Retry automatico** nella funzione `handleSubmit`: se l'insert fallisce con un `AbortError` (o errore di rete tipo "Failed to fetch"), riprovare automaticamente fino a 3 volte con una breve pausa crescente (es. 800ms, 1.6s) prima di mostrare l'errore.
+2. **Riconoscere l'AbortError**: distinguere l'AbortError/errore di rete dai veri errori del database, così da riprovare solo quando ha senso.
+3. **Messaggio d'errore più chiaro**: se dopo i tentativi fallisce ancora, mostrare un toast comprensibile ("Connessione interrotta, riprova") invece del messaggio tecnico `AbortError`.
+4. **Evitare doppio invio**: mantenere il pulsante disabilitato durante i tentativi (già presente `submitting`), così i retry non generano righe duplicate.
 
-## Dettagli tecnici
-
-**Database (migrazione)**
-- Aggiungere la colonna `note text` (nullable) alla tabella `iscrizioni`.
-- Aggiungere una nuova policy di UPDATE su `iscrizioni` che consenta la modifica a chi ha accesso al turno ed è abilitato:
-  - `is_admin()`, oppure
-  - utente con login non-staff (`NOT is_staff_account()`) che ha `has_turno_access(auth.uid(), turno)`, oppure
-  - account staff con `my_staff_ruolo()` in (`cuoco`, `responsabile_campo`, `responsabile_animatori`) e `has_turno_access(auth.uid(), turno)`.
-- La policy di UPDATE esistente (admin / page-access a `/anagrafica-ragazzi`) resta invariata.
-
-Nota: la regola RLS agisce a livello di riga, non di singola colonna; la UI di questi ruoli espone solo la modifica della nota, quindi nella pratica viene scritta solo `note`.
-
-**Frontend (`src/pages/TurnoPage.tsx`)**
-- `RagazzoDetailDrawer`: aggiungere il blocco Note sotto la Firma, con stato locale di editing, textarea e pulsanti Salva/Annulla; passare al drawer un flag `canEditNote` e una callback di salvataggio (`update` su `iscrizioni` per `id`).
-- Calcolare `canEditNote = !isAnimatoreLimitato` (coerente con la logica di permessi già presente: gli animatori-staff restano in sola lettura, tutti gli altri ruoli/login possono scrivere).
-- Includere `note` nella query `turno-iscrizioni` (già `select('*')`, quindi nessuna modifica alla select) e invalidare/refetch dopo il salvataggio.
-- Aggiornare `src/integrations/supabase/types.ts` con la nuova colonna `note`.
+## Note tecniche
+- Nessuna modifica al database o alle policy: sono già corrette.
+- L'insert resta lato client con `supabase.from("giornata_genitori").insert(...)`; aggiungiamo solo il ciclo di retry e la gestione dell'errore.
+- Se dopo questo intervento l'errore dovesse ripresentarsi spesso, valuteremo come passo successivo lo spostamento dell'invio su una Edge Function (più resistente alle interruzioni del browser), ma è un'aggiunta non necessaria per ora.
