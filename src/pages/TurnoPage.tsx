@@ -1068,6 +1068,25 @@ export default function TurnoPage() {
     return duplicates;
   }, [iscrizioni]);
 
+  // Genitori mancanti: ragazzi iscritti al turno senza adesione alla giornata genitori
+  const genitoriMancanti = useMemo(() => {
+    if (!showGiornataGenitori) return [];
+    const adesioni = new Set(
+      genitoriRows.map((g) => normalizeDuplicateName(`${g.figlio_nome ?? ''} ${g.figlio_cognome ?? ''}`)).filter(Boolean)
+    );
+    const seen = new Set<string>();
+    const missing: { cognome: string; nome: string }[] = [];
+    for (const r of iscrizioni as any[]) {
+      const key = normalizeDuplicateName(`${r.ragazzo_nome ?? ''} ${r.ragazzo_cognome ?? ''}`);
+      if (!key || adesioni.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      missing.push({ cognome: r.ragazzo_cognome ?? '', nome: r.ragazzo_nome ?? '' });
+    }
+    return missing.sort((a, b) =>
+      `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it')
+    );
+  }, [showGiornataGenitori, genitoriRows, iscrizioni]);
+
   // Load animatori for this turno
   const { data: animatoriTurno = [], isLoading: animatoriLoading } = useAnimatoriByTurno(turnoValue);
 
