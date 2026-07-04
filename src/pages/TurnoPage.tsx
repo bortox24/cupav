@@ -909,7 +909,7 @@ type TabType = 'dettagli' | 'appello' | 'tende' | 'animatori' | 'download-lista'
 
 export default function TurnoPage() {
   const { turnoSlug } = useParams<{ turnoSlug: string }>();
-  const { user, isAdmin, profile } = useAuth();
+  const { user, isAdmin, profile: authProfile } = useAuth();
   const { data: myPerms = [], isLoading: permsLoading } = useMyTurnoPermissions();
 
   // Determine if the current user is a staff account (created from Anagrafica Staff)
