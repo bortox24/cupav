@@ -2002,6 +2002,36 @@ export default function TurnoPage() {
               )}
             </div>
 
+            {/* Genitori mancanti */}
+            {!genitoriLoading && !iscrizioniLoading && (
+              <Card className="border-0 shadow-sm rounded-2xl">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <UserX className="h-4 w-4 text-amber-600" />
+                    <p className="text-sm font-semibold text-foreground">
+                      Genitori mancanti
+                    </p>
+                    <Badge className="ml-auto border-0 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                      {genitoriMancanti.length} da compilare
+                    </Badge>
+                  </div>
+                  {genitoriMancanti.length === 0 ? (
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Check className="h-4 w-4 text-emerald-600" /> Tutti i genitori hanno compilato il modulo.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {genitoriMancanti.map((m, i) => (
+                        <span key={i} className="text-sm font-medium text-foreground bg-muted rounded-lg px-2.5 py-1">
+                          {toTitleCase(m.cognome)} {toTitleCase(m.nome)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Cards */}
             {genitoriLoading ? (
               <div className="flex justify-center py-8">
@@ -2022,7 +2052,10 @@ export default function TurnoPage() {
                     key={g.id}
                     g={g}
                     clickable={ggCanOpen}
+                    canCheckin={ggCanOpen}
                     onClick={() => setSelectedGenitore(g)}
+                    onToggleArrivato={(row) => setGgConfirm({ row, type: 'arrivato', next: !row.arrivato })}
+                    onTogglePagato={(row) => setGgConfirm({ row, type: 'pagato', next: !row.pagato })}
                   />
                 ))}
               </div>
@@ -2036,6 +2069,42 @@ export default function TurnoPage() {
                 showCosto={ggCanSeeMoney}
               />
             )}
+
+            {/* Conferma check-in */}
+            <AlertDialog open={!!ggConfirm} onOpenChange={(v) => { if (!v) setGgConfirm(null); }}>
+              <AlertDialogContent className="rounded-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {ggConfirm?.type === 'arrivato'
+                      ? (ggConfirm?.next ? 'Confermi l\u2019arrivo?' : 'Annullare l\u2019arrivo?')
+                      : (ggConfirm?.next ? 'Confermi il pagamento?' : 'Annullare il pagamento?')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {ggConfirm && (
+                      <>
+                        {ggConfirm.type === 'arrivato'
+                          ? (ggConfirm.next
+                              ? <>Segna <strong>{toTitleCase(ggConfirm.row.genitore_cognome)} {toTitleCase(ggConfirm.row.genitore_nome)}</strong> come arrivato.</>
+                              : <>Rimuovi l\u2019arrivo di <strong>{toTitleCase(ggConfirm.row.genitore_cognome)} {toTitleCase(ggConfirm.row.genitore_nome)}</strong>.</>)
+                          : (ggConfirm.next
+                              ? <>Segna il pagamento di <strong>{toTitleCase(ggConfirm.row.genitore_cognome)} {toTitleCase(ggConfirm.row.genitore_nome)}</strong>.</>
+                              : <>Rimuovi il pagamento di <strong>{toTitleCase(ggConfirm.row.genitore_cognome)} {toTitleCase(ggConfirm.row.genitore_nome)}</strong>.</>)}
+                      </>
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={ggCheckinMutation.isPending}>Annulla</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={ggCheckinMutation.isPending}
+                    onClick={(e) => { e.preventDefault(); if (ggConfirm) ggCheckinMutation.mutate(ggConfirm); }}
+                  >
+                    {ggCheckinMutation.isPending ? 'Salvataggio…' : 'Conferma'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
           </div>
         )}
       </div>
