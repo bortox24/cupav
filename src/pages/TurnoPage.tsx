@@ -716,17 +716,45 @@ type GenitoreRow = {
   num_adulti: number;
   num_minori: number;
   contributo: number;
+  arrivato: boolean;
+  arrivato_da: string | null;
+  arrivato_at: string | null;
+  pagato: boolean;
+  pagato_da: string | null;
+  pagato_at: string | null;
 };
 
-function GenitoreCard({ g, onClick, clickable }: { g: GenitoreRow; onClick: () => void; clickable: boolean }) {
+function CheckinLog({ label, da, at }: { label: string; da: string | null; at: string | null }) {
+  if (!da && !at) return null;
+  let when = '';
+  try {
+    if (at) when = format(new Date(at), "d MMM 'ore' HH:mm", { locale: itLocale });
+  } catch { /* ignore */ }
+  return (
+    <p className="text-[11px] text-muted-foreground leading-tight">
+      {label} da <span className="font-medium text-foreground">{da || '—'}</span>{when ? ` · ${when}` : ''}
+    </p>
+  );
+}
+
+function GenitoreCard({ g, onClick, clickable, canCheckin, onToggleArrivato, onTogglePagato }: {
+  g: GenitoreRow;
+  onClick: () => void;
+  clickable: boolean;
+  canCheckin: boolean;
+  onToggleArrivato: (g: GenitoreRow) => void;
+  onTogglePagato: (g: GenitoreRow) => void;
+}) {
   const initials = `${(g.figlio_cognome?.[0] || '').toUpperCase()}${(g.figlio_nome?.[0] || '').toUpperCase()}`;
   return (
     <Card
       className={`border-0 shadow-sm transition-all duration-300 overflow-hidden bg-card rounded-2xl [-webkit-tap-highlight-color:transparent] ${clickable ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02]' : ''}`}
-      onClick={clickable ? onClick : undefined}
     >
       <CardContent className="p-0">
-        <div className={`px-4 py-3.5 flex items-center gap-3 ${g.partecipa ? 'bg-gradient-to-r from-rose-500/10 to-pink-500/10' : 'bg-gradient-to-r from-muted to-muted/40'}`}>
+        <div
+          className={`px-4 py-3.5 flex items-center gap-3 ${g.partecipa ? 'bg-gradient-to-r from-rose-500/10 to-pink-500/10' : 'bg-gradient-to-r from-muted to-muted/40'}`}
+          onClick={clickable ? onClick : undefined}
+        >
           <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md ${g.partecipa ? 'bg-gradient-to-br from-rose-500 to-pink-500' : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
             {initials}
           </div>
@@ -740,14 +768,14 @@ function GenitoreCard({ g, onClick, clickable }: { g: GenitoreRow; onClick: () =
           </div>
         </div>
         <div className="px-4 py-3.5 space-y-3">
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-sm" onClick={clickable ? onClick : undefined}>
             <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Mail className="h-3.5 w-3.5 text-primary" />
             </div>
             <span className="font-medium text-foreground truncate">{g.genitore_email}</span>
           </div>
           {g.partecipa ? (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap" onClick={clickable ? onClick : undefined}>
               {g.num_adulti > 0 && (
                 <Badge className="text-[11px] gap-1 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
                   <Users className="h-3 w-3" /> {g.num_adulti} adult{g.num_adulti === 1 ? 'o' : 'i'}
@@ -764,11 +792,44 @@ function GenitoreCard({ g, onClick, clickable }: { g: GenitoreRow; onClick: () =
               <X className="h-3 w-3" /> Non partecipa
             </Badge>
           )}
+
+          {/* Check-in */}
+          <div className="pt-1 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                size="sm"
+                disabled={!canCheckin}
+                onClick={(e) => { e.stopPropagation(); onToggleArrivato(g); }}
+                className={`rounded-xl gap-1.5 text-white border-0 disabled:opacity-100 ${g.arrivato ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-500 hover:bg-red-600'}`}
+              >
+                {g.arrivato ? <UserCheck className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
+                {g.arrivato ? 'Arrivato' : 'Non arrivato'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!canCheckin}
+                onClick={(e) => { e.stopPropagation(); onTogglePagato(g); }}
+                className={`rounded-xl gap-1.5 text-white border-0 disabled:opacity-100 ${g.pagato ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-500 hover:bg-red-600'}`}
+              >
+                <CircleDollarSign className="h-4 w-4" />
+                {g.pagato ? 'Pagato' : 'Non pagato'}
+              </Button>
+            </div>
+            {(g.arrivato || g.pagato) && (
+              <div className="space-y-0.5">
+                {g.arrivato && <CheckinLog label="Arrivo segnato" da={g.arrivato_da} at={g.arrivato_at} />}
+                {g.pagato && <CheckinLog label="Pagamento segnato" da={g.pagato_da} at={g.pagato_at} />}
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+
 
 function GenitoreDetailDrawer({ g, open, onOpenChange, showCosto }: { g: GenitoreRow | null; open: boolean; onOpenChange: (v: boolean) => void; showCosto: boolean }) {
   if (!g) return null;
