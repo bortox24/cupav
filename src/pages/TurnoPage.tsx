@@ -1002,6 +1002,26 @@ export default function TurnoPage() {
     return { adulti, minori, persone: adulti + minori, soldi };
   }, [genitoriRows]);
 
+  // Check-in giornata genitori (arrivato / pagato)
+  const [ggConfirm, setGgConfirm] = useState<{ row: GenitoreRow; type: 'arrivato' | 'pagato'; next: boolean } | null>(null);
+  const ggCheckinMutation = useMutation({
+    mutationFn: async ({ row, type, next }: { row: GenitoreRow; type: 'arrivato' | 'pagato'; next: boolean }) => {
+      const who = authProfile?.full_name || authProfile?.email || 'Sconosciuto';
+      const patch: Record<string, any> = type === 'arrivato'
+        ? { arrivato: next, arrivato_da: next ? who : null, arrivato_at: next ? new Date().toISOString() : null }
+        : { pagato: next, pagato_da: next ? who : null, pagato_at: next ? new Date().toISOString() : null };
+      const { error } = await supabase.from('giornata_genitori' as any).update(patch as any).eq('id', row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['giornata-genitori', turnoValue] });
+      setGgConfirm(null);
+    },
+    onError: (err: any) => {
+      toast({ title: 'Errore', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(giornataLink);
