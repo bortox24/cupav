@@ -307,6 +307,9 @@ export type Database = {
       }
       giornata_genitori: {
         Row: {
+          arrivato: boolean
+          arrivato_at: string | null
+          arrivato_da: string | null
           contributo: number
           created_at: string
           figlio_cognome: string
@@ -317,11 +320,17 @@ export type Database = {
           id: string
           num_adulti: number
           num_minori: number
+          pagato: boolean
+          pagato_at: string | null
+          pagato_da: string | null
           partecipa: boolean
           turno: string
           updated_at: string
         }
         Insert: {
+          arrivato?: boolean
+          arrivato_at?: string | null
+          arrivato_da?: string | null
           contributo?: number
           created_at?: string
           figlio_cognome: string
@@ -332,11 +341,17 @@ export type Database = {
           id?: string
           num_adulti?: number
           num_minori?: number
+          pagato?: boolean
+          pagato_at?: string | null
+          pagato_da?: string | null
           partecipa?: boolean
           turno: string
           updated_at?: string
         }
         Update: {
+          arrivato?: boolean
+          arrivato_at?: string | null
+          arrivato_da?: string | null
           contributo?: number
           created_at?: string
           figlio_cognome?: string
@@ -347,6 +362,9 @@ export type Database = {
           id?: string
           num_adulti?: number
           num_minori?: number
+          pagato?: boolean
+          pagato_at?: string | null
+          pagato_da?: string | null
           partecipa?: boolean
           turno?: string
           updated_at?: string

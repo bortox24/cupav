@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen, Filter, Users, ClipboardCheck, Download, LayoutGrid, X, UserPlus, ChevronDown, CalendarHeart, Copy, Link as LinkIcon, Euro, Pencil, StickyNote } from 'lucide-react';
+import { Loader2, ShieldAlert, Phone, Camera, AlertTriangle, Check, Search, MapPin, Mail, CalendarDays, Home, Pen, Filter, Users, ClipboardCheck, Download, LayoutGrid, X, UserPlus, ChevronDown, CalendarHeart, Copy, Link as LinkIcon, Euro, Pencil, StickyNote, UserCheck, CircleDollarSign, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
@@ -716,17 +716,45 @@ type GenitoreRow = {
   num_adulti: number;
   num_minori: number;
   contributo: number;
+  arrivato: boolean;
+  arrivato_da: string | null;
+  arrivato_at: string | null;
+  pagato: boolean;
+  pagato_da: string | null;
+  pagato_at: string | null;
 };
 
-function GenitoreCard({ g, onClick, clickable }: { g: GenitoreRow; onClick: () => void; clickable: boolean }) {
+function CheckinLog({ label, da, at }: { label: string; da: string | null; at: string | null }) {
+  if (!da && !at) return null;
+  let when = '';
+  try {
+    if (at) when = format(new Date(at), "d MMM 'ore' HH:mm", { locale: itLocale });
+  } catch { /* ignore */ }
+  return (
+    <p className="text-[11px] text-muted-foreground leading-tight">
+      {label} da <span className="font-medium text-foreground">{da || '—'}</span>{when ? ` · ${when}` : ''}
+    </p>
+  );
+}
+
+function GenitoreCard({ g, onClick, clickable, canCheckin, onToggleArrivato, onTogglePagato }: {
+  g: GenitoreRow;
+  onClick: () => void;
+  clickable: boolean;
+  canCheckin: boolean;
+  onToggleArrivato: (g: GenitoreRow) => void;
+  onTogglePagato: (g: GenitoreRow) => void;
+}) {
   const initials = `${(g.figlio_cognome?.[0] || '').toUpperCase()}${(g.figlio_nome?.[0] || '').toUpperCase()}`;
   return (
     <Card
       className={`border-0 shadow-sm transition-all duration-300 overflow-hidden bg-card rounded-2xl [-webkit-tap-highlight-color:transparent] ${clickable ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02]' : ''}`}
-      onClick={clickable ? onClick : undefined}
     >
       <CardContent className="p-0">
-        <div className={`px-4 py-3.5 flex items-center gap-3 ${g.partecipa ? 'bg-gradient-to-r from-rose-500/10 to-pink-500/10' : 'bg-gradient-to-r from-muted to-muted/40'}`}>
+        <div
+          className={`px-4 py-3.5 flex items-center gap-3 ${g.partecipa ? 'bg-gradient-to-r from-rose-500/10 to-pink-500/10' : 'bg-gradient-to-r from-muted to-muted/40'}`}
+          onClick={clickable ? onClick : undefined}
+        >
           <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-md ${g.partecipa ? 'bg-gradient-to-br from-rose-500 to-pink-500' : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
             {initials}
           </div>
@@ -740,14 +768,14 @@ function GenitoreCard({ g, onClick, clickable }: { g: GenitoreRow; onClick: () =
           </div>
         </div>
         <div className="px-4 py-3.5 space-y-3">
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-sm" onClick={clickable ? onClick : undefined}>
             <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Mail className="h-3.5 w-3.5 text-primary" />
             </div>
             <span className="font-medium text-foreground truncate">{g.genitore_email}</span>
           </div>
           {g.partecipa ? (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap" onClick={clickable ? onClick : undefined}>
               {g.num_adulti > 0 && (
                 <Badge className="text-[11px] gap-1 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border-0 rounded-full px-2.5 py-1 pointer-events-none">
                   <Users className="h-3 w-3" /> {g.num_adulti} adult{g.num_adulti === 1 ? 'o' : 'i'}
@@ -764,11 +792,44 @@ function GenitoreCard({ g, onClick, clickable }: { g: GenitoreRow; onClick: () =
               <X className="h-3 w-3" /> Non partecipa
             </Badge>
           )}
+
+          {/* Check-in */}
+          <div className="pt-1 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                size="sm"
+                disabled={!canCheckin}
+                onClick={(e) => { e.stopPropagation(); onToggleArrivato(g); }}
+                className={`rounded-xl gap-1.5 text-white border-0 disabled:opacity-100 ${g.arrivato ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-500 hover:bg-red-600'}`}
+              >
+                {g.arrivato ? <UserCheck className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
+                {g.arrivato ? 'Arrivato' : 'Non arrivato'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!canCheckin}
+                onClick={(e) => { e.stopPropagation(); onTogglePagato(g); }}
+                className={`rounded-xl gap-1.5 text-white border-0 disabled:opacity-100 ${g.pagato ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-500 hover:bg-red-600'}`}
+              >
+                <CircleDollarSign className="h-4 w-4" />
+                {g.pagato ? 'Pagato' : 'Non pagato'}
+              </Button>
+            </div>
+            {(g.arrivato || g.pagato) && (
+              <div className="space-y-0.5">
+                {g.arrivato && <CheckinLog label="Arrivo segnato" da={g.arrivato_da} at={g.arrivato_at} />}
+                {g.pagato && <CheckinLog label="Pagamento segnato" da={g.pagato_da} at={g.pagato_at} />}
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+
 
 function GenitoreDetailDrawer({ g, open, onOpenChange, showCosto }: { g: GenitoreRow | null; open: boolean; onOpenChange: (v: boolean) => void; showCosto: boolean }) {
   if (!g) return null;
@@ -848,7 +909,7 @@ type TabType = 'dettagli' | 'appello' | 'tende' | 'animatori' | 'download-lista'
 
 export default function TurnoPage() {
   const { turnoSlug } = useParams<{ turnoSlug: string }>();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, profile: authProfile } = useAuth();
   const { data: myPerms = [], isLoading: permsLoading } = useMyTurnoPermissions();
 
   // Determine if the current user is a staff account (created from Anagrafica Staff)
@@ -941,6 +1002,26 @@ export default function TurnoPage() {
     return { adulti, minori, persone: adulti + minori, soldi };
   }, [genitoriRows]);
 
+  // Check-in giornata genitori (arrivato / pagato)
+  const [ggConfirm, setGgConfirm] = useState<{ row: GenitoreRow; type: 'arrivato' | 'pagato'; next: boolean } | null>(null);
+  const ggCheckinMutation = useMutation({
+    mutationFn: async ({ row, type, next }: { row: GenitoreRow; type: 'arrivato' | 'pagato'; next: boolean }) => {
+      const who = authProfile?.full_name || authProfile?.email || 'Sconosciuto';
+      const patch: Record<string, any> = type === 'arrivato'
+        ? { arrivato: next, arrivato_da: next ? who : null, arrivato_at: next ? new Date().toISOString() : null }
+        : { pagato: next, pagato_da: next ? who : null, pagato_at: next ? new Date().toISOString() : null };
+      const { error } = await supabase.from('giornata_genitori' as any).update(patch as any).eq('id', row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['giornata-genitori', turnoValue] });
+      setGgConfirm(null);
+    },
+    onError: (err: any) => {
+      toast({ title: 'Errore', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(giornataLink);
@@ -986,6 +1067,25 @@ export default function TurnoPage() {
     });
     return duplicates;
   }, [iscrizioni]);
+
+  // Genitori mancanti: ragazzi iscritti al turno senza adesione alla giornata genitori
+  const genitoriMancanti = useMemo(() => {
+    if (!showGiornataGenitori) return [];
+    const adesioni = new Set(
+      genitoriRows.map((g) => normalizeDuplicateName(`${g.figlio_nome ?? ''} ${g.figlio_cognome ?? ''}`)).filter(Boolean)
+    );
+    const seen = new Set<string>();
+    const missing: { cognome: string; nome: string }[] = [];
+    for (const r of iscrizioni as any[]) {
+      const key = normalizeDuplicateName(`${r.ragazzo_nome ?? ''} ${r.ragazzo_cognome ?? ''}`);
+      if (!key || adesioni.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      missing.push({ cognome: r.ragazzo_cognome ?? '', nome: r.ragazzo_nome ?? '' });
+    }
+    return missing.sort((a, b) =>
+      `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it')
+    );
+  }, [showGiornataGenitori, genitoriRows, iscrizioni]);
 
   // Load animatori for this turno
   const { data: animatoriTurno = [], isLoading: animatoriLoading } = useAnimatoriByTurno(turnoValue);
@@ -1902,6 +2002,36 @@ export default function TurnoPage() {
               )}
             </div>
 
+            {/* Genitori mancanti */}
+            {!genitoriLoading && !iscrizioniLoading && (
+              <Card className="border-0 shadow-sm rounded-2xl">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <UserX className="h-4 w-4 text-amber-600" />
+                    <p className="text-sm font-semibold text-foreground">
+                      Genitori mancanti
+                    </p>
+                    <Badge className="ml-auto border-0 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                      {genitoriMancanti.length} da compilare
+                    </Badge>
+                  </div>
+                  {genitoriMancanti.length === 0 ? (
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Check className="h-4 w-4 text-emerald-600" /> Tutti i genitori hanno compilato il modulo.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {genitoriMancanti.map((m, i) => (
+                        <span key={i} className="text-sm font-medium text-foreground bg-muted rounded-lg px-2.5 py-1">
+                          {toTitleCase(m.cognome)} {toTitleCase(m.nome)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Cards */}
             {genitoriLoading ? (
               <div className="flex justify-center py-8">
@@ -1922,7 +2052,10 @@ export default function TurnoPage() {
                     key={g.id}
                     g={g}
                     clickable={ggCanOpen}
+                    canCheckin={ggCanOpen}
                     onClick={() => setSelectedGenitore(g)}
+                    onToggleArrivato={(row) => setGgConfirm({ row, type: 'arrivato', next: !row.arrivato })}
+                    onTogglePagato={(row) => setGgConfirm({ row, type: 'pagato', next: !row.pagato })}
                   />
                 ))}
               </div>
@@ -1936,6 +2069,42 @@ export default function TurnoPage() {
                 showCosto={ggCanSeeMoney}
               />
             )}
+
+            {/* Conferma check-in */}
+            <AlertDialog open={!!ggConfirm} onOpenChange={(v) => { if (!v) setGgConfirm(null); }}>
+              <AlertDialogContent className="rounded-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {ggConfirm?.type === 'arrivato'
+                      ? (ggConfirm?.next ? 'Confermi l\u2019arrivo?' : 'Annullare l\u2019arrivo?')
+                      : (ggConfirm?.next ? 'Confermi il pagamento?' : 'Annullare il pagamento?')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {ggConfirm && (
+                      <>
+                        {ggConfirm.type === 'arrivato'
+                          ? (ggConfirm.next
+                              ? <>Segna <strong>{toTitleCase(ggConfirm.row.genitore_cognome)} {toTitleCase(ggConfirm.row.genitore_nome)}</strong> come arrivato.</>
+                              : <>Rimuovi l\u2019arrivo di <strong>{toTitleCase(ggConfirm.row.genitore_cognome)} {toTitleCase(ggConfirm.row.genitore_nome)}</strong>.</>)
+                          : (ggConfirm.next
+                              ? <>Segna il pagamento di <strong>{toTitleCase(ggConfirm.row.genitore_cognome)} {toTitleCase(ggConfirm.row.genitore_nome)}</strong>.</>
+                              : <>Rimuovi il pagamento di <strong>{toTitleCase(ggConfirm.row.genitore_cognome)} {toTitleCase(ggConfirm.row.genitore_nome)}</strong>.</>)}
+                      </>
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={ggCheckinMutation.isPending}>Annulla</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={ggCheckinMutation.isPending}
+                    onClick={(e) => { e.preventDefault(); if (ggConfirm) ggCheckinMutation.mutate(ggConfirm); }}
+                  >
+                    {ggCheckinMutation.isPending ? 'Salvataggio…' : 'Conferma'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
           </div>
         )}
       </div>

@@ -1,19 +1,45 @@
-# Fix invio "Giornata Genitori" — AbortError su mobile
-
-## Diagnosi
-- La tabella `giornata_genitori` riceve correttamente gli invii (43 righe, due salvate oggi). Quindi **non** è un problema di database, permessi o RLS.
-- L'errore mostrato (`AbortError: signal is aborted without reason`) significa che **il browser ha annullato la richiesta di rete** prima che completasse. Su iPhone/Safari e nelle PWA questo capita per rete instabile, schermo che si spegne, app messa in background, oppure interferenza del service worker. È intermittente: per questo alcuni genitori riescono a inviare e altri no.
-
 ## Obiettivo
-Far sì che l'invio non fallisca per un'interruzione temporanea, riprovando in automatico e mostrando un messaggio chiaro solo se proprio non riesce.
+Nella tab **Giornata Genitori** (turni 4ª e 5ª elementare, in `src/pages/TurnoPage.tsx`) aggiungere:
+1. Un elenco dei genitori **mancanti** (figli iscritti al turno che non hanno ancora compilato il modulo).
+2. Per ogni card di adesione, due pulsanti **check-in**: "Arrivato" e "Pagato", con conferma e log di chi ha registrato.
 
-## Interventi (solo `src/pages/public/GiornataGenitori.tsx`)
-1. **Retry automatico** nella funzione `handleSubmit`: se l'insert fallisce con un `AbortError` (o errore di rete tipo "Failed to fetch"), riprovare automaticamente fino a 3 volte con una breve pausa crescente (es. 800ms, 1.6s) prima di mostrare l'errore.
-2. **Riconoscere l'AbortError**: distinguere l'AbortError/errore di rete dai veri errori del database, così da riprovare solo quando ha senso.
-3. **Messaggio d'errore più chiaro**: se dopo i tentativi fallisce ancora, mostrare un toast comprensibile ("Connessione interrotta, riprova") invece del messaggio tecnico `AbortError`.
-4. **Evitare doppio invio**: mantenere il pulsante disabilitato durante i tentativi (già presente `submitting`), così i retry non generano righe duplicate.
+## 1. Modifica database
+Aggiungo alla tabella `giornata_genitori` i campi per il check-in:
+- `arrivato` (sì/no, default no)
+- `arrivato_da` (nome di chi ha registrato l'arrivo)
+- `arrivato_at` (data/ora)
+- `pagato` (sì/no, default no)
+- `pagato_da` (nome di chi ha registrato il pagamento)
+- `pagato_at` (data/ora)
 
-## Note tecniche
-- Nessuna modifica al database o alle policy: sono già corrette.
-- L'insert resta lato client con `supabase.from("giornata_genitori").insert(...)`; aggiungiamo solo il ciclo di retry e la gestione dell'errore.
-- Se dopo questo intervento l'errore dovesse ripresentarsi spesso, valuteremo come passo successivo lo spostamento dell'invio su una Edge Function (più resistente alle interruzioni del browser), ma è un'aggiunta non necessaria per ora.
+Le regole di accesso restano invariate (già esiste la regola che permette agli utenti autenticati di aggiornare le adesioni).
+
+## 2. Elenco genitori mancanti
+Sopra o sotto le KPI, nella tab, aggiungo una card "Genitori mancanti":
+- Confronto la lista dei **ragazzi iscritti** al turno (`iscrizioni`, già caricati) con le adesioni ricevute (`giornata_genitori`), abbinando per cognome+nome normalizzato (riuso `normalizeDuplicateName`).
+- Mostro **cognome e nome** (formato "Cognome Nome") di ogni ragazzo il cui genitore non ha ancora compilato il modulo, con un contatore (es. "5 da compilare").
+- Se non manca nessuno, mostro un messaggio positivo.
+
+## 3. Pulsanti check-in nelle card
+In ogni `GenitoreCard` aggiungo due pulsanti:
+- **Arrivato**: rosso di default, diventa **verde** quando segnato come arrivato.
+- **Pagato**: rosso "Non pagato" di default, verde "Pagato" quando segnato.
+
+Comportamento:
+- Al click si apre un **dialog di conferma** (es. "Confermi che *Cognome Nome* è arrivato?" / "Confermi il pagamento di *Cognome Nome*?").
+- Alla conferma aggiorno il record e salvo **chi** ha registrato (nome dell'utente loggato, da `profile.full_name`) e **quando**.
+- I pulsanti si possono anche riattivare/annullare (toggle) con conferma.
+
+Sotto i pulsanti, nella card, mostro il **log**:
+- "Arrivo segnato da *Nome* — data/ora"
+- "Pagamento segnato da *Nome* — data/ora"
+
+## 4. Permessi
+- I pulsanti di check-in e la conferma sono attivi **solo** per admin, responsabili di campo, responsabili animatori e cuochi (riuso la logica esistente `ggCanOpen` / `!isAnimatoreLimitato`).
+- Gli **animatori** vedono le card, l'elenco mancanti e lo stato (arrivato/pagato) ma **non** possono cliccare i pulsanti (disabilitati / sola lettura).
+
+## Dettagli tecnici
+- Estendo il tipo `GenitoreRow` con i nuovi campi.
+- Aggiungo mutation React Query per aggiornare `arrivato`/`pagato` e invalidare `['giornata-genitori', turnoValue]`.
+- Il nome del registrante viene da `useAuth().profile.full_name`.
+- Nessuna modifica al modulo pubblico `GiornataGenitori.tsx`.
