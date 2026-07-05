@@ -1393,6 +1393,7 @@ export type Database = {
         Args: { _transaction_user_id: string }
         Returns: boolean
       }
+      get_staff_role_by_user_id: { Args: { _user_id: string }; Returns: string }
       has_page_access: {
         Args: { _page_path: string; _user_id: string }
         Returns: boolean
