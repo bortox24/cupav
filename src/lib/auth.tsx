@@ -142,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isActive,
     profile,
+    staffRole,
     signIn,
     signOut,
   };
