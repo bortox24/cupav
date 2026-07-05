@@ -421,6 +421,7 @@ function PermessiPagineTab() {
 function AccountStaffTab() {
   const { data: accounts, isLoading } = useStaffAccounts();
   const resetPassword = useResetStaffPassword();
+  const toggleActive = useToggleStaffActive();
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
