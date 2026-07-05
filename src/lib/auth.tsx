@@ -132,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
     setIsActive(true);
     setProfile(null);
+    setStaffRole(null);
   };
 
   const value = {
