@@ -48,7 +48,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center p-8 max-w-md">
           <div className="flex justify-center mb-4">
-            <Heart className="h-8 w-8 text-rose-500 fill-rose-500" />
+            <img src={logoUrl} alt="Logo CUPAV" className="h-16 w-auto object-contain" />
           </div>
           {roleText ? (
             <>
