@@ -9,6 +9,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isActive: boolean;
   profile: { full_name: string; email: string } | null;
+  staffRole: string | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -22,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [profile, setProfile] = useState<{ full_name: string; email: string } | null>(null);
+  const [staffRole, setStaffRole] = useState<string | null>(null);
 
   const fetchUserData = async (userId: string) => {
     // Fetch admin status
@@ -38,10 +40,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('id', userId)
       .maybeSingle();
     
+    // Fetch staff role
+    const { data: roleResult } = await supabase
+      .rpc('get_staff_role_by_user_id', { _user_id: userId });
+    
     return {
       isAdmin: roleData?.role === 'admin',
       isActive: profileData?.is_active ?? true,
       profile: profileData ? { full_name: profileData.full_name, email: profileData.email } : null,
+      staffRole: roleResult as string | null,
     };
   };
 
@@ -54,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(data.isAdmin);
       setIsActive(data.isActive);
       setProfile(data.profile);
+      setStaffRole(data.staffRole);
     };
 
     // Listener for ongoing auth changes (does NOT control initial loading)
@@ -72,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(false);
         setIsActive(true);
         setProfile(null);
+        setStaffRole(null);
       }
     });
 
@@ -93,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false);
           setIsActive(true);
           setProfile(null);
+          setStaffRole(null);
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -122,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
     setIsActive(true);
     setProfile(null);
+    setStaffRole(null);
   };
 
   const value = {
@@ -131,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isActive,
     profile,
+    staffRole,
     signIn,
     signOut,
   };
