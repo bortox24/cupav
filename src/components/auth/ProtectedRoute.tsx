@@ -21,6 +21,7 @@ function formatRole(role: string): string {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, isActive, profile, staffRole, signOut } = useAuth();
+  const logoUrl = useCustomLogo();
   const { canAccessPage, isLoading: permissionsLoading } = useMyPagePermissions();
   const location = useLocation();
 
