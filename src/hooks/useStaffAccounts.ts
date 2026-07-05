@@ -16,6 +16,12 @@ export interface StaffAccount {
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+const TURNO_ORDER = ['4° Elementare', '5° Elementare', '1° Media', '2° Media', '3° Media'];
+const turnoRank = (turno: string) => {
+  const i = TURNO_ORDER.indexOf(turno);
+  return i === -1 ? TURNO_ORDER.length : i;
+};
+
 export function useStaffAccounts() {
   return useQuery({
     queryKey: ['staff-accounts'],
@@ -56,11 +62,18 @@ export function useStaffAccounts() {
         });
       }
 
-      return accounts.map((a) => ({
-        ...a,
-        is_active: profilesById.get(a.user_id) ?? true,
-        turni: turniByAnimatore.get(a.animatore_id) ?? [],
-      })) as StaffAccount[];
+      return accounts
+        .map((a) => ({
+          ...a,
+          is_active: profilesById.get(a.user_id) ?? true,
+          turni: (turniByAnimatore.get(a.animatore_id) ?? []).sort((x, y) => turnoRank(x) - turnoRank(y)),
+        }))
+        .sort((a, b) => {
+          const ra = a.turni.length ? turnoRank(a.turni[0]) : TURNO_ORDER.length;
+          const rb = b.turni.length ? turnoRank(b.turni[0]) : TURNO_ORDER.length;
+          if (ra !== rb) return ra - rb;
+          return a.full_name.localeCompare(b.full_name, 'it');
+        }) as StaffAccount[];
     },
   });
 }
