@@ -1,8 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
-import { Loader2, Heart } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useCustomLogo } from '@/hooks/useCustomLogo';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
