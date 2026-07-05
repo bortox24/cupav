@@ -61,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(data.isAdmin);
       setIsActive(data.isActive);
       setProfile(data.profile);
+      setStaffRole(data.staffRole);
     };
 
     // Listener for ongoing auth changes (does NOT control initial loading)
