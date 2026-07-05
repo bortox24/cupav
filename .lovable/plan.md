@@ -1,45 +1,29 @@
-## Obiettivo
-Nella tab **Giornata Genitori** (turni 4ª e 5ª elementare, in `src/pages/TurnoPage.tsx`) aggiungere:
-1. Un elenco dei genitori **mancanti** (figli iscritti al turno che non hanno ancora compilato il modulo).
-2. Per ogni card di adesione, due pulsanti **check-in**: "Arrivato" e "Pagato", con conferma e log di chi ha registrato.
+# Account Staff: turni assegnati + Disattiva/Riattiva
 
-## 1. Modifica database
-Aggiungo alla tabella `giornata_genitori` i campi per il check-in:
-- `arrivato` (sì/no, default no)
-- `arrivato_da` (nome di chi ha registrato l'arrivo)
-- `arrivato_at` (data/ora)
-- `pagato` (sì/no, default no)
-- `pagato_da` (nome di chi ha registrato il pagamento)
-- `pagato_at` (data/ora)
+Modifiche alla tab **Account Staff** in `/admin/permessi` (`src/pages/AdminPermessi.tsx`, componente `AccountStaffTab`).
 
-Le regole di accesso restano invariate (già esiste la regola che permette agli utenti autenticati di aggiornare le adesioni).
+## 1. Mostrare i turni assegnati
+Per ogni account staff mostro i turni assegnati alla persona, gli stessi che compaiono in `/anagrafica-animatori` (tabella `animatori_turni`, anno corrente 2026), abbinati tramite `animatore_id` già presente in `staff_accounts`.
 
-## 2. Elenco genitori mancanti
-Sopra o sotto le KPI, nella tab, aggiungo una card "Genitori mancanti":
-- Confronto la lista dei **ragazzi iscritti** al turno (`iscrizioni`, già caricati) con le adesioni ricevute (`giornata_genitori`), abbinando per cognome+nome normalizzato (riuso `normalizeDuplicateName`).
-- Mostro **cognome e nome** (formato "Cognome Nome") di ogni ragazzo il cui genitore non ha ancora compilato il modulo, con un contatore (es. "5 da compilare").
-- Se non manca nessuno, mostro un messaggio positivo.
+- Estendo `useStaffAccounts` (`src/hooks/useStaffAccounts.ts`) per recuperare anche:
+  - i turni dell'anno corrente da `animatori_turni` (via `animatore_id`);
+  - lo stato `is_active` da `profiles` (via `user_id`).
+- Aggiungo in tabella una colonna **"Turni"** che mostra i turni come badge (es. "4^ Elementare", "5^ Elementare"). Se nessun turno è assegnato mostro "Nessun turno".
 
-## 3. Pulsanti check-in nelle card
-In ogni `GenitoreCard` aggiungo due pulsanti:
-- **Arrivato**: rosso di default, diventa **verde** quando segnato come arrivato.
-- **Pagato**: rosso "Non pagato" di default, verde "Pagato" quando segnato.
+## 2. Azione Disattiva / Riattiva
+Di fianco al pulsante **Reset**, nella colonna Azioni, aggiungo un pulsante **Disattiva** (o **Riattiva** se già disattivato).
 
-Comportamento:
-- Al click si apre un **dialog di conferma** (es. "Confermi che *Cognome Nome* è arrivato?" / "Confermi il pagamento di *Cognome Nome*?").
-- Alla conferma aggiorno il record e salvo **chi** ha registrato (nome dell'utente loggato, da `profile.full_name`) e **quando**.
-- I pulsanti si possono anche riattivare/annullare (toggle) con conferma.
+- Riuso la logica esistente `useToggleActive` (aggiorna `profiles.is_active`), che è già applicata in `ProtectedRoute`: un account disattivato non può più accedere alla piattaforma (viene mostrata la schermata "Account disattivato" e può solo uscire).
+- Click su **Disattiva** → dialog di conferma → imposta `is_active = false`.
+- Click su **Riattiva** → dialog di conferma → imposta `is_active = true`, la persona può rientrare con le stesse credenziali.
+- Aggiungo una colonna **"Stato"** con badge verde "Attivo" / rosso "Disattivato".
+- Il pulsante Disattiva è in stile distruttivo; Riattiva in stile normale/verde.
 
-Sotto i pulsanti, nella card, mostro il **log**:
-- "Arrivo segnato da *Nome* — data/ora"
-- "Pagamento segnato da *Nome* — data/ora"
+## 3. Default: tutti attivi
+`profiles.is_active` è già `true` di default, quindi tutti gli account esistenti risultano **Attivi** senza alcun intervento — nessuna migrazione dati necessaria.
 
-## 4. Permessi
-- I pulsanti di check-in e la conferma sono attivi **solo** per admin, responsabili di campo, responsabili animatori e cuochi (riuso la logica esistente `ggCanOpen` / `!isAnimatoreLimitato`).
-- Gli **animatori** vedono le card, l'elenco mancanti e lo stato (arrivato/pagato) ma **non** possono cliccare i pulsanti (disabilitati / sola lettura).
-
-## Dettagli tecnici
-- Estendo il tipo `GenitoreRow` con i nuovi campi.
-- Aggiungo mutation React Query per aggiornare `arrivato`/`pagato` e invalidare `['giornata-genitori', turnoValue]`.
-- Il nome del registrante viene da `useAuth().profile.full_name`.
-- Nessuna modifica al modulo pubblico `GiornataGenitori.tsx`.
+## Note tecniche
+- Nessuna modifica al database: `is_active` e `animatori_turni` esistono già.
+- La colonna turni riusa la costante anno corrente (2026) coerente con `/anagrafica-animatori`.
+- Invalidazione query: dopo toggle attivo invalido `['staff-accounts']` (e le query utenti già invalidate da `useToggleActive`).
+- La tab Account Staff è già accessibile solo agli admin dalla pagina `/admin/permessi`.
