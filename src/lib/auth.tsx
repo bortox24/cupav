@@ -9,6 +9,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isActive: boolean;
   profile: { full_name: string; email: string } | null;
+  staffRole: string | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
