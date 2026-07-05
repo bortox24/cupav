@@ -456,16 +456,29 @@ function AccountStaffTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead className="hidden md:table-cell">Turni</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Password</TableHead>
-                  <TableHead className="hidden sm:table-cell">Data creazione</TableHead>
+                  <TableHead className="text-center">Stato</TableHead>
+                  <TableHead className="hidden lg:table-cell">Data creazione</TableHead>
                   <TableHead className="text-center">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {accounts.map((acc) => (
-                  <TableRow key={acc.id}>
+                  <TableRow key={acc.id} className={!acc.is_active ? 'opacity-60' : ''}>
                     <TableCell className="font-medium">{acc.full_name}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {acc.turni.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {acc.turni.map((t) => (
+                            <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Nessun turno</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <span className="truncate max-w-[180px]">{acc.email}</span>
@@ -482,32 +495,79 @@ function AccountStaffTab() {
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm hidden sm:table-cell">
+                    <TableCell className="text-center">
+                      {acc.is_active ? (
+                        <Badge variant="outline" className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 border-transparent">Attivo</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-transparent">Disattivato</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">
                       {new Date(acc.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </TableCell>
-                    <TableCell className="text-center">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1">
-                            <RefreshCw className="h-3 w-3" />Reset
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Resettare la password?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Verrà generata una nuova password per <strong>{acc.full_name}</strong>. La vecchia password non sarà più valida.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annulla</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => resetPassword.mutateAsync(acc.user_id)}>
-                              {resetPassword.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                              Reset Password
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-2">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="gap-1">
+                              <RefreshCw className="h-3 w-3" />Reset
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Resettare la password?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Verrà generata una nuova password per <strong>{acc.full_name}</strong>. La vecchia password non sarà più valida.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annulla</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => resetPassword.mutateAsync(acc.user_id)}>
+                                {resetPassword.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                                Reset Password
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            {acc.is_active ? (
+                              <Button variant="destructive" size="sm" className="gap-1">
+                                <PowerOff className="h-3 w-3" />Disattiva
+                              </Button>
+                            ) : (
+                              <Button variant="outline" size="sm" className="gap-1 border-green-600/40 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40">
+                                <Power className="h-3 w-3" />Riattiva
+                              </Button>
+                            )}
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {acc.is_active ? "Disattivare l'account?" : "Riattivare l'account?"}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {acc.is_active ? (
+                                  <>
+                                    <strong>{acc.full_name}</strong> non potrà più accedere alla piattaforma con le proprie credenziali finché non verrà riattivato.
+                                  </>
+                                ) : (
+                                  <>
+                                    <strong>{acc.full_name}</strong> potrà nuovamente accedere alla piattaforma con le stesse credenziali.
+                                  </>
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annulla</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => toggleActive.mutateAsync({ userId: acc.user_id, isActive: !acc.is_active })}>
+                                {toggleActive.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                {acc.is_active ? 'Disattiva' : 'Riattiva'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
