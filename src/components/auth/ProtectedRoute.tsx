@@ -1,8 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
-import { Loader2, Heart } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useCustomLogo } from '@/hooks/useCustomLogo';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ function formatRole(role: string): string {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, isActive, profile, staffRole, signOut } = useAuth();
+  const logoUrl = useCustomLogo();
   const { canAccessPage, isLoading: permissionsLoading } = useMyPagePermissions();
   const location = useLocation();
 
@@ -46,7 +48,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center p-8 max-w-md">
           <div className="flex justify-center mb-4">
-            <Heart className="h-8 w-8 text-rose-500 fill-rose-500" />
+            <img src={logoUrl} alt="Logo CUPAV" className="h-16 w-auto object-contain" />
           </div>
           {roleText ? (
             <>
