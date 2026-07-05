@@ -16,6 +16,12 @@ export interface StaffAccount {
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+const TURNO_ORDER = ['4° Elementare', '5° Elementare', '1° Media', '2° Media', '3° Media'];
+const turnoRank = (turno: string) => {
+  const i = TURNO_ORDER.indexOf(turno);
+  return i === -1 ? TURNO_ORDER.length : i;
+};
+
 export function useStaffAccounts() {
   return useQuery({
     queryKey: ['staff-accounts'],
