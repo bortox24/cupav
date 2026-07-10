@@ -119,8 +119,13 @@ export default function GiornataGenitori() {
     const maxAttempts = 3;
     try {
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         try {
-          const { error } = await supabase.from("giornata_genitori" as any).insert(payload as any);
+          const { error } = await supabase
+            .from("giornata_genitori" as any)
+            .insert(payload as any)
+            .abortSignal(controller.signal);
           if (error) throw error;
           setSubmitted(true);
           return;
