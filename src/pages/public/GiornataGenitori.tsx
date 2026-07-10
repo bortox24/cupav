@@ -145,6 +145,8 @@ export default function GiornataGenitori() {
             toast({ title: "Errore durante l'invio", description: err.message, variant: "destructive" });
           }
           return;
+        } finally {
+          clearTimeout(timeoutId);
         }
       }
     } finally {
