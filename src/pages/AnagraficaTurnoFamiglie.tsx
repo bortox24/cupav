@@ -331,25 +331,27 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
 
                 <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-2 text-sm">
                   <h4 className="font-semibold text-foreground flex items-center gap-2">💶 Tariffa & totale</h4>
-                  {item.categoria_tariffa ? (
+                  {giorniItem === 0 ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Imposta date valide per calcolare il totale.</p>
+                  ) : righeEsplosoItem.length === 0 ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Nessun partecipante da tariffare.</p>
+                  ) : (
                     <>
-                      <p>Categoria: <strong>{item.categoria_tariffa}</strong> — <span className="text-muted-foreground">{tariffaCorrente?.descrizione ?? '-'}</span></p>
-                      <p>Giorni: <strong>{calcolo.giorni}</strong></p>
-                      {calcolo.righe.length > 0 && (
-                        <div className="text-xs space-y-0.5 pl-2 text-muted-foreground">
-                          {calcolo.righe.map((r, i) => (
-                            <p key={i}>• {r.voce}: {r.persone} × {formatEuro(r.prezzoGiorno)} × {r.giorni}gg = <strong className="text-foreground">{formatEuro(r.subtotale)}</strong></p>
-                          ))}
-                        </div>
-                      )}
+                      <p className="text-xs text-muted-foreground">Giorni totali: <strong className="text-foreground">{giorniItem}</strong></p>
+                      <div className="text-xs space-y-0.5 pl-1 text-muted-foreground">
+                        {righeEsplosoItem.map(r => (
+                          <p key={`${r.tipo}-${r.indice}`}>
+                            • {r.label}: {formatEuro(r.prezzoGiorno)}/gg × {giorniItem}gg = <strong className="text-foreground">{formatEuro(r.prezzoGiorno * giorniItem)}</strong>
+                          </p>
+                        ))}
+                      </div>
                       <p className="text-base font-bold text-foreground pt-1 border-t border-orange-200/60 dark:border-orange-900/40">
-                        Totale dovuto: {formatEuro(item.importo_totale_calcolato ?? calcolo.totale)}
+                        Totale dovuto: {formatEuro(item.importo_totale_calcolato ?? totaleEsplosoItem)}
                       </p>
                     </>
-                  ) : (
-                    <p className="text-amber-700 dark:text-amber-400">⚠️ Categoria tariffaria non impostata. Premi "Modifica" per assegnarla.</p>
                   )}
                 </div>
+
 
                 <Button
                   onClick={() => setComunicazioneOpen(true)}
