@@ -120,7 +120,7 @@ function FamigliaCard({ item, pagamento, onClick }: { item: IscrizioneFamiglia; 
         </div>
         {noCategoria ? (
           <div className="rounded-lg px-2 py-1.5 text-[11px] bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
-            ⚠️ Categoria tariffa non impostata
+            ⚠️ Tariffa non impostata
           </div>
         ) : (
           <div className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold flex items-center justify-between gap-2 ${statoColor}`}>
