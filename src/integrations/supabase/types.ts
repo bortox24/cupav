@@ -624,6 +624,7 @@ export type Database = {
           num_adulti: number
           num_animali: number
           num_figli_over10: number
+          prezzi_partecipanti: Json | null
           recapiti_telefonici: Json
           regolamento_accettato: boolean
           residente_a: string
@@ -653,6 +654,7 @@ export type Database = {
           num_adulti?: number
           num_animali?: number
           num_figli_over10?: number
+          prezzi_partecipanti?: Json | null
           recapiti_telefonici?: Json
           regolamento_accettato?: boolean
           residente_a: string
@@ -682,6 +684,7 @@ export type Database = {
           num_adulti?: number
           num_animali?: number
           num_figli_over10?: number
+          prezzi_partecipanti?: Json | null
           recapiti_telefonici?: Json
           regolamento_accettato?: boolean
           residente_a?: string
