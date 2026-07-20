@@ -207,29 +207,35 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const invalidateLogs = () => queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs-famiglia', item.id] });
 
   const handleSave = () => {
-    // Ricalcola totale con tariffa corrente
-    const t = form.categoria_tariffa ? tariffe.find(x => x.categoria === form.categoria_tariffa) ?? null : null;
-    const ric = calcolaTotaleFamiglia(form, t);
-    const formWithCalc: IscrizioneFamiglia = { ...form, importo_totale_calcolato: t ? ric.totale : null };
+    // Nuovo calcolo: esploso per singolo partecipante
+    const righeSave = buildRigheEsploso(form, tariffe, form.prezzi_partecipanti ?? null);
+    const giorniSave = calcolaGiorni(form.data_inizio, form.data_fine);
+    const totaleSave = calcolaTotaleEsploso(righeSave, giorniSave);
+    const prezziSave = righeToPrezziPartecipanti(righeSave);
+
+    const formWithCalc: IscrizioneFamiglia = {
+      ...form,
+      prezzi_partecipanti: prezziSave,
+      importo_totale_calcolato: totaleSave,
+    };
     const { id, created_at, ...updates } = formWithCalc;
     const diff = buildDiff(item, formWithCalc);
     updateMut.mutate({ id, updates }, {
       onSuccess: async () => {
         // Propaga importo_dovuto su pagamenti_famiglie
-        if (t) {
-          const { data: existingPag } = await (supabase as any)
-            .from('pagamenti_famiglie').select('id, importo_pagato').eq('iscrizione_id', id).maybeSingle();
-          if (existingPag) {
-            await (supabase as any).from('pagamenti_famiglie').update({
-              importo_dovuto: ric.totale, updated_by: user?.id ?? null,
-            }).eq('id', existingPag.id);
-          } else {
-            await (supabase as any).from('pagamenti_famiglie').insert({
-              iscrizione_id: id, importo_dovuto: ric.totale, updated_by: user?.id ?? null,
-            });
-          }
-          queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+        const { data: existingPag } = await (supabase as any)
+          .from('pagamenti_famiglie').select('id, importo_pagato').eq('iscrizione_id', id).maybeSingle();
+        if (existingPag) {
+          await (supabase as any).from('pagamenti_famiglie').update({
+            importo_dovuto: totaleSave, updated_by: user?.id ?? null,
+          }).eq('id', existingPag.id);
+        } else {
+          await (supabase as any).from('pagamenti_famiglie').insert({
+            iscrizione_id: id, importo_dovuto: totaleSave, updated_by: user?.id ?? null,
+          });
         }
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+
         toast.success('Iscrizione aggiornata');
         setEditMode(false);
         if (user && diff) {
@@ -243,6 +249,7 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
       onError: (e: any) => toast.error(e.message || 'Errore aggiornamento'),
     });
   };
+
 
   const handleArchive = () => {
     const willArchive = !item.archiviato;
