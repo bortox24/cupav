@@ -174,6 +174,26 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
     form.categoria_tariffa ? tariffe.find(t => t.categoria === form.categoria_tariffa) ?? null : null;
   const calcolo = calcolaTotaleFamiglia(form, tariffaCorrente);
 
+  // ---- Esploso per singolo partecipante ----
+  const giorniForm = calcolaGiorni(form.data_inizio, form.data_fine);
+  const righeEsploso: RigaPartecipante[] = buildRigheEsploso(form, tariffe, form.prezzi_partecipanti ?? null);
+  const totaleEsploso = calcolaTotaleEsploso(righeEsploso, giorniForm);
+
+  // Righe basate sui dati salvati (per la vista read-only)
+  const giorniItem = calcolaGiorni(item.data_inizio, item.data_fine);
+  const righeEsplosoItem: RigaPartecipante[] = buildRigheEsploso(item, tariffe, item.prezzi_partecipanti ?? null);
+  const totaleEsplosoItem = calcolaTotaleEsploso(righeEsplosoItem, giorniItem);
+
+  const setPrezzoRiga = (tipo: RigaPartecipante['tipo'], indice: number, val: string) => {
+    const prezzo = parseFloat(val);
+    setForm(prev => {
+      if (!prev) return prev;
+      const base = buildRigheEsploso(prev, tariffe, prev.prezzi_partecipanti ?? null);
+      const next = base.map(r => r.tipo === tipo && r.indice === indice ? { ...r, prezzoGiorno: isNaN(prezzo) ? 0 : prezzo } : r);
+      return { ...prev, prezzi_partecipanti: righeToPrezziPartecipanti(next) };
+    });
+  };
+
   const update = <K extends keyof IscrizioneFamiglia>(k: K, v: IscrizioneFamiglia[K]) => setForm(p => p ? { ...p, [k]: v } : p);
 
   const updateRecapito = (idx: number, field: 'nome' | 'telefono', val: string) => {
