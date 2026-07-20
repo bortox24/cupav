@@ -22,7 +22,7 @@ import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { InviaComunicazioneFamigliaWizard } from '@/components/InviaComunicazioneFamigliaWizard';
 import { useTariffeFamiglie } from '@/hooks/useTariffeFamiglie';
-import { calcolaTotaleFamiglia, calcolaGiorni, formatEuro, type TariffaFamiglia } from '@/lib/tariffeFamiglie';
+import { calcolaTotaleFamiglia, calcolaGiorni, formatEuro, buildRigheEsploso, calcolaTotaleEsploso, righeToPrezziPartecipanti, type TariffaFamiglia, type RigaPartecipante } from '@/lib/tariffeFamiglie';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 async function logFamigliaAction(params: {
@@ -92,7 +92,7 @@ function FamigliaCard({ item, pagamento, onClick }: { item: IscrizioneFamiglia; 
     stato === 'pagato' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
     : stato === 'parziale' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
     : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300';
-  const noCategoria = !item.categoria_tariffa;
+  const noCategoria = !item.importo_totale_calcolato;
   return (
     <Card className={`border-2 border-l-4 ${item.archiviato ? 'border-l-muted-foreground/40 opacity-70' : 'border-l-orange-500'} rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer`} onClick={onClick}>
       <CardContent className="p-4 space-y-3">
@@ -120,7 +120,7 @@ function FamigliaCard({ item, pagamento, onClick }: { item: IscrizioneFamiglia; 
         </div>
         {noCategoria ? (
           <div className="rounded-lg px-2 py-1.5 text-[11px] bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
-            ⚠️ Categoria tariffa non impostata
+            ⚠️ Tariffa non impostata
           </div>
         ) : (
           <div className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold flex items-center justify-between gap-2 ${statoColor}`}>
@@ -174,6 +174,26 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
     form.categoria_tariffa ? tariffe.find(t => t.categoria === form.categoria_tariffa) ?? null : null;
   const calcolo = calcolaTotaleFamiglia(form, tariffaCorrente);
 
+  // ---- Esploso per singolo partecipante ----
+  const giorniForm = calcolaGiorni(form.data_inizio, form.data_fine);
+  const righeEsploso: RigaPartecipante[] = buildRigheEsploso(form, tariffe, form.prezzi_partecipanti ?? null);
+  const totaleEsploso = calcolaTotaleEsploso(righeEsploso, giorniForm);
+
+  // Righe basate sui dati salvati (per la vista read-only)
+  const giorniItem = calcolaGiorni(item.data_inizio, item.data_fine);
+  const righeEsplosoItem: RigaPartecipante[] = buildRigheEsploso(item, tariffe, item.prezzi_partecipanti ?? null);
+  const totaleEsplosoItem = calcolaTotaleEsploso(righeEsplosoItem, giorniItem);
+
+  const setPrezzoRiga = (tipo: RigaPartecipante['tipo'], indice: number, val: string) => {
+    const prezzo = parseFloat(val);
+    setForm(prev => {
+      if (!prev) return prev;
+      const base = buildRigheEsploso(prev, tariffe, prev.prezzi_partecipanti ?? null);
+      const next = base.map(r => r.tipo === tipo && r.indice === indice ? { ...r, prezzoGiorno: isNaN(prezzo) ? 0 : prezzo } : r);
+      return { ...prev, prezzi_partecipanti: righeToPrezziPartecipanti(next) };
+    });
+  };
+
   const update = <K extends keyof IscrizioneFamiglia>(k: K, v: IscrizioneFamiglia[K]) => setForm(p => p ? { ...p, [k]: v } : p);
 
   const updateRecapito = (idx: number, field: 'nome' | 'telefono', val: string) => {
@@ -187,29 +207,35 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const invalidateLogs = () => queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs-famiglia', item.id] });
 
   const handleSave = () => {
-    // Ricalcola totale con tariffa corrente
-    const t = form.categoria_tariffa ? tariffe.find(x => x.categoria === form.categoria_tariffa) ?? null : null;
-    const ric = calcolaTotaleFamiglia(form, t);
-    const formWithCalc: IscrizioneFamiglia = { ...form, importo_totale_calcolato: t ? ric.totale : null };
+    // Nuovo calcolo: esploso per singolo partecipante
+    const righeSave = buildRigheEsploso(form, tariffe, form.prezzi_partecipanti ?? null);
+    const giorniSave = calcolaGiorni(form.data_inizio, form.data_fine);
+    const totaleSave = calcolaTotaleEsploso(righeSave, giorniSave);
+    const prezziSave = righeToPrezziPartecipanti(righeSave);
+
+    const formWithCalc: IscrizioneFamiglia = {
+      ...form,
+      prezzi_partecipanti: prezziSave,
+      importo_totale_calcolato: totaleSave,
+    };
     const { id, created_at, ...updates } = formWithCalc;
     const diff = buildDiff(item, formWithCalc);
     updateMut.mutate({ id, updates }, {
       onSuccess: async () => {
         // Propaga importo_dovuto su pagamenti_famiglie
-        if (t) {
-          const { data: existingPag } = await (supabase as any)
-            .from('pagamenti_famiglie').select('id, importo_pagato').eq('iscrizione_id', id).maybeSingle();
-          if (existingPag) {
-            await (supabase as any).from('pagamenti_famiglie').update({
-              importo_dovuto: ric.totale, updated_by: user?.id ?? null,
-            }).eq('id', existingPag.id);
-          } else {
-            await (supabase as any).from('pagamenti_famiglie').insert({
-              iscrizione_id: id, importo_dovuto: ric.totale, updated_by: user?.id ?? null,
-            });
-          }
-          queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+        const { data: existingPag } = await (supabase as any)
+          .from('pagamenti_famiglie').select('id, importo_pagato').eq('iscrizione_id', id).maybeSingle();
+        if (existingPag) {
+          await (supabase as any).from('pagamenti_famiglie').update({
+            importo_dovuto: totaleSave, updated_by: user?.id ?? null,
+          }).eq('id', existingPag.id);
+        } else {
+          await (supabase as any).from('pagamenti_famiglie').insert({
+            iscrizione_id: id, importo_dovuto: totaleSave, updated_by: user?.id ?? null,
+          });
         }
+        queryClient.invalidateQueries({ queryKey: ['iscrizioni-con-pagamenti'] });
+
         toast.success('Iscrizione aggiornata');
         setEditMode(false);
         if (user && diff) {
@@ -223,6 +249,7 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
       onError: (e: any) => toast.error(e.message || 'Errore aggiornamento'),
     });
   };
+
 
   const handleArchive = () => {
     const willArchive = !item.archiviato;
@@ -304,25 +331,27 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
 
                 <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-2 text-sm">
                   <h4 className="font-semibold text-foreground flex items-center gap-2">💶 Tariffa & totale</h4>
-                  {item.categoria_tariffa ? (
+                  {giorniItem === 0 ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Imposta date valide per calcolare il totale.</p>
+                  ) : righeEsplosoItem.length === 0 ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Nessun partecipante da tariffare.</p>
+                  ) : (
                     <>
-                      <p>Categoria: <strong>{item.categoria_tariffa}</strong> — <span className="text-muted-foreground">{tariffaCorrente?.descrizione ?? '-'}</span></p>
-                      <p>Giorni: <strong>{calcolo.giorni}</strong></p>
-                      {calcolo.righe.length > 0 && (
-                        <div className="text-xs space-y-0.5 pl-2 text-muted-foreground">
-                          {calcolo.righe.map((r, i) => (
-                            <p key={i}>• {r.voce}: {r.persone} × {formatEuro(r.prezzoGiorno)} × {r.giorni}gg = <strong className="text-foreground">{formatEuro(r.subtotale)}</strong></p>
-                          ))}
-                        </div>
-                      )}
+                      <p className="text-xs text-muted-foreground">Giorni totali: <strong className="text-foreground">{giorniItem}</strong></p>
+                      <div className="text-xs space-y-0.5 pl-1 text-muted-foreground">
+                        {righeEsplosoItem.map(r => (
+                          <p key={`${r.tipo}-${r.indice}`}>
+                            • {r.label}: {formatEuro(r.prezzoGiorno)}/gg × {giorniItem}gg = <strong className="text-foreground">{formatEuro(r.prezzoGiorno * giorniItem)}</strong>
+                          </p>
+                        ))}
+                      </div>
                       <p className="text-base font-bold text-foreground pt-1 border-t border-orange-200/60 dark:border-orange-900/40">
-                        Totale dovuto: {formatEuro(item.importo_totale_calcolato ?? calcolo.totale)}
+                        Totale dovuto: {formatEuro(item.importo_totale_calcolato ?? totaleEsplosoItem)}
                       </p>
                     </>
-                  ) : (
-                    <p className="text-amber-700 dark:text-amber-400">⚠️ Categoria tariffaria non impostata. Premi "Modifica" per assegnarla.</p>
                   )}
                 </div>
+
 
                 <Button
                   onClick={() => setComunicazioneOpen(true)}
@@ -456,43 +485,55 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                   <div><Label>Acconto versato (€)</Label><Input type="number" min={0} step="0.01" value={form.acconto_versato} onChange={e => update('acconto_versato', parseFloat(e.target.value) || 0)} /></div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Categoria tariffaria</Label>
-                  <Select
-                    value={form.categoria_tariffa ? String(form.categoria_tariffa) : ''}
-                    onValueChange={(v) => update('categoria_tariffa', parseInt(v) as any)}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Seleziona categoria..." /></SelectTrigger>
-                    <SelectContent>
-                      {tariffe.map(t => (
-                        <SelectItem key={t.categoria} value={String(t.categoria)}>
-                          {t.categoria}. {t.descrizione}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-3 text-sm">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <h4 className="font-semibold text-foreground">💶 Tariffa & totale (per persona)</h4>
+                    <span className="text-xs text-muted-foreground">Giorni totali: <strong className="text-foreground">{giorniForm}</strong></span>
+                  </div>
 
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-2 text-sm">
-                  <h4 className="font-semibold text-foreground">💶 Anteprima totale</h4>
-                  {!tariffaCorrente ? (
-                    <p className="text-amber-700 dark:text-amber-400 text-xs">Seleziona una categoria per calcolare il totale.</p>
-                  ) : calcolo.giorni === 0 ? (
+                  {giorniForm === 0 ? (
                     <p className="text-amber-700 dark:text-amber-400 text-xs">Imposta date valide per calcolare il totale.</p>
+                  ) : righeEsploso.length === 0 ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Aggiungi almeno un partecipante per impostare le tariffe.</p>
                   ) : (
                     <>
-                      <p className="text-xs text-muted-foreground">Giorni: <strong className="text-foreground">{calcolo.giorni}</strong></p>
-                      <div className="text-xs space-y-0.5 text-muted-foreground">
-                        {calcolo.righe.map((r, i) => (
-                          <p key={i}>• {r.voce}: {r.persone} × {formatEuro(r.prezzoGiorno)} × {r.giorni}gg = <strong className="text-foreground">{formatEuro(r.subtotale)}</strong></p>
-                        ))}
+                      <div className="hidden sm:grid grid-cols-[minmax(0,1fr)_120px_60px_110px] gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                        <div>Partecipante</div>
+                        <div>Prezzo/gg (€)</div>
+                        <div className="text-center">Giorni</div>
+                        <div className="text-right">Totale</div>
                       </div>
-                      <p className="text-base font-bold text-foreground pt-1 border-t border-orange-200/60 dark:border-orange-900/40">
-                        Totale dovuto: {formatEuro(calcolo.totale)}
+                      <div className="space-y-1.5">
+                        {righeEsploso.map(r => {
+                          const subtot = (Number(r.prezzoGiorno) || 0) * giorniForm;
+                          return (
+                            <div key={`${r.tipo}-${r.indice}`} className="grid grid-cols-[minmax(0,1fr)_120px_60px_110px] gap-2 items-center bg-white/60 dark:bg-black/20 rounded-lg px-2 py-1.5">
+                              <div className="text-xs font-medium truncate">{r.label}</div>
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step="0.5"
+                                  value={Number(r.prezzoGiorno)}
+                                  onChange={e => setPrezzoRiga(r.tipo, r.indice, e.target.value)}
+                                  className="pl-6 h-8 text-xs"
+                                />
+                              </div>
+                              <div className="text-xs text-center text-muted-foreground">{giorniForm}</div>
+                              <div className="text-xs font-semibold text-right">{formatEuro(subtot)}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-base font-bold text-foreground pt-2 border-t border-orange-200/60 dark:border-orange-900/40 flex justify-between">
+                        <span>Totale dovuto</span>
+                        <span>{formatEuro(totaleEsploso)}</span>
                       </p>
                     </>
                   )}
                 </div>
+
 
                 <div className="grid grid-cols-2 gap-2 pt-2">
                   <Button variant="outline" onClick={() => { setForm({ ...item }); setEditMode(false); }}>
