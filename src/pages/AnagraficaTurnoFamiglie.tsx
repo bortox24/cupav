@@ -485,43 +485,55 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                   <div><Label>Acconto versato (€)</Label><Input type="number" min={0} step="0.01" value={form.acconto_versato} onChange={e => update('acconto_versato', parseFloat(e.target.value) || 0)} /></div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Categoria tariffaria</Label>
-                  <Select
-                    value={form.categoria_tariffa ? String(form.categoria_tariffa) : ''}
-                    onValueChange={(v) => update('categoria_tariffa', parseInt(v) as any)}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Seleziona categoria..." /></SelectTrigger>
-                    <SelectContent>
-                      {tariffe.map(t => (
-                        <SelectItem key={t.categoria} value={String(t.categoria)}>
-                          {t.categoria}. {t.descrizione}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-3 text-sm">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <h4 className="font-semibold text-foreground">💶 Tariffa & totale (per persona)</h4>
+                    <span className="text-xs text-muted-foreground">Giorni totali: <strong className="text-foreground">{giorniForm}</strong></span>
+                  </div>
 
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-2 text-sm">
-                  <h4 className="font-semibold text-foreground">💶 Anteprima totale</h4>
-                  {!tariffaCorrente ? (
-                    <p className="text-amber-700 dark:text-amber-400 text-xs">Seleziona una categoria per calcolare il totale.</p>
-                  ) : calcolo.giorni === 0 ? (
+                  {giorniForm === 0 ? (
                     <p className="text-amber-700 dark:text-amber-400 text-xs">Imposta date valide per calcolare il totale.</p>
+                  ) : righeEsploso.length === 0 ? (
+                    <p className="text-amber-700 dark:text-amber-400 text-xs">Aggiungi almeno un partecipante per impostare le tariffe.</p>
                   ) : (
                     <>
-                      <p className="text-xs text-muted-foreground">Giorni: <strong className="text-foreground">{calcolo.giorni}</strong></p>
-                      <div className="text-xs space-y-0.5 text-muted-foreground">
-                        {calcolo.righe.map((r, i) => (
-                          <p key={i}>• {r.voce}: {r.persone} × {formatEuro(r.prezzoGiorno)} × {r.giorni}gg = <strong className="text-foreground">{formatEuro(r.subtotale)}</strong></p>
-                        ))}
+                      <div className="hidden sm:grid grid-cols-[minmax(0,1fr)_120px_60px_110px] gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                        <div>Partecipante</div>
+                        <div>Prezzo/gg (€)</div>
+                        <div className="text-center">Giorni</div>
+                        <div className="text-right">Totale</div>
                       </div>
-                      <p className="text-base font-bold text-foreground pt-1 border-t border-orange-200/60 dark:border-orange-900/40">
-                        Totale dovuto: {formatEuro(calcolo.totale)}
+                      <div className="space-y-1.5">
+                        {righeEsploso.map(r => {
+                          const subtot = (Number(r.prezzoGiorno) || 0) * giorniForm;
+                          return (
+                            <div key={`${r.tipo}-${r.indice}`} className="grid grid-cols-[minmax(0,1fr)_120px_60px_110px] gap-2 items-center bg-white/60 dark:bg-black/20 rounded-lg px-2 py-1.5">
+                              <div className="text-xs font-medium truncate">{r.label}</div>
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step="0.5"
+                                  value={Number(r.prezzoGiorno)}
+                                  onChange={e => setPrezzoRiga(r.tipo, r.indice, e.target.value)}
+                                  className="pl-6 h-8 text-xs"
+                                />
+                              </div>
+                              <div className="text-xs text-center text-muted-foreground">{giorniForm}</div>
+                              <div className="text-xs font-semibold text-right">{formatEuro(subtot)}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-base font-bold text-foreground pt-2 border-t border-orange-200/60 dark:border-orange-900/40 flex justify-between">
+                        <span>Totale dovuto</span>
+                        <span>{formatEuro(totaleEsploso)}</span>
                       </p>
                     </>
                   )}
                 </div>
+
 
                 <div className="grid grid-cols-2 gap-2 pt-2">
                   <Button variant="outline" onClick={() => { setForm({ ...item }); setEditMode(false); }}>
