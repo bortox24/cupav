@@ -32,6 +32,15 @@ export interface IscrizioneFamiglia {
   archiviato: boolean;
   categoria_tariffa?: number | null;
   importo_totale_calcolato?: number | null;
+  prezzi_partecipanti?: PrezzoPartecipante[] | null;
+}
+
+export type TipoPartecipante = 'adulto' | 'figlio_over10' | 'eta_4_10' | 'eta_0_3';
+
+export interface PrezzoPartecipante {
+  tipo: TipoPartecipante;
+  indice: number; // 1-based
+  prezzo_giorno: number;
 }
 
 export const TIPO_PERIODO_LABEL: Record<IscrizioneFamiglia['tipo_periodo'], string> = {
