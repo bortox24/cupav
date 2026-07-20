@@ -92,7 +92,7 @@ function FamigliaCard({ item, pagamento, onClick }: { item: IscrizioneFamiglia; 
     stato === 'pagato' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
     : stato === 'parziale' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
     : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300';
-  const noCategoria = !item.categoria_tariffa;
+  const noCategoria = !item.importo_totale_calcolato;
   return (
     <Card className={`border-2 border-l-4 ${item.archiviato ? 'border-l-muted-foreground/40 opacity-70' : 'border-l-orange-500'} rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer`} onClick={onClick}>
       <CardContent className="p-4 space-y-3">
