@@ -1,4 +1,4 @@
-import type { IscrizioneFamiglia } from '@/hooks/useFamiglie';
+import type { IscrizioneFamiglia, PrezzoPartecipante, TipoPartecipante } from '@/hooks/useFamiglie';
 
 export interface TariffaFamiglia {
   categoria: number;
