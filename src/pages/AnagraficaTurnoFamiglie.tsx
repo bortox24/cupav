@@ -22,7 +22,7 @@ import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { InviaComunicazioneFamigliaWizard } from '@/components/InviaComunicazioneFamigliaWizard';
 import { useTariffeFamiglie } from '@/hooks/useTariffeFamiglie';
-import { calcolaTotaleFamiglia, calcolaGiorni, formatEuro, buildRigheEsploso, calcolaTotaleEsploso, righeToPrezziPartecipanti, type TariffaFamiglia, type RigaPartecipante } from '@/lib/tariffeFamiglie';
+import { calcolaTotaleFamiglia, calcolaNotti, formatEuro, buildRigheEsploso, calcolaTotaleEsploso, righeToPrezziPartecipanti, type TariffaFamiglia, type RigaPartecipante } from '@/lib/tariffeFamiglie';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 async function logFamigliaAction(params: {
@@ -174,15 +174,15 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
     form.categoria_tariffa ? tariffe.find(t => t.categoria === form.categoria_tariffa) ?? null : null;
   const calcolo = calcolaTotaleFamiglia(form, tariffaCorrente);
 
-  // ---- Esploso per singolo partecipante ----
-  const giorniForm = calcolaGiorni(form.data_inizio, form.data_fine);
+  // ---- Esploso per singolo partecipante (moltiplicatore = notti) ----
+  const nottiForm = calcolaNotti(form.data_inizio, form.data_fine);
   const righeEsploso: RigaPartecipante[] = buildRigheEsploso(form, tariffe, form.prezzi_partecipanti ?? null);
-  const totaleEsploso = calcolaTotaleEsploso(righeEsploso, giorniForm);
+  const totaleEsploso = calcolaTotaleEsploso(righeEsploso, nottiForm);
 
   // Righe basate sui dati salvati (per la vista read-only)
-  const giorniItem = calcolaGiorni(item.data_inizio, item.data_fine);
+  const nottiItem = calcolaNotti(item.data_inizio, item.data_fine);
   const righeEsplosoItem: RigaPartecipante[] = buildRigheEsploso(item, tariffe, item.prezzi_partecipanti ?? null);
-  const totaleEsplosoItem = calcolaTotaleEsploso(righeEsplosoItem, giorniItem);
+  const totaleEsplosoItem = calcolaTotaleEsploso(righeEsplosoItem, nottiItem);
 
   const setPrezzoRiga = (tipo: RigaPartecipante['tipo'], indice: number, val: string) => {
     const prezzo = parseFloat(val);
@@ -207,10 +207,10 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
   const invalidateLogs = () => queryClient.invalidateQueries({ queryKey: ['anagrafica-invio-logs-famiglia', item.id] });
 
   const handleSave = () => {
-    // Nuovo calcolo: esploso per singolo partecipante
+    // Nuovo calcolo: esploso per singolo partecipante × notti
     const righeSave = buildRigheEsploso(form, tariffe, form.prezzi_partecipanti ?? null);
-    const giorniSave = calcolaGiorni(form.data_inizio, form.data_fine);
-    const totaleSave = calcolaTotaleEsploso(righeSave, giorniSave);
+    const nottiSave = calcolaNotti(form.data_inizio, form.data_fine);
+    const totaleSave = calcolaTotaleEsploso(righeSave, nottiSave);
     const prezziSave = righeToPrezziPartecipanti(righeSave);
 
     const formWithCalc: IscrizioneFamiglia = {
@@ -331,17 +331,17 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
 
                 <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-2 text-sm">
                   <h4 className="font-semibold text-foreground flex items-center gap-2">💶 Tariffa & totale</h4>
-                  {giorniItem === 0 ? (
+                  {nottiItem === 0 ? (
                     <p className="text-amber-700 dark:text-amber-400 text-xs">Imposta date valide per calcolare il totale.</p>
                   ) : righeEsplosoItem.length === 0 ? (
                     <p className="text-amber-700 dark:text-amber-400 text-xs">Nessun partecipante da tariffare.</p>
                   ) : (
                     <>
-                      <p className="text-xs text-muted-foreground">Giorni totali: <strong className="text-foreground">{giorniItem}</strong></p>
+                      <p className="text-xs text-muted-foreground">Notti totali: <strong className="text-foreground">{nottiItem}</strong></p>
                       <div className="text-xs space-y-0.5 pl-1 text-muted-foreground">
                         {righeEsplosoItem.map(r => (
                           <p key={`${r.tipo}-${r.indice}`}>
-                            • {r.label}: {formatEuro(r.prezzoGiorno)}/gg × {giorniItem}gg = <strong className="text-foreground">{formatEuro(r.prezzoGiorno * giorniItem)}</strong>
+                            • {r.label}: {formatEuro(r.prezzoGiorno)}/notte × {nottiItem} = <strong className="text-foreground">{formatEuro(r.prezzoGiorno * nottiItem)}</strong>
                           </p>
                         ))}
                       </div>
@@ -488,10 +488,10 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                 <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900/50 rounded-xl p-3 space-y-3 text-sm">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <h4 className="font-semibold text-foreground">💶 Tariffa & totale (per persona)</h4>
-                    <span className="text-xs text-muted-foreground">Giorni totali: <strong className="text-foreground">{giorniForm}</strong></span>
+                    <span className="text-xs text-muted-foreground">Notti totali: <strong className="text-foreground">{nottiForm}</strong></span>
                   </div>
 
-                  {giorniForm === 0 ? (
+                  {nottiForm === 0 ? (
                     <p className="text-amber-700 dark:text-amber-400 text-xs">Imposta date valide per calcolare il totale.</p>
                   ) : righeEsploso.length === 0 ? (
                     <p className="text-amber-700 dark:text-amber-400 text-xs">Aggiungi almeno un partecipante per impostare le tariffe.</p>
@@ -499,13 +499,13 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                     <>
                       <div className="hidden sm:grid grid-cols-[minmax(0,1fr)_120px_60px_110px] gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                         <div>Partecipante</div>
-                        <div>Prezzo/gg (€)</div>
-                        <div className="text-center">Giorni</div>
+                        <div>Prezzo/notte (€)</div>
+                        <div className="text-center">Notti</div>
                         <div className="text-right">Totale</div>
                       </div>
                       <div className="space-y-1.5">
                         {righeEsploso.map(r => {
-                          const subtot = (Number(r.prezzoGiorno) || 0) * giorniForm;
+                          const subtot = (Number(r.prezzoGiorno) || 0) * nottiForm;
                           return (
                             <div key={`${r.tipo}-${r.indice}`} className="grid grid-cols-[minmax(0,1fr)_120px_60px_110px] gap-2 items-center bg-white/60 dark:bg-black/20 rounded-lg px-2 py-1.5">
                               <div className="text-xs font-medium truncate">{r.label}</div>
@@ -520,7 +520,7 @@ function FamigliaDetailDrawer({ item, open, onOpenChange }: { item: IscrizioneFa
                                   className="pl-6 h-8 text-xs"
                                 />
                               </div>
-                              <div className="text-xs text-center text-muted-foreground">{giorniForm}</div>
+                              <div className="text-xs text-center text-muted-foreground">{nottiForm}</div>
                               <div className="text-xs font-semibold text-right">{formatEuro(subtot)}</div>
                             </div>
                           );
