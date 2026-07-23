@@ -37,6 +37,12 @@ export function calcolaGiorni(dataInizio?: string | null, dataFine?: string | nu
   return days > 0 ? days : 0;
 }
 
+/** Notti trascorse in campeggio = giorni - 1 (min 0). Usato come moltiplicatore per il calcolo tariffe famiglie. */
+export function calcolaNotti(dataInizio?: string | null, dataFine?: string | null): number {
+  const g = calcolaGiorni(dataInizio, dataFine);
+  return g > 0 ? g - 1 : 0;
+}
+
 type IscrizioneCalc = Pick<
   IscrizioneFamiglia,
   | 'data_inizio' | 'data_fine'
