@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import type { IscrizioneFamiglia } from '@/hooks/useFamiglie';
 import {
   buildRigheEsploso,
-  calcolaGiorni,
+  calcolaNotti,
   calcolaTotaleEsploso,
   formatEuro,
   type TariffaFamiglia,
@@ -40,7 +40,7 @@ function drawFooter(doc: jsPDF) {
     const h = doc.internal.pageSize.getHeight();
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
-    doc.text('CUPAV — Turno Famiglie 2026', 40, h - 20);
+    doc.text('CUPAV - Turno Famiglie 2026', 40, h - 20);
     doc.text(`Pagina ${i} di ${pageCount}`, w - 40, h - 20, { align: 'right' });
   }
 }
@@ -68,12 +68,13 @@ export function exportFamigliePdf(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.text('Turno Famiglie — CUPAV 2026', margin, 40);
+  doc.setCharSpace(0);
+  doc.text('Turno Famiglie - CUPAV 2026', margin, 40);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
   doc.text(
-    `Report generato il ${oggi}  •  ${totFamiglie} famiglie  •  ${totPers} persone${totAnimali > 0 ? `  •  ${totAnimali} animali` : ''}`,
+    `Report generato il ${oggi}  |  ${totFamiglie} famiglie  |  ${totPers} persone${totAnimali > 0 ? `  |  ${totAnimali} animali` : ''}`,
     margin,
     60,
   );
@@ -81,9 +82,9 @@ export function exportFamigliePdf(
   let y = 100;
 
   sorted.forEach((it, idx) => {
-    const giorni = calcolaGiorni(it.data_inizio, it.data_fine);
+    const notti = calcolaNotti(it.data_inizio, it.data_fine);
     const righe = buildRigheEsploso(it, tariffeDefault, it.prezzi_partecipanti);
-    const totaleFam = it.importo_totale_calcolato ?? calcolaTotaleEsploso(righe, giorni);
+    const totaleFam = it.importo_totale_calcolato ?? calcolaTotaleEsploso(righe, notti);
 
     // Stima altezza sezione (intestazione + tabella)
     const rowsCount = righe.length + 1; // + totale
@@ -99,12 +100,14 @@ export function exportFamigliePdf(
     doc.setTextColor(...ORANGE);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
+    doc.setCharSpace(0);
     doc.text(`${it.cognome} ${it.nome}`, margin + 12, y + 20);
     doc.setTextColor(...DARK);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
+    doc.setCharSpace(0);
     doc.text(
-      `Residente a ${it.residente_a}  •  ${fmtDate(it.data_inizio)} → ${fmtDate(it.data_fine)}  •  ${giorni} giorni`,
+      `Residente a ${it.residente_a}  |  ${fmtDate(it.data_inizio)} - ${fmtDate(it.data_fine)}  |  ${notti} notti`,
       margin + 12,
       y + 36,
     );
@@ -113,27 +116,28 @@ export function exportFamigliePdf(
     const compParts: string[] = [
       `Adulti: ${it.num_adulti}`,
       `Figli >10: ${nFigli(it)}`,
-      `4–10: ${it.num_4_10_anni}`,
-      `0–3: ${it.num_0_3_anni}`,
+      `4-10: ${it.num_4_10_anni}`,
+      `0-3: ${it.num_0_3_anni}`,
     ];
     if (it.num_animali > 0) compParts.push(`Animali: ${it.num_animali}`);
     doc.setFontSize(9);
     doc.setTextColor(...DARK);
-    doc.text(compParts.join('  •  '), pageW - margin - 12, y + 20, { align: 'right' });
+    doc.setCharSpace(0);
+    doc.text(compParts.join('  |  '), pageW - margin - 12, y + 20, { align: 'right' });
 
     y += 60;
 
     // Tabella partecipanti
     const body = righe.map(r => [
-      r.label,
+      r.label.replace(/–/g, '-'),
       { content: formatEuro(r.prezzoGiorno), styles: { halign: 'right' as const } },
-      { content: String(giorni), styles: { halign: 'center' as const } },
-      { content: formatEuro((Number(r.prezzoGiorno) || 0) * giorni), styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
+      { content: String(notti), styles: { halign: 'center' as const } },
+      { content: formatEuro((Number(r.prezzoGiorno) || 0) * notti), styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
     ]);
 
     autoTable(doc, {
       startY: y,
-      head: [['Partecipante', 'Quota/giorno', 'Giorni', 'Totale']],
+      head: [['Partecipante', 'Quota/notte', 'Notti', 'Totale']],
       body,
       foot: [[
         { content: 'Totale famiglia', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
