@@ -3,12 +3,14 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useIscrizioniFamiglie, IscrizioneFamiglia, TIPO_PERIODO_LABEL } from '@/hooks/useFamiglie';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Tent, Users, Calendar, MapPin, ArrowRight, CalendarDays } from 'lucide-react';
+import { Loader2, Tent, Users, Calendar, MapPin, ArrowRight, CalendarDays, Download } from 'lucide-react';
 import { format, addDays, differenceInCalendarDays } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CalendarioPresenzeDialog, GiornoCalendario } from '@/components/CalendarioPresenzeDialog';
+import { useTariffeFamiglie } from '@/hooks/useTariffeFamiglie';
+import { exportFamigliePdf } from '@/lib/exportFamigliePdf';
 
 function totalePartecipanti(i: IscrizioneFamiglia) {
   const fromBool = (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0);
