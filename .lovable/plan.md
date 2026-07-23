@@ -1,49 +1,41 @@
 
-# Download PDF lista famiglie in `/turno/turnofamiglie`
+# Turno Famiglie: notti + fix testi PDF
 
-Aggiungo un pulsante **"Scarica PDF"** nella toolbar di `TurnoFamigliePage`, a sinistra del pulsante **Calendario**, che genera un PDF A4 verticale con una sezione per ogni famiglia iscritta (non archiviata).
+## 1) Passare da "giorni" a "notti" nel Turno Famiglie
 
-## UI
+Il prezzo si applica per **notte trascorsa in campeggio**, non per giorno. Le date di inizio/fine restano quelle indicate dalla famiglia, ma il moltiplicatore diventa **notti = giorni − 1** (min 0). Esempio: 08/08 → 15/08 = **7 notti**.
 
-Nella riga toolbar attuale (`Calendario` + `Apri anagrafica completa`), inserisco come primo elemento:
+### `src/lib/tariffeFamiglie.ts`
+- Aggiungo `calcolaNotti(dataInizio, dataFine) = max(calcolaGiorni(...) − 1, 0)`.
+- `calcolaTotaleFamiglia`: usa `notti` come moltiplicatore; rinomino `giorni` → `notti` in `RisultatoCalcolo` e in `RigaCalcolo`.
+- `calcolaTotaleEsploso(righe, notti)`: firma invariata, il parametro ora rappresenta le notti.
 
-- Pulsante `outline` con icona `Download` → `Scarica PDF`
+### `src/pages/AnagraficaTurnoFamiglie.tsx`
+- Sostituisco tutte le etichette UI "Giorni" → "Notti" nel drawer di modifica e nella vista read-only.
+- Uso `calcolaNotti(...)` come moltiplicatore e come valore mostrato nella colonna.
+- `handleSave` ricalcola `importo_totale_calcolato` usando le notti.
 
-Ordine finale (da sinistra a destra): **Scarica PDF · Calendario · Apri anagrafica completa**.
+### `src/lib/exportFamigliePdf.ts`
+- Colonna tabella: intestazione **"Giorni" → "Notti"**, valore = `calcolaNotti(...)`.
+- Intestazione famiglia mostra `N notti` invece di `N giorni`.
+- Totale per riga = `prezzoGiorno × notti`.
 
-## Contenuto del PDF
+### Backfill
+Nessun UPDATE massivo: `importo_totale_calcolato` verrà rigenerato al primo salvataggio dell'iscrizione, mentre il PDF calcola sempre al volo, quindi resta coerente. Se vuoi anche un ricalcolo massivo one-shot dimmelo.
 
-- Formato: **A4 verticale**, generato con `jspdf` + `jspdf-autotable` (già usati in `TurnoPage.tsx` e `exportMontaggioPdf.ts`, quindi nessuna nuova dipendenza).
-- Header prima pagina: titolo "Turno Famiglie – CUPAV 2026" + data di generazione + totale famiglie / persone / animali.
-- **Una sezione per famiglia**, ordinate per `cognome, nome`. Ogni sezione contiene:
-  1. **Intestazione famiglia**: `Cognome Nome` (grande) + riga sotto con `Residente a …`, `Periodo dd/MM – dd/MM/yyyy`, `Giorni: N`.
-  2. **Riepilogo composizione** (tabella compatta a 2 colonne, destra come richiesto):
-     - Adulti: N
-     - Figli >10 anni: N
-     - Bambini 4–10 anni: N
-     - Bambini 0–3 anni: N
-     - Animali: N (mostrato solo se > 0)
-  3. **Tabella partecipanti** costruita con `buildRigheEsploso` (stessa logica dell'anagrafica famiglie), colonne:
-     - `Partecipante` (es. "Adulto 1", "1° figlio >10 anni", "Bambino 4–10 #1", "Bambino 0–3 #1")
-     - `Quota/giorno (€)`
-     - `Giorni`
-     - `Totale (€)`
-     - Riga finale **"Totale famiglia"** con la somma (usa `importo_totale_calcolato` se presente, altrimenti ricalcolato con `calcolaTotaleEsploso`).
-- Separatore sottile tra sezioni; page-break automatico gestito da `autoTable` (se la sezione non entra, va a pagina nuova).
-- Footer con numero pagina `Pagina X di Y`.
+## 2) Fix formattazione testi PDF
 
-Nessuna colonna "categoria tariffaria" – coerente con la scelta già fatta di nasconderla.
+Nello screenshot il testo appare "spaziato" e tra le date compare `!'` invece di `→`. Causa: jsPDF con font Helvetica usa la codifica **WinAnsi**, che non supporta caratteri Unicode come `→`, `–` (en-dash), `•`; quando li incontra li sostituisce con glifi errati e altera la spaziatura dell'intera riga.
 
-## Permessi
+Correzioni nel solo file `src/lib/exportFamigliePdf.ts` (nessuna dipendenza nuova, PDF resta leggerissimo):
 
-Il download è visibile a tutti gli utenti che oggi vedono la pagina `/turno/turnofamiglie` (nessuna restrizione staff-specifica: la pagina non è nel flusso account staff limitato).
+- Sostituisco `→` con `-` nella riga "Periodo".
+- Sostituisco il separatore `•` con `·` compatibile o direttamente `|` sicuro in WinAnsi (uso `  |  `).
+- Sostituisco l'en-dash `–` di `"4–10"` e `"0–3"` con `-` (`"4-10"`, `"0-3"`).
+- Esplicito `doc.setCharSpace(0)` prima di ogni `doc.text` per neutralizzare eventuali spacing residui.
 
-## File toccati
-
-- `src/lib/exportFamigliePdf.ts` (nuovo): funzione `exportFamigliePdf(items, tariffeDefault)` che costruisce il PDF usando `buildRigheEsploso` da `src/lib/tariffeFamiglie.ts`.
-- `src/pages/TurnoFamigliePage.tsx`: import del nuovo helper + hook `useTariffeFamiglie` per i prezzi di default (fallback quando `prezzi_partecipanti` non è ancora stato personalizzato), nuovo bottone "Scarica PDF" nella toolbar.
+Nessun altro cambiamento estetico al PDF: layout, colori arancioni, tabella e piè di pagina restano identici.
 
 ## Fuori scopo
-
-- Non tocco `AnagraficaTurnoFamiglie` né la logica di calcolo/persistenza dei prezzi.
-- Non aggiungo filtri o selezione colonne: la lista è fissa come sopra.
+- Modulo pubblico `IscrizioneFamiglie` e card "Tariffe Famiglie" in Impostazioni: non usano queste utility e non li tocco.
+- `Turno Montaggio`: modello a notti separato, invariato.
