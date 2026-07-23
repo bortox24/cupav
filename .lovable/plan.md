@@ -1,48 +1,49 @@
 
-# Modifica sezione "Tariffa & totale" in Anagrafica Turno Famiglie
+# Download PDF lista famiglie in `/turno/turnofamiglie`
 
-Nella card di modifica di ogni iscrizione famiglia sostituiamo il calcolo "categoria + tariffa unica" con un **esploso per singolo partecipante**, dove ogni persona ha il proprio prezzo al giorno personalizzabile.
+Aggiungo un pulsante **"Scarica PDF"** nella toolbar di `TurnoFamigliePage`, a sinistra del pulsante **Calendario**, che genera un PDF A4 verticale con una sezione per ogni famiglia iscritta (non archiviata).
 
-## Cosa cambia nell'UI (Drawer di modifica)
+## UI
 
-1. **Nascondere** il campo "Categoria tariffaria" (Select) e l'attuale blocco "Anteprima totale" basato sulla categoria.
-2. Nuova sezione **"Tariffa & totale (per persona)"** che si aggiorna in base ai numeri di partecipanti e alle date già presenti nel form. Elenca una riga per **ogni persona** presente:
-   - Adulto 1, Adulto 2, …
-   - 1° figlio >10, 2° figlio >10, 3° figlio >10, …
-   - Bambino 4–10 #1, #2, …
-   - Bambino 0–3 #1, #2, … (default 0 €)
-3. Ogni riga mostra:
-   - Etichetta partecipante
-   - Input **Prezzo/giorno (€)**
-   - Numero **giorni totali** (calcolato da data_inizio/data_fine, uguale per tutti, in sola lettura)
-   - **Totale persona** = prezzo × giorni (in sola lettura)
-4. Sotto l'elenco: **Totale generale** = somma dei totali persona.
-5. Nella vista **read-only** della card, mostrare lo stesso esploso (etichetta → prezzo/gg × giorni = subtotale) e il totale finale, al posto dell'attuale "Categoria X — descrizione".
+Nella riga toolbar attuale (`Calendario` + `Apri anagrafica completa`), inserisco come primo elemento:
 
-Preset iniziale dei prezzi quando l'iscrizione non ha ancora prezzi personalizzati: si prendono dalle tariffe globali attuali (adulto, figlio_1_over10, figlio_2_over10, figlio_3_over10 e successivi = figlio_3_over10, 4–10, 0–3) così l'utente parte da valori sensati e li può modificare uno per uno.
+- Pulsante `outline` con icona `Download` → `Scarica PDF`
 
-## Dati & backend
+Ordine finale (da sinistra a destra): **Scarica PDF · Calendario · Apri anagrafica completa**.
 
-Nuova colonna su `iscrizioni_famiglie`:
-- `prezzi_partecipanti jsonb` — array ordinato di oggetti `{ tipo: 'adulto'|'figlio_over10'|'eta_4_10'|'eta_0_3', indice: number, prezzo_giorno: number }`.
+## Contenuto del PDF
 
-Il campo `categoria_tariffa` resta in tabella (per storico) ma non viene più mostrato né usato dal nuovo calcolo. `importo_totale_calcolato` continua ad essere valorizzato al salvataggio con la nuova somma, così Gestione Pagamenti e il resto dell'app continuano a funzionare senza modifiche.
+- Formato: **A4 verticale**, generato con `jspdf` + `jspdf-autotable` (già usati in `TurnoPage.tsx` e `exportMontaggioPdf.ts`, quindi nessuna nuova dipendenza).
+- Header prima pagina: titolo "Turno Famiglie – CUPAV 2026" + data di generazione + totale famiglie / persone / animali.
+- **Una sezione per famiglia**, ordinate per `cognome, nome`. Ogni sezione contiene:
+  1. **Intestazione famiglia**: `Cognome Nome` (grande) + riga sotto con `Residente a …`, `Periodo dd/MM – dd/MM/yyyy`, `Giorni: N`.
+  2. **Riepilogo composizione** (tabella compatta a 2 colonne, destra come richiesto):
+     - Adulti: N
+     - Figli >10 anni: N
+     - Bambini 4–10 anni: N
+     - Bambini 0–3 anni: N
+     - Animali: N (mostrato solo se > 0)
+  3. **Tabella partecipanti** costruita con `buildRigheEsploso` (stessa logica dell'anagrafica famiglie), colonne:
+     - `Partecipante` (es. "Adulto 1", "1° figlio >10 anni", "Bambino 4–10 #1", "Bambino 0–3 #1")
+     - `Quota/giorno (€)`
+     - `Giorni`
+     - `Totale (€)`
+     - Riga finale **"Totale famiglia"** con la somma (usa `importo_totale_calcolato` se presente, altrimenti ricalcolato con `calcolaTotaleEsploso`).
+- Separatore sottile tra sezioni; page-break automatico gestito da `autoTable` (se la sezione non entra, va a pagina nuova).
+- Footer con numero pagina `Pagina X di Y`.
 
-Al salvataggio:
-- Ricalcolo totale = Σ (prezzo_giorno × giorni) su tutte le righe.
-- Aggiorno `importo_totale_calcolato` + `prezzi_partecipanti`.
-- Propago `importo_dovuto` su `pagamenti_famiglie` come già avviene oggi.
+Nessuna colonna "categoria tariffaria" – coerente con la scelta già fatta di nasconderla.
 
-Se il numero di partecipanti cambia (es. si aggiunge un adulto), le righe extra ricevono il prezzo di default preso dalle tariffe globali; le righe rimosse vengono eliminate.
+## Permessi
+
+Il download è visibile a tutti gli utenti che oggi vedono la pagina `/turno/turnofamiglie` (nessuna restrizione staff-specifica: la pagina non è nel flusso account staff limitato).
 
 ## File toccati
 
-- Migration: `ALTER TABLE public.iscrizioni_famiglie ADD COLUMN prezzi_partecipanti jsonb`.
-- `src/hooks/useFamiglie.ts` — aggiungere il campo al tipo `IscrizioneFamiglia`.
-- `src/lib/tariffeFamiglie.ts` — nuove utility: `buildRigheEsploso(form, tariffeDefault, prezziSalvati)` e `calcolaTotaleEsploso(righe, giorni)`.
-- `src/pages/AnagraficaTurnoFamiglie.tsx` — sostituire Select categoria + anteprima con il nuovo elenco editabile; aggiornare la vista read-only e la logica di `handleSave`.
+- `src/lib/exportFamigliePdf.ts` (nuovo): funzione `exportFamigliePdf(items, tariffeDefault)` che costruisce il PDF usando `buildRigheEsploso` da `src/lib/tariffeFamiglie.ts`.
+- `src/pages/TurnoFamigliePage.tsx`: import del nuovo helper + hook `useTariffeFamiglie` per i prezzi di default (fallback quando `prezzi_partecipanti` non è ancora stato personalizzato), nuovo bottone "Scarica PDF" nella toolbar.
 
 ## Fuori scopo
 
-- Non tocco il modulo pubblico di iscrizione famiglie né la card "Tariffe Turno Famiglie" in Impostazioni: restano come default globali.
-- Non modifico Gestione Pagamenti: continua a leggere `importo_totale_calcolato`/`importo_dovuto`.
+- Non tocco `AnagraficaTurnoFamiglie` né la logica di calcolo/persistenza dei prezzi.
+- Non aggiungo filtri o selezione colonne: la lista è fissa come sopra.
