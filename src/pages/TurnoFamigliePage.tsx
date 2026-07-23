@@ -22,6 +22,7 @@ const dayKey = (d: Date) => format(d, 'yyyy-MM-dd');
 
 export default function TurnoFamigliePage() {
   const { data: allItems = [], isLoading } = useIscrizioniFamiglie();
+  const { data: tariffe = [] } = useTariffeFamiglie();
   const items = allItems.filter(i => !i.archiviato);
   const [calendarioOpen, setCalendarioOpen] = useState(false);
 
@@ -91,6 +92,14 @@ export default function TurnoFamigliePage() {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => exportFamigliePdf(items, tariffe)}
+            disabled={items.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />Scarica PDF
+          </Button>
           <Button variant="outline" className="w-full sm:w-auto" onClick={() => setCalendarioOpen(true)}>
             <CalendarDays className="h-4 w-4 mr-2" />Calendario
           </Button>
