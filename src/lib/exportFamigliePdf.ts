@@ -61,6 +61,11 @@ export function exportFamigliePdf(
   const totFamiglie = sorted.length;
   const totPers = sorted.reduce((s, i) => s + totPersone(i), 0);
   const totAnimali = sorted.reduce((s, i) => s + i.num_animali, 0);
+  const totaleComplessivo = sorted.reduce((s, i) => {
+    const notti = calcolaNotti(i.data_inizio, i.data_fine);
+    const righe = buildRigheEsploso(i, tariffeDefault, i.prezzi_partecipanti);
+    return s + (i.importo_totale_calcolato ?? calcolaTotaleEsploso(righe, notti));
+  }, 0);
 
   // Header
   doc.setFillColor(...ORANGE);
@@ -73,13 +78,34 @@ export function exportFamigliePdf(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
-  doc.text(
-    `Report generato il ${oggi}  |  ${totFamiglie} famiglie  |  ${totPers} persone${totAnimali > 0 ? `  |  ${totAnimali} animali` : ''}`,
-    margin,
-    60,
-  );
+  doc.text(`Report generato il ${oggi}`, margin, 60);
 
-  let y = 100;
+  // Fascia riepilogo KPI
+  let y = 95;
+  const kpis: [string, string][] = [
+    ['Famiglie', String(totFamiglie)],
+    ['Persone', String(totPers)],
+    ['Animali', String(totAnimali)],
+    ['Totale da incassare', formatEuro(totaleComplessivo).replace(/\u00a0/g, ' ')],
+  ];
+  const boxGap = 8;
+  const boxW = (pageW - margin * 2 - boxGap * 3) / 4;
+  kpis.forEach(([label, value], i) => {
+    const x = margin + i * (boxW + boxGap);
+    doc.setFillColor(...LIGHT);
+    doc.roundedRect(x, y, boxW, 44, 6, 6, 'F');
+    doc.setCharSpace(0);
+    doc.setTextColor(...ORANGE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(i === 3 ? 11 : 14);
+    doc.text(value, x + boxW / 2, y + 22, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...MUTED);
+    doc.text(label, x + boxW / 2, y + 35, { align: 'center' });
+  });
+
+  y += 60;
 
   sorted.forEach((it, idx) => {
     const notti = calcolaNotti(it.data_inizio, it.data_fine);
@@ -163,6 +189,20 @@ export function exportFamigliePdf(
       doc.line(margin, y - 8, pageW - margin, y - 8);
     }
   });
+
+  // Totale complessivo turno
+  if (y + 50 > pageH - 40) {
+    doc.addPage();
+    y = 50;
+  }
+  doc.setFillColor(...ORANGE);
+  doc.roundedRect(margin, y, pageW - margin * 2, 34, 6, 6, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setCharSpace(0);
+  doc.text('TOTALE TURNO FAMIGLIE', margin + 12, y + 22);
+  doc.text(formatEuro(totaleComplessivo).replace(/\u00a0/g, ' '), pageW - margin - 12, y + 22, { align: 'right' });
 
   drawFooter(doc);
 

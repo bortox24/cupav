@@ -11,11 +11,18 @@ import { Button } from '@/components/ui/button';
 import { CalendarioPresenzeDialog, GiornoCalendario } from '@/components/CalendarioPresenzeDialog';
 import { useTariffeFamiglie } from '@/hooks/useTariffeFamiglie';
 import { exportFamigliePdf } from '@/lib/exportFamigliePdf';
+import { buildRigheEsploso, calcolaNotti, calcolaTotaleEsploso, formatEuro, type TariffaFamiglia } from '@/lib/tariffeFamiglie';
 
 function totalePartecipanti(i: IscrizioneFamiglia) {
   const fromBool = (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0);
   const nFigli = Math.max(0, i.num_figli_over10 ?? 0) || fromBool;
   return i.num_adulti + nFigli + i.num_4_10_anni + i.num_0_3_anni;
+}
+
+function totaleFamiglia(i: IscrizioneFamiglia, tariffe: TariffaFamiglia[] | null | undefined): number {
+  if (i.importo_totale_calcolato != null) return Number(i.importo_totale_calcolato) || 0;
+  const notti = calcolaNotti(i.data_inizio, i.data_fine);
+  return calcolaTotaleEsploso(buildRigheEsploso(i, tariffe, i.prezzi_partecipanti), notti);
 }
 
 const dayKey = (d: Date) => format(d, 'yyyy-MM-dd');
@@ -28,6 +35,10 @@ export default function TurnoFamigliePage() {
 
   const totalePersone = items.reduce((sum, i) => sum + totalePartecipanti(i), 0);
   const totaleAnimali = items.reduce((sum, i) => sum + i.num_animali, 0);
+  const totaleIncasso = useMemo(
+    () => items.reduce((sum, i) => sum + totaleFamiglia(i, tariffe), 0),
+    [items, tariffe],
+  );
 
   const { giorniCalendario, presenzePerGiorno } = useMemo(() => {
     if (items.length === 0) return { giorniCalendario: [] as GiornoCalendario[], presenzePerGiorno: {} as Record<string, number> };
@@ -75,7 +86,7 @@ export default function TurnoFamigliePage() {
               <h2 className="text-2xl font-bold leading-none">Turno Famiglie</h2>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 mt-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
             <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
               <p className="text-2xl font-bold">{items.length}</p>
               <p className="text-xs text-white/80">Famiglie</p>
@@ -87,6 +98,10 @@ export default function TurnoFamigliePage() {
             <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
               <p className="text-2xl font-bold">{totaleAnimali}</p>
               <p className="text-xs text-white/80">Animali 🐾</p>
+            </div>
+            <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
+              <p className="text-2xl font-bold">{formatEuro(totaleIncasso)}</p>
+              <p className="text-xs text-white/80">Totale da incassare</p>
             </div>
           </div>
         </div>
@@ -146,6 +161,10 @@ export default function TurnoFamigliePage() {
                   <div className="bg-muted/40 rounded-lg p-2 text-xs flex items-center justify-between">
                     <span className="text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" />Partecipanti</span>
                     <span className="font-semibold text-foreground">{totalePartecipanti(item)}{item.num_animali > 0 ? ` + 🐾${item.num_animali}` : ''}</span>
+                  </div>
+                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-2 text-xs flex items-center justify-between">
+                    <span className="text-orange-700 dark:text-orange-300">Totale da pagare</span>
+                    <span className="font-bold text-orange-700 dark:text-orange-300">{formatEuro(totaleFamiglia(item, tariffe))}</span>
                   </div>
                 </CardContent>
               </Card>

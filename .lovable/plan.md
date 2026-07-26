@@ -1,41 +1,24 @@
+## Obiettivo
 
-# Turno Famiglie: notti + fix testi PDF
+Mostrare il totale da pagare per ogni famiglia nella pagina `/turno/turno-famiglie`, il totale complessivo del turno nelle KPI in alto, e riportare gli stessi dati nel PDF scaricabile.
 
-## 1) Passare da "giorni" a "notti" nel Turno Famiglie
+## Cosa cambia
 
-Il prezzo si applica per **notte trascorsa in campeggio**, non per giorno. Le date di inizio/fine restano quelle indicate dalla famiglia, ma il moltiplicatore diventa **notti = giorni − 1** (min 0). Esempio: 08/08 → 15/08 = **7 notti**.
+### 1. Card famiglia (pagina Turno Famiglie)
+- In ogni card, sotto la riga "Partecipanti", aggiungere una riga **"Totale da pagare"** con l'importo in euro, evidenziato (stile arancione coerente con la pagina).
+- L'importo usa esattamente la stessa fonte dell'anagrafica: `importo_totale_calcolato` salvato sull'iscrizione; se assente, viene ricalcolato con l'esploso per partecipante (`buildRigheEsploso` + `calcolaTotaleEsploso`) moltiplicato per le **notti** — quindi il valore coincide sempre con quello visto in `/anagrafica-turno-famiglie`.
 
-### `src/lib/tariffeFamiglie.ts`
-- Aggiungo `calcolaNotti(dataInizio, dataFine) = max(calcolaGiorni(...) − 1, 0)`.
-- `calcolaTotaleFamiglia`: usa `notti` come moltiplicatore; rinomino `giorni` → `notti` in `RisultatoCalcolo` e in `RigaCalcolo`.
-- `calcolaTotaleEsploso(righe, notti)`: firma invariata, il parametro ora rappresenta le notti.
+### 2. KPI in alto
+- Il blocco KPI passa da 3 a 4 riquadri: Famiglie, Persone, Animali, **Totale € da incassare** (somma dei totali di tutte le famiglie non archiviate).
+- Layout responsive: 2 colonne su mobile, 4 su desktop, così il valore in euro resta leggibile.
 
-### `src/pages/AnagraficaTurnoFamiglie.tsx`
-- Sostituisco tutte le etichette UI "Giorni" → "Notti" nel drawer di modifica e nella vista read-only.
-- Uso `calcolaNotti(...)` come moltiplicatore e come valore mostrato nella colonna.
-- `handleSave` ricalcola `importo_totale_calcolato` usando le notti.
+### 3. PDF (`Scarica PDF`)
+- Sotto l'header arancione, aggiungere una **fascia riepilogo KPI** con 4 box: Famiglie, Persone, Animali, Totale complessivo €.
+- In fondo al documento (ultima pagina, dopo l'ultima famiglia) aggiungere una riga di chiusura **"TOTALE TURNO FAMIGLIE: € X"**.
+- Ogni sezione famiglia continua a mostrare il "Totale famiglia" già presente.
 
-### `src/lib/exportFamigliePdf.ts`
-- Colonna tabella: intestazione **"Giorni" → "Notti"**, valore = `calcolaNotti(...)`.
-- Intestazione famiglia mostra `N notti` invece di `N giorni`.
-- Totale per riga = `prezzoGiorno × notti`.
+## Dettagli tecnici
 
-### Backfill
-Nessun UPDATE massivo: `importo_totale_calcolato` verrà rigenerato al primo salvataggio dell'iscrizione, mentre il PDF calcola sempre al volo, quindi resta coerente. Se vuoi anche un ricalcolo massivo one-shot dimmelo.
-
-## 2) Fix formattazione testi PDF
-
-Nello screenshot il testo appare "spaziato" e tra le date compare `!'` invece di `→`. Causa: jsPDF con font Helvetica usa la codifica **WinAnsi**, che non supporta caratteri Unicode come `→`, `–` (en-dash), `•`; quando li incontra li sostituisce con glifi errati e altera la spaziatura dell'intera riga.
-
-Correzioni nel solo file `src/lib/exportFamigliePdf.ts` (nessuna dipendenza nuova, PDF resta leggerissimo):
-
-- Sostituisco `→` con `-` nella riga "Periodo".
-- Sostituisco il separatore `•` con `·` compatibile o direttamente `|` sicuro in WinAnsi (uso `  |  `).
-- Sostituisco l'en-dash `–` di `"4–10"` e `"0–3"` con `-` (`"4-10"`, `"0-3"`).
-- Esplicito `doc.setCharSpace(0)` prima di ogni `doc.text` per neutralizzare eventuali spacing residui.
-
-Nessun altro cambiamento estetico al PDF: layout, colori arancioni, tabella e piè di pagina restano identici.
-
-## Fuori scopo
-- Modulo pubblico `IscrizioneFamiglie` e card "Tariffe Famiglie" in Impostazioni: non usano queste utility e non li tocco.
-- `Turno Montaggio`: modello a notti separato, invariato.
+- `src/pages/TurnoFamigliePage.tsx`: helper `totaleFamiglia(item, tariffe)` (riuso di `calcolaNotti`/`buildRigheEsploso`/`calcolaTotaleEsploso` da `src/lib/tariffeFamiglie.ts`), `useMemo` per la somma; formattazione con `formatEuro`.
+- `src/lib/exportFamigliePdf.ts`: calcolo del totale complessivo prima del loop; disegno della fascia riepilogo con `roundedRect` + testo (solo ASCII/WinAnsi, `setCharSpace(0)` come già fatto) e blocco totale finale con gestione salto pagina.
+- Nessuna modifica al database: i dati sono già su `iscrizioni_famiglie`.
