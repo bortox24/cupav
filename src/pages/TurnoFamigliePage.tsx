@@ -11,11 +11,18 @@ import { Button } from '@/components/ui/button';
 import { CalendarioPresenzeDialog, GiornoCalendario } from '@/components/CalendarioPresenzeDialog';
 import { useTariffeFamiglie } from '@/hooks/useTariffeFamiglie';
 import { exportFamigliePdf } from '@/lib/exportFamigliePdf';
+import { buildRigheEsploso, calcolaNotti, calcolaTotaleEsploso, formatEuro, type TariffaFamiglia } from '@/lib/tariffeFamiglie';
 
 function totalePartecipanti(i: IscrizioneFamiglia) {
   const fromBool = (i.figlio_1_over10 ? 1 : 0) + (i.figlio_2_over10 ? 1 : 0) + (i.figlio_3_over10 ? 1 : 0);
   const nFigli = Math.max(0, i.num_figli_over10 ?? 0) || fromBool;
   return i.num_adulti + nFigli + i.num_4_10_anni + i.num_0_3_anni;
+}
+
+function totaleFamiglia(i: IscrizioneFamiglia, tariffe: TariffaFamiglia[] | null | undefined): number {
+  if (i.importo_totale_calcolato != null) return Number(i.importo_totale_calcolato) || 0;
+  const notti = calcolaNotti(i.data_inizio, i.data_fine);
+  return calcolaTotaleEsploso(buildRigheEsploso(i, tariffe, i.prezzi_partecipanti), notti);
 }
 
 const dayKey = (d: Date) => format(d, 'yyyy-MM-dd');
