@@ -35,6 +35,10 @@ export default function TurnoFamigliePage() {
 
   const totalePersone = items.reduce((sum, i) => sum + totalePartecipanti(i), 0);
   const totaleAnimali = items.reduce((sum, i) => sum + i.num_animali, 0);
+  const totaleIncasso = useMemo(
+    () => items.reduce((sum, i) => sum + totaleFamiglia(i, tariffe), 0),
+    [items, tariffe],
+  );
 
   const { giorniCalendario, presenzePerGiorno } = useMemo(() => {
     if (items.length === 0) return { giorniCalendario: [] as GiornoCalendario[], presenzePerGiorno: {} as Record<string, number> };
