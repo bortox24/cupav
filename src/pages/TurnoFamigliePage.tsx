@@ -86,7 +86,7 @@ export default function TurnoFamigliePage() {
               <h2 className="text-2xl font-bold leading-none">Turno Famiglie</h2>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 mt-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
             <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
               <p className="text-2xl font-bold">{items.length}</p>
               <p className="text-xs text-white/80">Famiglie</p>
@@ -98,6 +98,10 @@ export default function TurnoFamigliePage() {
             <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
               <p className="text-2xl font-bold">{totaleAnimali}</p>
               <p className="text-xs text-white/80">Animali 🐾</p>
+            </div>
+            <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
+              <p className="text-2xl font-bold">{formatEuro(totaleIncasso)}</p>
+              <p className="text-xs text-white/80">Totale da incassare</p>
             </div>
           </div>
         </div>
