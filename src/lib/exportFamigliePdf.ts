@@ -190,6 +190,20 @@ export function exportFamigliePdf(
     }
   });
 
+  // Totale complessivo turno
+  if (y + 50 > pageH - 40) {
+    doc.addPage();
+    y = 50;
+  }
+  doc.setFillColor(...ORANGE);
+  doc.roundedRect(margin, y, pageW - margin * 2, 34, 6, 6, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setCharSpace(0);
+  doc.text('TOTALE TURNO FAMIGLIE', margin + 12, y + 22);
+  doc.text(formatEuro(totaleComplessivo).replace(/\u00a0/g, ' '), pageW - margin - 12, y + 22, { align: 'right' });
+
   drawFooter(doc);
 
   const dateStr = new Date().toISOString().slice(0, 10);
