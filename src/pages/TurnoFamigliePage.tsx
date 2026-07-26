@@ -162,6 +162,10 @@ export default function TurnoFamigliePage() {
                     <span className="text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" />Partecipanti</span>
                     <span className="font-semibold text-foreground">{totalePartecipanti(item)}{item.num_animali > 0 ? ` + 🐾${item.num_animali}` : ''}</span>
                   </div>
+                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-2 text-xs flex items-center justify-between">
+                    <span className="text-orange-700 dark:text-orange-300">Totale da pagare</span>
+                    <span className="font-bold text-orange-700 dark:text-orange-300">{formatEuro(totaleFamiglia(item, tariffe))}</span>
+                  </div>
                 </CardContent>
               </Card>
             ))}
