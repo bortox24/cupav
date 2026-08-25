@@ -312,6 +312,7 @@ export default function VisualizzaModuloRisposte() {
                       {schema.map((field) => (
                         <TableHead key={field.name}>{field.label}</TableHead>
                       ))}
+                      <TableHead className="w-16 text-right">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -354,6 +355,16 @@ export default function VisualizzaModuloRisposte() {
                               </TableCell>
                             );
                           })}
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Modifica risposta"
+                              onClick={() => setEditingResponse(response)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
