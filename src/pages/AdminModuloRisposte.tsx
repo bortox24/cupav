@@ -317,7 +317,7 @@ export default function AdminModuloRisposte() {
                   {schema.map((field) => (
                     <TableHead key={field.name}>{field.label}</TableHead>
                   ))}
-                  <TableHead className="w-16"></TableHead>
+                  <TableHead className="w-24"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -333,7 +333,15 @@ export default function AdminModuloRisposte() {
                           {formatCellValue(field, data[field.name])}
                         </TableCell>
                       ))}
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Modifica risposta"
+                          onClick={() => setEditingResponse(response)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
