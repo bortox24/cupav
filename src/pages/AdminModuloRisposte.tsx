@@ -39,11 +39,13 @@ import {
   Search,
   Trash2,
   Download,
+  Pencil,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { DynamicStats } from '@/components/forms/DynamicStats';
 import { AIAnalysis } from '@/components/forms/AIAnalysis';
+import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
 
 export default function AdminModuloRisposte() {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +55,7 @@ export default function AdminModuloRisposte() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterField, setFilterField] = useState<string>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
+  const [editingResponse, setEditingResponse] = useState<FormResponse | null>(null);
 
   const isLoading = formLoading || responsesLoading;
 
@@ -314,7 +317,7 @@ export default function AdminModuloRisposte() {
                   {schema.map((field) => (
                     <TableHead key={field.name}>{field.label}</TableHead>
                   ))}
-                  <TableHead className="w-16"></TableHead>
+                  <TableHead className="w-24"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -330,7 +333,15 @@ export default function AdminModuloRisposte() {
                           {formatCellValue(field, data[field.name])}
                         </TableCell>
                       ))}
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Modifica risposta"
+                          onClick={() => setEditingResponse(response)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -368,6 +379,14 @@ export default function AdminModuloRisposte() {
             </Table>
           </div>
         )}
+
+        <EditResponseDialog
+          open={!!editingResponse}
+          onOpenChange={(open) => !open && setEditingResponse(null)}
+          formId={form.id}
+          schema={schema}
+          response={editingResponse}
+        />
       </div>
     </MainLayout>
   );

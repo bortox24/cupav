@@ -131,6 +131,44 @@ export function useSubmitFormResponse() {
   });
 }
 
+// Hook to update an existing form response
+export function useUpdateFormResponse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      responseId,
+      data,
+    }: {
+      responseId: string;
+      formId: string;
+      data: Record<string, unknown>;
+    }) => {
+      const { error } = await supabase
+        .from('form_responses')
+        .update({ data: data as unknown as Record<string, never> })
+        .eq('id', responseId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['form-responses', variables.formId] });
+      toast({
+        title: 'Successo',
+        description: 'Risposta aggiornata correttamente.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile aggiornare la risposta.',
+        variant: 'destructive',
+      });
+      console.error('Error updating form response:', error);
+    },
+  });
+}
+
 // Hook to create a new form
 export function useCreateForm() {
   const queryClient = useQueryClient();

@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Download, FileText, Calendar, Users, Search } from 'lucide-react';
-import { useFormById, useFormResponses, FormField } from '@/hooks/useForms';
+import { ArrowLeft, Download, FileText, Calendar, Users, Search, Pencil } from 'lucide-react';
+import { useFormById, useFormResponses, FormField, FormResponse } from '@/hooks/useForms';
+import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import {
@@ -29,6 +30,8 @@ export default function VisualizzaModuloRisposte() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterField, setFilterField] = useState<string>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
+  const [editingResponse, setEditingResponse] = useState<FormResponse | null>(null);
+
 
   const isLoading = formLoading || responsesLoading;
 
@@ -309,6 +312,7 @@ export default function VisualizzaModuloRisposte() {
                       {schema.map((field) => (
                         <TableHead key={field.name}>{field.label}</TableHead>
                       ))}
+                      <TableHead className="w-16 text-right">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -351,6 +355,16 @@ export default function VisualizzaModuloRisposte() {
                               </TableCell>
                             );
                           })}
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Modifica risposta"
+                              onClick={() => setEditingResponse(response)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -360,6 +374,14 @@ export default function VisualizzaModuloRisposte() {
             )}
           </CardContent>
         </Card>
+
+        <EditResponseDialog
+          open={!!editingResponse}
+          onOpenChange={(open) => !open && setEditingResponse(null)}
+          formId={form.id}
+          schema={schema}
+          response={editingResponse}
+        />
       </div>
     </MainLayout>
   );
