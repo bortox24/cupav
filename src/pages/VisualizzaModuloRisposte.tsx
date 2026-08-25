@@ -374,6 +374,14 @@ export default function VisualizzaModuloRisposte() {
             )}
           </CardContent>
         </Card>
+
+        <EditResponseDialog
+          open={!!editingResponse}
+          onOpenChange={(open) => !open && setEditingResponse(null)}
+          formId={form.id}
+          schema={schema}
+          response={editingResponse}
+        />
       </div>
     </MainLayout>
   );
