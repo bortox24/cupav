@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Download, FileText, Calendar, Users, Search } from 'lucide-react';
-import { useFormById, useFormResponses, FormField } from '@/hooks/useForms';
+import { ArrowLeft, Download, FileText, Calendar, Users, Search, Pencil } from 'lucide-react';
+import { useFormById, useFormResponses, FormField, FormResponse } from '@/hooks/useForms';
+import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import {
@@ -29,6 +30,8 @@ export default function VisualizzaModuloRisposte() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterField, setFilterField] = useState<string>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
+  const [editingResponse, setEditingResponse] = useState<FormResponse | null>(null);
+
 
   const isLoading = formLoading || responsesLoading;
 
