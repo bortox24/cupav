@@ -85,7 +85,7 @@ function FamigliaCard({ item, pagamento, onClick }: { item: IscrizioneFamiglia; 
   const tot = totalePartecipanti(item);
   const totaleCalc = item.importo_totale_calcolato ?? 0;
   const dovuto = pagamento?.importo_dovuto ?? totaleCalc;
-  const pagato = pagamento?.importo_pagato ?? 0;
+  const pagato = Math.max(Number(item.acconto_versato) || 0, Number(pagamento?.importo_pagato) || 0);
   const residuo = Math.max(0, dovuto - pagato);
   const stato = pagato <= 0 ? 'da_pagare' : (residuo <= 0 ? 'pagato' : 'parziale');
   const statoColor =
@@ -581,7 +581,7 @@ function exportCSV(items: IscrizioneFamiglia[], pagMap: Map<string, PagamentoInf
   const rows = items.map(i => {
     const p = pagMap.get(i.id);
     const dovuto = p?.importo_dovuto ?? i.importo_totale_calcolato ?? 0;
-    const pagato = p?.importo_pagato ?? 0;
+    const pagato = Math.max(Number(i.acconto_versato) || 0, Number(p?.importo_pagato) || 0);
     const residuo = Math.max(0, dovuto - pagato);
     return [
       i.cognome, i.nome, i.email, i.residente_a, i.via,
