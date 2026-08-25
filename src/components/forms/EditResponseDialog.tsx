@@ -204,7 +204,7 @@ export function EditResponseDialog({
             {label}
             <Input
               id={field.name}
-              type={field.type === 'divider' ? 'text' : field.type}
+              type={field.type}
               value={values[field.name] || ''}
               onChange={(e) => setValue(field.name, e.target.value)}
               className={hasError ? 'border-destructive' : ''}
