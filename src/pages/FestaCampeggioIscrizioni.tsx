@@ -317,6 +317,26 @@ export default function FestaCampeggioIscrizioni() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InvioMassivoGenericDialog
+        open={invioOpen}
+        onOpenChange={setInvioOpen}
+        entityType="festa"
+        recipients={invioRecipients}
+        recipientsLabel="destinatari"
+        allowIndividualSelection
+        filterGroups={[
+          {
+            key: 'tipologia',
+            label: 'Tipologia partecipanti',
+            options: [
+              { value: 'adulti', label: 'Adulti' },
+              { value: 'ragazzi', label: 'Ragazzi' },
+              { value: 'staff', label: 'Staff' },
+            ],
+          },
+        ]}
+      />
     </MainLayout>
   );
 }
