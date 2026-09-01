@@ -48,6 +48,7 @@ interface Props {
 
 export function InvioMassivoGenericDialog({
   open, onOpenChange, entityType, recipients, filterGroups, recipientsLabel,
+  allowIndividualSelection = false,
 }: Props) {
   const { activeJob } = useInvioMassivoJob();
   const [showMonitor, setShowMonitor] = useState(false);
@@ -59,6 +60,7 @@ export function InvioMassivoGenericDialog({
   const [ctaUrl, setCtaUrl] = useState('');
 
   const [selections, setSelections] = useState<Record<string, string[]>>({});
+  const [excluded, setExcluded] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -73,11 +75,12 @@ export function InvioMassivoGenericDialog({
       setStep('message');
       setTitolo(''); setTesto(''); setCtaLabel(''); setCtaUrl('');
       setSelections({});
+      setExcluded([]);
       setSubmitting(false);
     }
   }, [open]);
 
-  const filtered = recipients.filter(r => {
+  const matched = recipients.filter(r => {
     for (const g of filterGroups) {
       const sel = selections[g.key] || [];
       if (sel.length === 0) continue;
@@ -86,6 +89,17 @@ export function InvioMassivoGenericDialog({
     }
     return true;
   });
+
+  const filtered = allowIndividualSelection
+    ? matched.filter(r => !excluded.includes(r.id))
+    : matched;
+
+  const toggleRecipient = (id: string) =>
+    setExcluded(p => (p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
+  const selectAll = () => setExcluded(p => p.filter(id => !matched.some(m => m.id === id)));
+  const deselectAll = () =>
+    setExcluded(p => Array.from(new Set([...p, ...matched.map(m => m.id)])));
+
 
   const toggleValue = (key: string, value: string) =>
     setSelections(p => {
