@@ -34,6 +34,7 @@ const PAGE_BY_ENTITY: Record<string, string> = {
   animatori: "/anagrafica-animatori",
   montaggio: "/anagrafica-montaggio-campeggio",
   festa: "/festa-campeggio-iscrizioni",
+  modulo: "/visualizza-moduli",
 };
 
 // --- Auth helper: verifica utente + permesso pagina ---
@@ -76,7 +77,7 @@ async function handleStart(req: Request) {
     ragazzi_ids, recipient_ids, filtri,
   } = body;
 
-  const entityType = ["ragazzi", "animatori", "montaggio", "festa"].includes(body.entity_type)
+  const entityType = ["ragazzi", "animatori", "montaggio", "festa", "modulo"].includes(body.entity_type)
     ? body.entity_type : "ragazzi";
   const pagePath = PAGE_BY_ENTITY[entityType];
 
@@ -207,6 +208,51 @@ async function handleStart(req: Request) {
           genitori: [{ nome_cognome: nome, email: r.email }],
         },
       };
+    });
+  } else if (entityType === "modulo") {
+    const formId = body.form_id;
+    if (typeof formId !== "string" || formId.length < 10) return json({ error: "form_id mancante" }, 400);
+    const { data: form, error: formErr } = await a
+      .from("forms").select("id, name, form_schema").eq("id", formId).maybeSingle();
+    if (formErr || !form) return json({ error: "Modulo non trovato" }, 400);
+    const { data: rows, error: rErr } = await a
+      .from("form_responses").select("id, data").eq("form_id", formId).in("id", recIds);
+    if (rErr) return json({ error: "Errore caricamento risposte", detail: rErr.message }, 500);
+
+    const schema: any[] = Array.isArray(form.form_schema) ? (form.form_schema as any[]) : [];
+    const low = (v: unknown) => String(v || "").toLowerCase();
+    const emailField =
+      schema.find((f) => f?.type === "email") ||
+      schema.find((f) => low(f?.name).includes("email") || low(f?.label).includes("email")) ||
+      schema.find((f) => low(f?.name).includes("mail") || low(f?.label).includes("mail"));
+    const hasKey = (f: any, k: string) => low(f?.name).includes(k) || low(f?.label).includes(k);
+    const nameFields = [
+      ...schema.filter((f) => hasKey(f, "cognome")),
+      ...schema.filter((f) => hasKey(f, "nome") && !hasKey(f, "cognome")),
+    ];
+    const isEmail = (v: unknown) =>
+      typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+    recipients = (rows || []).flatMap((r: any) => {
+      const d = (r.data || {}) as Record<string, unknown>;
+      let email: unknown = emailField ? d[emailField.name] : undefined;
+      if (!isEmail(email)) email = Object.values(d).find((v) => isEmail(v));
+      if (!isEmail(email)) return [];
+      const parts = nameFields.map((f) => String(d[f.name] ?? "").trim()).filter(Boolean);
+      const nome = parts.join(" ") || String(email).trim();
+      return [{
+        source_id: r.id,
+        recipient_full_name: nome,
+        personalization_name: nome,
+        payload: {
+          full_name: nome,
+          email: String(email).trim(),
+          form_id: form.id,
+          form_name: form.name,
+          risposta: d,
+          genitori: [{ nome_cognome: nome, email: String(email).trim() }],
+        },
+      }];
     });
   } else { // montaggio
     const { data: rows, error: mErr } = await a
@@ -490,8 +536,9 @@ async function runJob(jobId: string) {
           azione: "invio_massivo",
           dettaglio: `${success ? "OK" : "ERRORE"} — ${dettaglio}`,
         });
-      } else if (entityType === "festa") {
-        // nessuna tabella di log dedicata per la festa campeggio
+      } else if (entityType === "festa" || entityType === "modulo") {
+        // nessuna tabella di log dedicata per festa campeggio / risposte moduli
+
       } else if (entityType === "montaggio") {
         await a.from("anagrafica_invio_logs").insert({
           iscrizione_montaggio_id: sourceId,

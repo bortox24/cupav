@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Download, FileText, Calendar, Users, Search, Pencil } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Calendar, Users, Search, Pencil, Megaphone } from 'lucide-react';
 import { useFormById, useFormResponses, FormField, FormResponse } from '@/hooks/useForms';
+import { InvioMassivoGenericDialog } from '@/components/InvioMassivoGenericDialog';
+import { buildFormRecipients } from '@/lib/formRecipients';
 import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -31,6 +33,7 @@ export default function VisualizzaModuloRisposte() {
   const [filterField, setFilterField] = useState<string>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
   const [editingResponse, setEditingResponse] = useState<FormResponse | null>(null);
+  const [invioOpen, setInvioOpen] = useState(false);
 
 
   const isLoading = formLoading || responsesLoading;
@@ -71,6 +74,11 @@ export default function VisualizzaModuloRisposte() {
       return true;
     });
   }, [responses, searchTerm, filterField, filterValue]);
+
+  const invioRecipients = useMemo(
+    () => buildFormRecipients(schema, filteredResponses),
+    [schema, filteredResponses],
+  );
 
   const handleExportCSV = () => {
     if (!form || responses.length === 0) return;
@@ -152,14 +160,25 @@ export default function VisualizzaModuloRisposte() {
               )}
             </div>
           </div>
-          <Button 
-            onClick={handleExportCSV} 
-            disabled={responses.length === 0}
-            className="w-full sm:w-auto"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Scarica CSV
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={() => setInvioOpen(true)}
+              disabled={invioRecipients.length === 0}
+              className="w-full sm:w-auto"
+            >
+              <Megaphone className="h-4 w-4 mr-2" />
+              Comunicazioni
+            </Button>
+            <Button
+              onClick={handleExportCSV}
+              disabled={responses.length === 0}
+              className="w-full sm:w-auto"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Scarica CSV
+            </Button>
+          </div>
         </div>
 
         {/* Stats Summary */}
@@ -374,6 +393,17 @@ export default function VisualizzaModuloRisposte() {
             )}
           </CardContent>
         </Card>
+
+        <InvioMassivoGenericDialog
+          open={invioOpen}
+          onOpenChange={setInvioOpen}
+          entityType="modulo"
+          recipients={invioRecipients}
+          recipientsLabel="destinatari"
+          allowIndividualSelection
+          filterGroups={[]}
+          extraStartPayload={{ form_id: form.id }}
+        />
 
         <EditResponseDialog
           open={!!editingResponse}

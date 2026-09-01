@@ -38,17 +38,19 @@ export interface GenericRecipient {
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  entityType: 'animatori' | 'montaggio' | 'festa';
+  entityType: 'animatori' | 'montaggio' | 'festa' | 'modulo';
   recipients: GenericRecipient[];
   filterGroups: FilterGroup[];
   recipientsLabel: string;
   /** mostra checkbox per selezionare/deselezionare singoli destinatari */
   allowIndividualSelection?: boolean;
+  /** campi extra inviati al runner nel body di start (es. form_id) */
+  extraStartPayload?: Record<string, unknown>;
 }
 
 export function InvioMassivoGenericDialog({
   open, onOpenChange, entityType, recipients, filterGroups, recipientsLabel,
-  allowIndividualSelection = false,
+  allowIndividualSelection = false, extraStartPayload,
 }: Props) {
   const { activeJob } = useInvioMassivoJob();
   const [showMonitor, setShowMonitor] = useState(false);
@@ -133,6 +135,7 @@ export function InvioMassivoGenericDialog({
           ctaUrl: ctaUrlTrim,
           recipient_ids: filtered.map(r => r.id),
           filtri: selections,
+          ...(extraStartPayload || {}),
         },
       });
       if (error) {
