@@ -23,6 +23,7 @@ import {
   UserPlus,
   BookOpen,
   Hammer,
+  PartyPopper,
 } from 'lucide-react';
 import { useMyPagePermissions } from '@/hooks/usePagePermissions';
 import { useState, useEffect } from 'react';
