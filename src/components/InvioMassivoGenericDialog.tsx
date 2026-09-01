@@ -38,10 +38,12 @@ export interface GenericRecipient {
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  entityType: 'animatori' | 'montaggio';
+  entityType: 'animatori' | 'montaggio' | 'festa';
   recipients: GenericRecipient[];
   filterGroups: FilterGroup[];
   recipientsLabel: string;
+  /** mostra checkbox per selezionare/deselezionare singoli destinatari */
+  allowIndividualSelection?: boolean;
 }
 
 export function InvioMassivoGenericDialog({
