@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,11 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, calcolaContributoFesta, COSTO_FESTA_ADULTO, COSTO_FESTA_RAGAZZO, COSTO_FESTA_STAFF } from "@/hooks/useFestaCampeggio";
+import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, calcolaContributoFesta } from "@/hooks/useFestaCampeggio";
 import { exportFestaCampeggioPdf } from "@/lib/exportFestaCampeggioPdf";
-import { PageHeader } from "@/components/PageHeader";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
 
 function StatoBadge({ item }: { item: FestaCampeggio }) {
   if (item.pagato) return <Badge className="bg-green-500 hover:bg-green-600 text-white">Pagato</Badge>;
