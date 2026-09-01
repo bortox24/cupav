@@ -255,6 +255,6 @@ export default function FestaCampeggioIscrizioni() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </MainLayout>
   );
 }
