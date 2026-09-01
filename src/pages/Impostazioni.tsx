@@ -112,6 +112,7 @@ export default function Impostazioni() {
   const iscrizioneFamiglieEnabled = settings?.iscrizione_famiglie_enabled === 'true';
   const preiscrizioneEnabled = settings?.preiscrizione_enabled === 'true';
   const moduloStaffEnabled = settings?.modulo_staff_enabled === 'true';
+  const festaCampeggioEnabled = settings?.festa_campeggio_enabled === 'true';
 
   return (
     <MainLayout title="Impostazioni">
