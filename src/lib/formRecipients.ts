@@ -1,5 +1,5 @@
 import type { FormField, FormResponse } from '@/hooks/useForms';
-import type { GenericRecipient } from '@/components/InvioMassivoGenericDialog';
+import type { GenericRecipient, FilterGroup } from '@/components/InvioMassivoGenericDialog';
 
 const norm = (s: string) => (s || '').toLowerCase();
 
