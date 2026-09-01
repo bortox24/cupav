@@ -131,6 +131,33 @@ export default function FestaCampeggioIscrizioni() {
           ))}
         </div>
 
+        {/* Distribuzione partecipanti */}
+        <Card className="rounded-2xl shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Distribuzione partecipanti</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[
+              { label: 'Adulti', val: stats.adulti, color: 'bg-fuchsia-500' },
+              { label: 'Ragazzi', val: stats.ragazzi, color: 'bg-purple-500' },
+              { label: 'Staff', val: stats.staff, color: 'bg-sky-500' },
+            ].map(r => {
+              const max = Math.max(stats.adulti, stats.ragazzi, stats.staff, 1);
+              return (
+                <div key={r.label} className="flex items-center gap-3">
+                  <span className="w-20 shrink-0 text-xs text-muted-foreground">{r.label}</span>
+                  <div className="flex-1 h-3 rounded-full bg-muted overflow-hidden">
+                    <div className={`h-full rounded-full ${r.color} transition-all`} style={{ width: `${(r.val / max) * 100}%` }} />
+                  </div>
+                  <span className="w-8 text-right text-sm font-semibold tabular-nums">{r.val}</span>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+
+
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
           <div className="relative w-full sm:w-72">
