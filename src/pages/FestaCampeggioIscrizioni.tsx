@@ -98,10 +98,17 @@ export default function FestaCampeggioIscrizioni() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader title="Festa Campeggio" description="Gestione adesioni e contributi" icon={<PartyPopper className="h-6 w-6" />} />
-
+    <MainLayout>
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-fuchsia-100 text-fuchsia-600 rounded-xl"><PartyPopper className="h-6 w-6" /></div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Festa Campeggio</h1>
+              <p className="text-sm text-muted-foreground">Gestione adesioni e contributi</p>
+            </div>
+          </div>
+        </div>
         {/* KPI */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {[
