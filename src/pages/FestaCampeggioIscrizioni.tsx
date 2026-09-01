@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { InvioMassivoGenericDialog, GenericRecipient } from "@/components/InvioMassivoGenericDialog";
 import { useAuth } from "@/lib/auth";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,27 @@ export default function FestaCampeggioIscrizioni() {
   const [search, setSearch] = useState("");
   const [editItem, setEditItem] = useState<FestaCampeggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FestaCampeggio | null>(null);
+  const [invioOpen, setInvioOpen] = useState(false);
+
+  const invioRecipients: GenericRecipient[] = useMemo(() => items
+    .filter(i => i.email)
+    .map(i => {
+      const tipologia: string[] = [];
+      if (i.num_adulti > 0) tipologia.push('adulti');
+      if (i.num_ragazzi > 0) tipologia.push('ragazzi');
+      if (i.num_staff > 0) tipologia.push('staff');
+      const badges = [
+        i.num_adulti > 0 ? { label: `${i.num_adulti} ad.`, variant: 'secondary' as const } : null,
+        i.num_ragazzi > 0 ? { label: `${i.num_ragazzi} rag.`, variant: 'secondary' as const } : null,
+        i.num_staff > 0 ? { label: `${i.num_staff} staff`, variant: 'secondary' as const } : null,
+      ].filter(Boolean) as { label: string; variant: 'secondary' }[];
+      return {
+        id: i.id,
+        full_name: `${i.cognome} ${i.nome}`.trim(),
+        badges,
+        tags: { tipologia },
+      };
+    }), [items]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -164,9 +186,21 @@ export default function FestaCampeggioIscrizioni() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca per nome o email..." className="pl-9 rounded-xl" />
           </div>
-          <Button onClick={exportPdf} variant="outline" className="gap-2 rounded-xl">
-            <FileDown className="h-4 w-4" /> Scarica PDF
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={exportPdf} variant="outline" className="gap-2 rounded-xl">
+              <FileDown className="h-4 w-4" /> Scarica PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 rounded-xl"
+              onClick={() => {
+                if (invioRecipients.length === 0) { toast({ title: "Nessuna adesione con email" }); return; }
+                setInvioOpen(true);
+              }}
+            >
+              <Megaphone className="h-4 w-4" /> Comunicazioni
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
