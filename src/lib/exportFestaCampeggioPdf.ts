@@ -1,0 +1,152 @@
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import type { FestaCampeggio } from '@/hooks/useFestaCampeggio';
+
+const FUCHSIA = [192, 38, 211] as [number, number, number];
+const PURPLE = [147, 51, 234] as [number, number, number];
+const DARK = [40, 40, 40] as [number, number, number];
+const MUTED = [120, 120, 120] as [number, number, number];
+const LIGHT = [253, 244, 255] as [number, number, number];
+
+function totalPersone(i: FestaCampeggio) {
+  return i.num_adulti + i.num_ragazzi + i.num_staff;
+}
+
+export function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 40;
+
+  const sorted = [...items].sort((a, b) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'));
+  const totIscr = sorted.length;
+  const totAdulti = sorted.reduce((s, i) => s + i.num_adulti, 0);
+  const totRagazzi = sorted.reduce((s, i) => s + i.num_ragazzi, 0);
+  const totStaff = sorted.reduce((s, i) => s + i.num_staff, 0);
+  const totPers = totAdulti + totRagazzi + totStaff;
+  const totContributo = sorted.reduce((s, i) => s + i.contributo, 0);
+  const totPagati = sorted.filter(i => i.pagato).length;
+  const totArrivati = sorted.filter(i => i.arrivato).length;
+
+  // Header
+  doc.setFillColor(...FUCHSIA);
+  doc.rect(0, 0, pageW, 90, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Festa Campeggio 2026', margin, 45);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+  doc.text(`Report generato il ${oggi}`, margin, 65);
+
+  // KPI Cards
+  let y = 120;
+  const cardW = (pageW - margin * 2 - 24) / 4;
+  const cards = [
+    { label: 'Adesioni', value: String(totIscr) },
+    { label: 'Persone', value: String(totPers) },
+    { label: 'Arrivati', value: String(totArrivati) },
+    { label: 'Totale €', value: `${totContributo}€` },
+  ];
+  cards.forEach((c, idx) => {
+    const x = margin + idx * (cardW + 8);
+    doc.setFillColor(...LIGHT);
+    doc.roundedRect(x, y, cardW, 70, 8, 8, 'F');
+    doc.setTextColor(...PURPLE);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(c.value, x + cardW / 2, y + 35, { align: 'center' });
+    doc.setTextColor(...MUTED);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(c.label, x + cardW / 2, y + 55, { align: 'center' });
+  });
+
+  y += 100;
+
+  // Fasce
+  doc.setTextColor(...DARK);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Suddivisione partecipanti', margin, y);
+  y += 18;
+  const fasce = [
+    { label: 'Adulti', val: totAdulti },
+    { label: 'Ragazzi', val: totRagazzi },
+    { label: 'Staff', val: totStaff },
+  ];
+  const maxFascia = Math.max(1, ...fasce.map(f => f.val));
+  fasce.forEach((f, i) => {
+    const by = y + i * 24;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...DARK);
+    doc.text(f.label, margin, by + 10);
+    doc.setFillColor(230, 230, 230);
+    doc.roundedRect(margin + 90, by, 260, 16, 3, 3, 'F');
+    const w = (f.val / maxFascia) * 260;
+    doc.setFillColor(...FUCHSIA);
+    if (w > 0) doc.roundedRect(margin + 90, by, Math.max(w, 1), 16, 3, 3, 'F');
+    doc.setTextColor(...DARK);
+    doc.text(`${f.val}`, margin + 360, by + 10);
+  });
+
+  y += fasce.length * 24 + 24;
+
+  // Table
+  doc.setTextColor(...DARK);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Elenco adesioni', margin, y);
+  y += 22;
+
+  autoTable(doc, {
+    startY: y,
+    head: [['Cognome Nome', 'Adulti', 'Ragazzi', 'Staff', 'Tot.', 'Contrib.', 'Stato']],
+    body: sorted.map(i => [
+      `${i.cognome} ${i.nome}`,
+      i.num_adulti,
+      i.num_ragazzi,
+      i.num_staff,
+      totalPersone(i),
+      `${i.contributo}€`,
+      i.pagato ? 'Pagato' : i.arrivato ? 'Arrivato' : 'Da arrivare',
+    ]),
+    foot: [[
+      { content: 'TOTALI', styles: { halign: 'left', fontStyle: 'bold' } },
+      { content: String(totAdulti), styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: String(totRagazzi), styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: String(totStaff), styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: String(totPers), styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: `${totContributo}€`, styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: `Arriv. ${totArrivati} / Pag. ${totPagati}`, styles: { halign: 'center', fontStyle: 'bold' } },
+    ]],
+    headStyles: { fillColor: FUCHSIA, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+    footStyles: { fillColor: LIGHT, textColor: DARK, fontStyle: 'bold', fontSize: 9 },
+    styles: { fontSize: 9, cellPadding: 5, overflow: 'linebreak' },
+    columnStyles: {
+      0: { cellWidth: 110, fontStyle: 'bold' },
+      1: { halign: 'center', cellWidth: 42 },
+      2: { halign: 'center', cellWidth: 48 },
+      3: { halign: 'center', cellWidth: 42 },
+      4: { halign: 'center', cellWidth: 38 },
+      5: { halign: 'center', cellWidth: 60 },
+      6: { halign: 'center', cellWidth: 70 },
+    },
+    margin: { left: margin, right: margin },
+  });
+
+  // Footer
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    const h = doc.internal.pageSize.getHeight();
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text('CUPAV — Festa Campeggio 2026', margin, h - 20);
+    doc.text(`Pagina ${i} di ${pageCount}`, pageW - margin, h - 20, { align: 'right' });
+  }
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  doc.save(`festa-campeggio-${dateStr}.pdf`);
+}
