@@ -224,6 +224,19 @@ export default function Impostazioni() {
                 disabled={updateSetting.isPending}
               />
             </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base font-medium">Festa Campeggio</Label>
+                <p className="text-sm text-muted-foreground">
+                  Modulo pubblico adesione festa campeggio (/festa-campeggio)
+                </p>
+              </div>
+              <Switch
+                checked={festaCampeggioEnabled}
+                onCheckedChange={(checked) => handleToggle('festa_campeggio_enabled', checked)}
+                disabled={updateSetting.isPending}
+              />
+            </div>
           </CardContent>
         </Card>
 
