@@ -154,14 +154,15 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
 
   autoTable(doc, {
     startY: y,
-    head: [['Cognome Nome', 'Adulti', 'Ragazzi', 'Staff', 'Tot.', 'Contrib.', 'Stato']],
+    head: [['Cognome Nome', 'Ad.', 'Rag.', 'Staff', 'Tot.', 'Previsto', 'Incassato', 'Stato']],
     body: sorted.map(i => [
       `${i.cognome} ${i.nome}`,
       i.num_adulti,
       i.num_ragazzi,
       i.num_staff,
       totalPersone(i),
-      `${i.contributo}€`,
+      `${i.contributo}\u20AC`,
+      i.pagato ? `${i.contributo}\u20AC` : '0\u20AC',
       i.pagato ? 'Pagato' : i.arrivato ? 'Arrivato' : 'Da arrivare',
     ]),
     foot: [[
@@ -170,21 +171,24 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
       { content: String(totRagazzi), styles: { halign: 'center', fontStyle: 'bold' } },
       { content: String(totStaff), styles: { halign: 'center', fontStyle: 'bold' } },
       { content: String(totPers), styles: { halign: 'center', fontStyle: 'bold' } },
-      { content: `${totContributo}€`, styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: `${totContributo}\u20AC`, styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: `${totIncassato}\u20AC`, styles: { halign: 'center', fontStyle: 'bold' } },
       { content: `Arriv. ${totArrivati} / Pag. ${totPagati}`, styles: { halign: 'center', fontStyle: 'bold' } },
     ]],
-    headStyles: { fillColor: FUCHSIA, textColor: 255, fontStyle: 'bold', fontSize: 9 },
-    footStyles: { fillColor: LIGHT, textColor: DARK, fontStyle: 'bold', fontSize: 9 },
-    styles: { fontSize: 9, cellPadding: 5, overflow: 'linebreak' },
+    headStyles: { fillColor: FUCHSIA, textColor: 255, fontStyle: 'bold', fontSize: 8 },
+    footStyles: { fillColor: LIGHT, textColor: DARK, fontStyle: 'bold', fontSize: 8 },
+    styles: { fontSize: 8, cellPadding: 4, overflow: 'linebreak' },
     columnStyles: {
-      0: { cellWidth: 110, fontStyle: 'bold' },
-      1: { halign: 'center', cellWidth: 42 },
-      2: { halign: 'center', cellWidth: 48 },
-      3: { halign: 'center', cellWidth: 42 },
-      4: { halign: 'center', cellWidth: 38 },
-      5: { halign: 'center', cellWidth: 60 },
-      6: { halign: 'center', cellWidth: 70 },
+      0: { cellWidth: 116, fontStyle: 'bold' },
+      1: { halign: 'center', cellWidth: 30 },
+      2: { halign: 'center', cellWidth: 32 },
+      3: { halign: 'center', cellWidth: 34 },
+      4: { halign: 'center', cellWidth: 30 },
+      5: { halign: 'center', cellWidth: 52 },
+      6: { halign: 'center', cellWidth: 54 },
+      7: { halign: 'center', cellWidth: 67 },
     },
+
     margin: { left: margin, right: margin },
   });
 
