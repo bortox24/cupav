@@ -97,19 +97,16 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   };
 
   drawCards([
-    { label: 'Adesioni', value: String(totIscr) },
     { label: 'Persone previste', value: String(totPers) },
     { label: 'Persone arrivate', value: String(persArrivate) },
-    { label: 'Adesioni arrivate', value: `${totArrivati}/${totIscr}` },
   ], y);
 
   y += 80;
 
   drawCards([
-    { label: 'Previsto', value: `${totContributo}\u20AC` },
-    { label: 'Incassato', value: `${totIncassato}\u20AC` },
+    { label: 'Totale previsto', value: `${totContributo}\u20AC` },
+    { label: 'Totale incassato', value: `${totIncassato}\u20AC` },
     { label: 'Da incassare', value: `${totDaIncassare}\u20AC` },
-    { label: 'Adesioni pagate', value: `${totPagati}/${totIscr}` },
   ], y);
 
   y += 100;
