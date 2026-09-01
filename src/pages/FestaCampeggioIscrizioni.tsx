@@ -20,7 +20,8 @@ function StatoBadge({ item }: { item: FestaCampeggio }) {
 }
 
 export default function FestaCampeggioIscrizioni() {
-  const { user, fullName } = useAuth();
+  const { profile } = useAuth();
+  const fullName = profile?.full_name || 'Sistema';
   const { data: items = [], isLoading } = useFestaCampeggio();
   const update = useUpdateFestaCampeggio();
   const remove = useDeleteFestaCampeggio();
