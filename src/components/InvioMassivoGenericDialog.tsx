@@ -325,15 +325,33 @@ export function InvioMassivoGenericDialog({
 
                 <Separator />
 
-                {filtered.length > 0 && (
+                {matched.length > 0 && (
                   <div className="space-y-2">
-                    <h3 className="text-sm font-semibold">Anteprima destinatari</h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-semibold">
+                        {allowIndividualSelection ? 'Destinatari selezionati' : 'Anteprima destinatari'}
+                      </h3>
+                      {allowIndividualSelection && (
+                        <div className="flex gap-1">
+                          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={selectAll}>Seleziona tutti</Button>
+                          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={deselectAll}>Deseleziona tutti</Button>
+                        </div>
+                      )}
+                    </div>
                     <ScrollArea className="h-[180px] rounded-md border">
                       <div className="p-2 space-y-1">
-                        {filtered.map(r => (
-                          <div key={r.id} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-muted/50">
-                            <span className="font-medium">{r.full_name}</span>
-                            <div className="flex items-center gap-2">
+                        {matched.map(r => (
+                          <div key={r.id} className="flex items-center justify-between gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {allowIndividualSelection && (
+                                <Checkbox
+                                  checked={!excluded.includes(r.id)}
+                                  onCheckedChange={() => toggleRecipient(r.id)}
+                                />
+                              )}
+                              <span className="font-medium truncate">{r.full_name}</span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
                               {(r.badges || []).map((b, i) => (
                                 <Badge key={i} variant={b.variant || 'secondary'} className="text-xs">{b.label}</Badge>
                               ))}
