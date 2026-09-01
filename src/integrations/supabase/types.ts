@@ -226,6 +226,72 @@ export type Database = {
         }
         Relationships: []
       }
+      festa_campeggio: {
+        Row: {
+          arrivato: boolean
+          arrivato_at: string | null
+          arrivato_da: string | null
+          cognome: string
+          contributo: number
+          created_at: string
+          email: string
+          firma_data: string
+          firma_nome_cognome: string
+          id: string
+          nome: string
+          num_adulti: number
+          num_ragazzi: number
+          num_staff: number
+          pagato: boolean
+          pagato_at: string | null
+          pagato_da: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          arrivato?: boolean
+          arrivato_at?: string | null
+          arrivato_da?: string | null
+          cognome: string
+          contributo?: number
+          created_at?: string
+          email: string
+          firma_data: string
+          firma_nome_cognome: string
+          id?: string
+          nome: string
+          num_adulti?: number
+          num_ragazzi?: number
+          num_staff?: number
+          pagato?: boolean
+          pagato_at?: string | null
+          pagato_da?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arrivato?: boolean
+          arrivato_at?: string | null
+          arrivato_da?: string | null
+          cognome?: string
+          contributo?: number
+          created_at?: string
+          email?: string
+          firma_data?: string
+          firma_nome_cognome?: string
+          id?: string
+          nome?: string
+          num_adulti?: number
+          num_ragazzi?: number
+          num_staff?: number
+          pagato?: boolean
+          pagato_at?: string | null
+          pagato_da?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       form_responses: {
         Row: {
           created_at: string
