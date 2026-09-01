@@ -1,5 +1,5 @@
 import type { FormField, FormResponse } from '@/hooks/useForms';
-import type { GenericRecipient } from '@/components/InvioMassivoGenericDialog';
+import type { GenericRecipient, FilterGroup } from '@/components/InvioMassivoGenericDialog';
 
 const norm = (s: string) => (s || '').toLowerCase();
 
@@ -24,6 +24,46 @@ export function findNameFields(schema: FormField[]): FormField[] {
 
 const isEmail = (v: unknown) => typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
+/** Normalizza un valore in etichette-tag */
+const toTags = (v: unknown): string[] => {
+  if (v === null || v === undefined || v === '') return [];
+  if (Array.isArray(v)) return v.map(x => String(x).trim()).filter(Boolean);
+  if (typeof v === 'boolean') return [v ? 'Sì' : 'No'];
+  return [String(v).trim()].filter(Boolean);
+};
+
+/** Campi del modulo utilizzabili come filtro (select, radio, checkbox) */
+export function findFilterableFields(schema: FormField[]): FormField[] {
+  return schema.filter(f => f.type === 'select' || f.type === 'radio' || f.type === 'checkbox');
+}
+
+/** Costruisce i gruppi di filtro dalle risposte effettive */
+export function buildFormFilterGroups(
+  schema: FormField[],
+  responses: FormResponse[],
+): FilterGroup[] {
+  return findFilterableFields(schema).reduce<FilterGroup[]>((acc, f) => {
+    const values = new Set<string>();
+    responses.forEach(r => {
+      const data = (r.data || {}) as Record<string, unknown>;
+      toTags(data[f.name]).forEach(t => values.add(t));
+    });
+    if (f.type === 'checkbox') {
+      ['Sì', 'No'].forEach(v => values.add(v));
+    } else {
+      (f.options || []).forEach(o => values.add(String(o).trim()));
+    }
+    const options = Array.from(values).filter(Boolean).sort((a, b) => a.localeCompare(b, 'it'));
+    if (options.length === 0) return acc;
+    acc.push({
+      key: f.name,
+      label: f.label,
+      options: options.map(v => ({ value: v, label: v })),
+    });
+    return acc;
+  }, []);
+}
+
 /** Costruisce i destinatari per l'invio massivo dalle risposte di un modulo */
 export function buildFormRecipients(
   schema: FormField[],
@@ -31,6 +71,7 @@ export function buildFormRecipients(
 ): GenericRecipient[] {
   const emailField = findEmailField(schema);
   const nameFields = findNameFields(schema);
+  const filterFields = findFilterableFields(schema);
 
   return responses.reduce<GenericRecipient[]>((acc, r) => {
     const data = (r.data || {}) as Record<string, unknown>;
@@ -45,12 +86,19 @@ export function buildFormRecipients(
       .filter(Boolean);
     const fullName = nameParts.join(' ') || String(email).trim();
 
+    const tags: Record<string, string[]> = {};
+    filterFields.forEach(f => {
+      const t = f.type === 'checkbox' ? toTags(!!data[f.name]) : toTags(data[f.name]);
+      tags[f.name] = t;
+    });
+
     acc.push({
       id: r.id,
       full_name: fullName,
       badges: [{ label: String(email).trim(), variant: 'outline' }],
-      tags: {},
+      tags,
     });
     return acc;
   }, []);
 }
+
