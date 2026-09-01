@@ -318,7 +318,7 @@ export function InvioMassivoGenericDialog({
                     <Users className="h-4 w-4 text-primary" />
                     <span className="text-sm text-primary">
                       <span className="font-bold text-lg mr-1">{filtered.length}</span>
-                      {recipientsLabel} corrispondono ai filtri
+                      {recipientsLabel} {allowIndividualSelection ? 'selezionati' : 'corrispondono ai filtri'}
                     </span>
                   </div>
                 </div>
