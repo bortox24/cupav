@@ -1,6 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { FestaCampeggio } from '@/hooks/useFestaCampeggio';
+import { supabase } from '@/integrations/supabase/client';
+import fallbackLogo from '@/assets/logo-cupav.png';
 
 const FUCHSIA = [192, 38, 211] as [number, number, number];
 const PURPLE = [147, 51, 234] as [number, number, number];
@@ -12,7 +14,33 @@ function totalPersone(i: FestaCampeggio) {
   return i.num_adulti + i.num_ragazzi + i.num_staff;
 }
 
-export function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
+async function loadLogo(): Promise<string | null> {
+  const candidates: string[] = [];
+  try {
+    const { data } = await supabase.storage.from('branding').list('', { search: 'logo' });
+    if (data && data.length > 0) {
+      candidates.push(supabase.storage.from('branding').getPublicUrl('logo.png').data.publicUrl);
+    }
+  } catch { /* ignore */ }
+  candidates.push(fallbackLogo);
+
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
+export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 40;
@@ -24,12 +52,22 @@ export function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   const totStaff = sorted.reduce((s, i) => s + i.num_staff, 0);
   const totPers = totAdulti + totRagazzi + totStaff;
   const totContributo = sorted.reduce((s, i) => s + i.contributo, 0);
+  const totIncassato = sorted.filter(i => i.pagato).reduce((s, i) => s + i.contributo, 0);
+  const totDaIncassare = totContributo - totIncassato;
   const totPagati = sorted.filter(i => i.pagato).length;
   const totArrivati = sorted.filter(i => i.arrivato).length;
+  const persArrivate = sorted.filter(i => i.arrivato).reduce((s, i) => s + totalPersone(i), 0);
+
+  const logo = await loadLogo();
 
   // Header
   doc.setFillColor(...FUCHSIA);
   doc.rect(0, 0, pageW, 90, 'F');
+  if (logo) {
+    try {
+      doc.addImage(logo, 'PNG', pageW - margin - 58, 16, 58, 58, undefined, 'FAST');
+    } catch { /* ignore */ }
+  }
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
@@ -41,26 +79,41 @@ export function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
 
   // KPI Cards
   let y = 120;
-  const cardW = (pageW - margin * 2 - 24) / 4;
-  const cards = [
+  const drawCards = (cards: { label: string; value: string }[], top: number) => {
+    const cardW = (pageW - margin * 2 - 24) / 4;
+    cards.forEach((c, idx) => {
+      const x = margin + idx * (cardW + 8);
+      doc.setFillColor(...LIGHT);
+      doc.roundedRect(x, top, cardW, 70, 8, 8, 'F');
+      doc.setTextColor(...PURPLE);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(c.value, x + cardW / 2, top + 32, { align: 'center' });
+      doc.setTextColor(...MUTED);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(c.label, x + cardW / 2, top + 52, { align: 'center' });
+    });
+  };
+
+  drawCards([
     { label: 'Adesioni', value: String(totIscr) },
-    { label: 'Persone', value: String(totPers) },
-    { label: 'Arrivati', value: String(totArrivati) },
-    { label: 'Totale €', value: `${totContributo}€` },
-  ];
-  cards.forEach((c, idx) => {
-    const x = margin + idx * (cardW + 8);
-    doc.setFillColor(...LIGHT);
-    doc.roundedRect(x, y, cardW, 70, 8, 8, 'F');
-    doc.setTextColor(...PURPLE);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text(c.value, x + cardW / 2, y + 35, { align: 'center' });
-    doc.setTextColor(...MUTED);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(c.label, x + cardW / 2, y + 55, { align: 'center' });
-  });
+    { label: 'Persone previste', value: String(totPers) },
+    { label: 'Persone arrivate', value: String(persArrivate) },
+    { label: 'Adesioni arrivate', value: `${totArrivati}/${totIscr}` },
+  ], y);
+
+  y += 80;
+
+  drawCards([
+    { label: 'Previsto', value: `${totContributo}\u20AC` },
+    { label: 'Incassato', value: `${totIncassato}\u20AC` },
+    { label: 'Da incassare', value: `${totDaIncassare}\u20AC` },
+    { label: 'Adesioni pagate', value: `${totPagati}/${totIscr}` },
+  ], y);
+
+  y += 100;
+
 
   y += 100;
 
