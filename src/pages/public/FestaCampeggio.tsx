@@ -213,7 +213,11 @@ export default function FestaCampeggio() {
             >
               {submitting ? "Invio in corso..." : "Conferma adesione"}
             </Button>
-            {!isValid && <p className="text-xs text-center text-muted-foreground">Compila nome, cognome ed email obbligatori.</p>}
+            {!isValid && (
+              <p className="text-xs text-center text-muted-foreground">
+                {!hasPartecipanti ? "Inserisci almeno un partecipante (adulti, ragazzi o staff)." : "Compila nome, cognome ed email obbligatori."}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
