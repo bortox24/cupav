@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Download, FileText, Calendar, Users, Search, Pencil, Megaphone } from 'lucide-react';
 import { useFormById, useFormResponses, FormField, FormResponse } from '@/hooks/useForms';
 import { InvioMassivoGenericDialog } from '@/components/InvioMassivoGenericDialog';
-import { buildFormRecipients } from '@/lib/formRecipients';
+import { buildFormRecipients, buildFormFilterGroups } from '@/lib/formRecipients';
 import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -78,6 +78,11 @@ export default function VisualizzaModuloRisposte() {
   const invioRecipients = useMemo(
     () => buildFormRecipients(schema, filteredResponses),
     [schema, filteredResponses],
+  );
+
+  const invioFilterGroups = useMemo(
+    () => buildFormFilterGroups(schema, responses),
+    [schema, responses],
   );
 
   const handleExportCSV = () => {
@@ -401,7 +406,7 @@ export default function VisualizzaModuloRisposte() {
           recipients={invioRecipients}
           recipientsLabel="destinatari"
           allowIndividualSelection
-          filterGroups={[]}
+          filterGroups={invioFilterGroups}
           extraStartPayload={{ form_id: form.id }}
         />
 

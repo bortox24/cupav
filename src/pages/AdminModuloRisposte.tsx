@@ -47,7 +47,7 @@ import { it } from 'date-fns/locale';
 import { DynamicStats } from '@/components/forms/DynamicStats';
 import { AIAnalysis } from '@/components/forms/AIAnalysis';
 import { InvioMassivoGenericDialog } from '@/components/InvioMassivoGenericDialog';
-import { buildFormRecipients } from '@/lib/formRecipients';
+import { buildFormRecipients, buildFormFilterGroups } from '@/lib/formRecipients';
 import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
 
 export default function AdminModuloRisposte() {
@@ -179,6 +179,11 @@ export default function AdminModuloRisposte() {
   const invioRecipients = useMemo(
     () => buildFormRecipients(schema, filteredResponses),
     [schema, filteredResponses],
+  );
+
+  const invioFilterGroups = useMemo(
+    () => buildFormFilterGroups(schema, responses),
+    [schema, responses],
   );
 
   const handleExportCSV = () => {
@@ -407,7 +412,7 @@ export default function AdminModuloRisposte() {
           recipients={invioRecipients}
           recipientsLabel="destinatari"
           allowIndividualSelection
-          filterGroups={[]}
+          filterGroups={invioFilterGroups}
           extraStartPayload={{ form_id: form.id }}
         />
 
