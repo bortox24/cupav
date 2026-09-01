@@ -92,8 +92,8 @@ export default function FestaCampeggioIscrizioni() {
     });
   };
 
-  const exportPdf = () => {
-    exportFestaCampeggioPdf(filtered.length < items.length ? filtered : items);
+  const exportPdf = async () => {
+    await exportFestaCampeggioPdf(filtered.length < items.length ? filtered : items);
     toast({ title: "PDF scaricato" });
   };
 
