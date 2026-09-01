@@ -47,6 +47,7 @@ export default function FestaCampeggioIscrizioni() {
     return {
       iscrizioni: items.length,
       persone: totAdulti + totRagazzi + totStaff,
+      personeArrivate: items.filter(i => i.arrivato).reduce((s, i) => s + i.num_adulti + i.num_ragazzi + i.num_staff, 0),
       adulti: totAdulti,
       ragazzi: totRagazzi,
       staff: totStaff,
@@ -112,10 +113,10 @@ export default function FestaCampeggioIscrizioni() {
         {/* KPI */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {[
-            { label: 'Adesioni', value: stats.iscrizioni, icon: Users },
-            { label: 'Persone', value: stats.persone, icon: Users },
-            { label: 'Totale', value: `${stats.totale}€`, icon: Banknote },
-            { label: 'Incassato', value: `${stats.incassato}€`, icon: CheckCircle2 },
+            { label: 'Persone previste', value: stats.persone, icon: Users },
+            { label: 'Persone arrivate', value: stats.personeArrivate, icon: CheckCircle2 },
+            { label: 'Totale previsto', value: `${stats.totale}€`, icon: Banknote },
+            { label: 'Totale incassato', value: `${stats.incassato}€`, icon: CheckCircle2 },
             { label: 'Da incassare', value: `${stats.daIncassare}€`, icon: Banknote },
           ].map((k, i) => (
             <Card key={i} className="rounded-2xl shadow-sm hover:shadow-md transition-shadow">
