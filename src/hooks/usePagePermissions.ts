@@ -96,6 +96,11 @@ export const availablePages: PageInfo[] = [
     description: 'Riepilogo iscrizioni montaggio campeggio',
   },
   {
+    path: '/festa-campeggio-iscrizioni',
+    title: 'Festa Campeggio',
+    description: 'Gestione adesioni e contributi festa campeggio',
+  },
+  {
     path: '/gestione-pagamenti',
     title: 'Gestione Pagamenti',
     description: 'Gestisci stato pagamenti delle iscrizioni',

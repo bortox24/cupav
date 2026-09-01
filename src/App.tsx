@@ -23,6 +23,8 @@ import PreiscrizioneCupav from "./pages/public/PreiscrizioneCupav";
 import IscrizioneCampeggio from "./pages/public/IscrizioneCampeggio";
 import IscrizioneFamiglie from "./pages/public/IscrizioneFamiglie";
 import IscrizioneMontaggio from "./pages/public/IscrizioneMontaggio";
+import FestaCampeggio from "./pages/public/FestaCampeggio";
+import FestaCampeggioIscrizioni from "./pages/FestaCampeggioIscrizioni";
 import ModuloStaff from "./pages/public/ModuloStaff";
 import GiornataGenitori from "./pages/public/GiornataGenitori";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
@@ -225,12 +227,14 @@ function AppRoutes() {
       <Route path="/iscrizione-famiglie" element={<IscrizioneFamiglie />} />
       <Route path="/giornata-genitori" element={<GiornataGenitori />} />
       <Route path="/iscrizione-montaggio" element={<IscrizioneMontaggio />} />
+      <Route path="/festa-campeggio" element={<FestaCampeggio />} />
       <Route path="/modulo/:slug" element={<ModuloForm />} />
       <Route path="/modulo-staff" element={<ModuloStaff />} />
 
       {/* Montaggio Campeggio */}
       <Route path="/turno/montaggio-campeggio" element={<ProtectedRoute><TurnoMontaggioPage /></ProtectedRoute>} />
       <Route path="/anagrafica-montaggio-campeggio" element={<ProtectedRoute><AnagraficaMontaggioCampeggio /></ProtectedRoute>} />
+      <Route path="/festa-campeggio-iscrizioni" element={<ProtectedRoute><FestaCampeggioIscrizioni /></ProtectedRoute>} />
 
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />

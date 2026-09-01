@@ -112,6 +112,7 @@ export default function Impostazioni() {
   const iscrizioneFamiglieEnabled = settings?.iscrizione_famiglie_enabled === 'true';
   const preiscrizioneEnabled = settings?.preiscrizione_enabled === 'true';
   const moduloStaffEnabled = settings?.modulo_staff_enabled === 'true';
+  const festaCampeggioEnabled = settings?.festa_campeggio_enabled === 'true';
 
   return (
     <MainLayout title="Impostazioni">
@@ -220,6 +221,19 @@ export default function Impostazioni() {
               <Switch
                 checked={moduloStaffEnabled}
                 onCheckedChange={(checked) => handleToggle('modulo_staff_enabled', checked)}
+                disabled={updateSetting.isPending}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base font-medium">Festa Campeggio</Label>
+                <p className="text-sm text-muted-foreground">
+                  Modulo pubblico adesione festa campeggio (/festa-campeggio)
+                </p>
+              </div>
+              <Switch
+                checked={festaCampeggioEnabled}
+                onCheckedChange={(checked) => handleToggle('festa_campeggio_enabled', checked)}
                 disabled={updateSetting.isPending}
               />
             </div>

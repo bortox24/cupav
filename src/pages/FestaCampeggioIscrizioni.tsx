@@ -1,0 +1,260 @@
+import { useMemo, useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, calcolaContributoFesta } from "@/hooks/useFestaCampeggio";
+import { exportFestaCampeggioPdf } from "@/lib/exportFestaCampeggioPdf";
+
+function StatoBadge({ item }: { item: FestaCampeggio }) {
+  if (item.pagato) return <Badge className="bg-green-500 hover:bg-green-600 text-white">Pagato</Badge>;
+  if (item.arrivato) return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Arrivato</Badge>;
+  return <Badge variant="outline" className="text-muted-foreground">In attesa</Badge>;
+}
+
+export default function FestaCampeggioIscrizioni() {
+  const { profile } = useAuth();
+  const fullName = profile?.full_name || 'Sistema';
+  const { data: items = [], isLoading } = useFestaCampeggio();
+  const update = useUpdateFestaCampeggio();
+  const remove = useDeleteFestaCampeggio();
+
+  const [search, setSearch] = useState("");
+  const [editItem, setEditItem] = useState<FestaCampeggio | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<FestaCampeggio | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(i =>
+      `${i.cognome} ${i.nome}`.toLowerCase().includes(q) ||
+      i.email.toLowerCase().includes(q) ||
+      (i.telefono || '').toLowerCase().includes(q)
+    );
+  }, [items, search]);
+
+  const stats = useMemo(() => {
+    const totAdulti = items.reduce((s, i) => s + i.num_adulti, 0);
+    const totRagazzi = items.reduce((s, i) => s + i.num_ragazzi, 0);
+    const totStaff = items.reduce((s, i) => s + i.num_staff, 0);
+    return {
+      iscrizioni: items.length,
+      persone: totAdulti + totRagazzi + totStaff,
+      adulti: totAdulti,
+      ragazzi: totRagazzi,
+      staff: totStaff,
+      totale: items.reduce((s, i) => s + i.contributo, 0),
+      incassato: items.filter(i => i.pagato).reduce((s, i) => s + i.contributo, 0),
+      daIncassare: items.filter(i => !i.pagato).reduce((s, i) => s + i.contributo, 0),
+    };
+  }, [items]);
+
+  const toggleArrivato = async (item: FestaCampeggio) => {
+    const updates: Partial<FestaCampeggio> = item.arrivato
+      ? { arrivato: false, arrivato_da: null, arrivato_at: null }
+      : { arrivato: true, arrivato_da: fullName || 'Sistema', arrivato_at: new Date().toISOString() };
+    await update.mutateAsync({ id: item.id, updates }, {
+      onSuccess: () => toast({ title: "Stato aggiornato" }),
+      onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    });
+  };
+
+  const togglePagato = async (item: FestaCampeggio) => {
+    const updates: Partial<FestaCampeggio> = item.pagato
+      ? { pagato: false, pagato_da: null, pagato_at: null }
+      : { pagato: true, pagato_da: fullName || 'Sistema', pagato_at: new Date().toISOString() };
+    await update.mutateAsync({ id: item.id, updates }, {
+      onSuccess: () => toast({ title: "Stato pagamento aggiornato" }),
+      onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editItem) return;
+    const contributo = calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff);
+    await update.mutateAsync({ id: editItem.id, updates: { ...editItem, contributo } }, {
+      onSuccess: () => { toast({ title: "Iscrizione aggiornata" }); setEditItem(null); },
+      onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    });
+  };
+
+  const deleteItem = async (item: FestaCampeggio) => {
+    await remove.mutateAsync(item.id, {
+      onSuccess: () => { toast({ title: "Iscrizione eliminata" }); setConfirmDelete(null); },
+      onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    });
+  };
+
+  const exportPdf = () => {
+    exportFestaCampeggioPdf(filtered.length < items.length ? filtered : items);
+    toast({ title: "PDF scaricato" });
+  };
+
+  return (
+    <MainLayout title="Festa Campeggio">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-fuchsia-100 text-fuchsia-600 rounded-xl"><PartyPopper className="h-6 w-6" /></div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Festa Campeggio</h1>
+              <p className="text-sm text-muted-foreground">Gestione adesioni e contributi</p>
+            </div>
+          </div>
+        </div>
+        {/* KPI */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {[
+            { label: 'Adesioni', value: stats.iscrizioni, icon: Users },
+            { label: 'Persone', value: stats.persone, icon: Users },
+            { label: 'Totale', value: `${stats.totale}€`, icon: Banknote },
+            { label: 'Incassato', value: `${stats.incassato}€`, icon: CheckCircle2 },
+            { label: 'Da incassare', value: `${stats.daIncassare}€`, icon: Banknote },
+          ].map((k, i) => (
+            <Card key={i} className="rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{k.value}</p>
+                  <p className="text-xs text-muted-foreground">{k.label}</p>
+                </div>
+                <k.icon className="h-8 w-8 text-fuchsia-500/60" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-between">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca per nome o email..." className="pl-9 rounded-xl" />
+          </div>
+          <Button onClick={exportPdf} variant="outline" className="gap-2 rounded-xl">
+            <FileDown className="h-4 w-4" /> Scarica PDF
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        ) : (
+          <Tabs defaultValue="tutte">
+            <TabsList className="rounded-2xl bg-muted/50 p-1 mb-4">
+              <TabsTrigger value="tutte" className="rounded-xl">Tutte ({items.length})</TabsTrigger>
+              <TabsTrigger value="arrivati" className="rounded-xl">Arrivati ({items.filter(i => i.arrivato).length})</TabsTrigger>
+              <TabsTrigger value="pagati" className="rounded-xl">Pagati ({items.filter(i => i.pagato).length})</TabsTrigger>
+            </TabsList>
+
+            {['tutte', 'arrivati', 'pagati'].map(tab => {
+              const list = tab === 'tutte' ? filtered : tab === 'arrivati' ? filtered.filter(i => i.arrivato) : filtered.filter(i => i.pagato);
+              return (
+                <TabsContent key={tab} value={tab}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {list.map(item => (
+                      <Card key={item.id} className="rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <CardTitle className="text-base leading-tight">{item.cognome} {item.nome}</CardTitle>
+                            <StatoBadge item={item} />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-sm">
+                          <div className="grid grid-cols-3 gap-2 text-center bg-muted/30 rounded-xl p-2">
+                            <div><p className="font-bold">{item.num_adulti}</p><p className="text-[10px] text-muted-foreground">Adulti</p></div>
+                            <div><p className="font-bold">{item.num_ragazzi}</p><p className="text-[10px] text-muted-foreground">Ragazzi</p></div>
+                            <div><p className="font-bold">{item.num_staff}</p><p className="text-[10px] text-muted-foreground">Staff</p></div>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Contributo</span>
+                            <span className="font-bold text-fuchsia-600">{item.contributo}€</span>
+                          </div>
+                          {item.telefono && <p className="text-muted-foreground text-xs">Tel: {item.telefono}</p>}
+                          {item.email && <p className="text-muted-foreground text-xs truncate">{item.email}</p>}
+                          <div className="flex gap-2 pt-1">
+                            <Button size="sm" variant={item.arrivato ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => toggleArrivato(item)}>
+                              {item.arrivato ? "Annulla arrivo" : "Arrivato"}
+                            </Button>
+                            <Button size="sm" variant={item.pagato ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => togglePagato(item)}>
+                              {item.pagato ? "Pagato" : "Segna pagato"}
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="ghost" className="flex-1 rounded-xl" onClick={() => setEditItem(item)}>
+                              <Pencil className="h-4 w-4 mr-1" /> Modifica
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-destructive rounded-xl" onClick={() => setConfirmDelete(item)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {list.length === 0 && (
+                      <div className="col-span-full text-center py-12 text-muted-foreground">
+                        Nessuna adesione trovata.
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              );
+            })}
+          </Tabs>
+        )}
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editItem} onOpenChange={open => !open && setEditItem(null)}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader><DialogTitle>Modifica adesione</DialogTitle></DialogHeader>
+          {editItem && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Nome</Label><Input value={editItem.nome} onChange={e => setEditItem({ ...editItem, nome: e.target.value })} /></div>
+                <div><Label>Cognome</Label><Input value={editItem.cognome} onChange={e => setEditItem({ ...editItem, cognome: e.target.value })} /></div>
+              </div>
+              <div><Label>Email</Label><Input type="email" value={editItem.email} onChange={e => setEditItem({ ...editItem, email: e.target.value })} /></div>
+              <div><Label>Telefono</Label><Input value={editItem.telefono || ''} onChange={e => setEditItem({ ...editItem, telefono: e.target.value })} /></div>
+              <div className="grid grid-cols-3 gap-3">
+                <div><Label>Adulti</Label><Input type="number" min={0} value={editItem.num_adulti} onChange={e => setEditItem({ ...editItem, num_adulti: Number(e.target.value) })} /></div>
+                <div><Label>Ragazzi</Label><Input type="number" min={0} value={editItem.num_ragazzi} onChange={e => setEditItem({ ...editItem, num_ragazzi: Number(e.target.value) })} /></div>
+                <div><Label>Staff</Label><Input type="number" min={0} value={editItem.num_staff} onChange={e => setEditItem({ ...editItem, num_staff: Number(e.target.value) })} /></div>
+              </div>
+              <div className="bg-fuchsia-50 dark:bg-fuchsia-950/20 rounded-xl p-3 text-center">
+                <p className="text-sm text-muted-foreground">Contributo calcolato</p>
+                <p className="text-2xl font-bold text-fuchsia-600">
+                  {calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff)}€
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditItem(null)}>Annulla</Button>
+            <Button onClick={saveEdit} disabled={update.isPending}>{update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salva'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={!!confirmDelete} onOpenChange={open => !open && setConfirmDelete(null)}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>Conferma eliminazione</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Vuoi eliminare l'adesione di <strong>{confirmDelete?.cognome} {confirmDelete?.nome}</strong>? L'azione è irreversibile.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDelete(null)}>Annulla</Button>
+            <Button variant="destructive" onClick={() => confirmDelete && deleteItem(confirmDelete)} disabled={remove.isPending}>
+              {remove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Elimina'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </MainLayout>
+  );
+}
