@@ -23,7 +23,7 @@ Il totale viene ricalcolato anche lato salvataggio, così resta coerente se qual
 - Tabella a più colonne (pochi dati per riga: nome, cognome, contatti, adulti, ragazzi, staff, totale, stato) con ricerca; su mobile diventa una lista di card compatte
 - Per ogni riscrizione: pulsanti "Arrivato" e "Pagato" (come Giornata Genitori, con chi e quando)
 - Per ogni riga: modifica (dialog con tutti i campi, totale ricalcolato) ed eliminazione con conferma
-- Export CSV dell'elenco
+- Export PDF dell'elenco
 
 ## Dettagli tecnici
 
