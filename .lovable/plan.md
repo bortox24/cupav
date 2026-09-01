@@ -9,7 +9,7 @@ Mobile first, un'unica schermata compatta:
 - Nome e Cognome (due campi separati, auto-capitalizzazione come negli altri moduli)
 - Email e Telefono
 - Numero adulti (15 EUR ciascuno)
-- Numero ragazzi che hanno partecipato al campeggio (10 EUR ciascuno)
+- Numero ragazzi (10 EUR ciascuno)
 - Numero staff — animatori, responsabili animatori, staff cucina, responsabili campo, direttivo (10 EUR ciascuno)
 - Riepilogo live del contributo totale mentre si compilano i campi
 - Firma: nome e cognome + data, invio con conferma di avvenuta iscrizione
