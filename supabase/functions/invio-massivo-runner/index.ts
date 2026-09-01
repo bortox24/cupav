@@ -33,6 +33,7 @@ const PAGE_BY_ENTITY: Record<string, string> = {
   ragazzi: "/anagrafica-ragazzi",
   animatori: "/anagrafica-animatori",
   montaggio: "/anagrafica-montaggio-campeggio",
+  festa: "/festa-campeggio-iscrizioni",
 };
 
 // --- Auth helper: verifica utente + permesso pagina ---
@@ -75,7 +76,7 @@ async function handleStart(req: Request) {
     ragazzi_ids, recipient_ids, filtri,
   } = body;
 
-  const entityType = ["ragazzi", "animatori", "montaggio"].includes(body.entity_type)
+  const entityType = ["ragazzi", "animatori", "montaggio", "festa"].includes(body.entity_type)
     ? body.entity_type : "ragazzi";
   const pagePath = PAGE_BY_ENTITY[entityType];
 
@@ -175,6 +176,35 @@ async function handleStart(req: Request) {
           ruolo: s.ruolo,
           turni: tr,
           genitori: [{ nome_cognome: s.full_name, email: s.email }],
+        },
+      };
+    });
+  } else if (entityType === "festa") {
+    const { data: rows, error: fErr } = await a
+      .from("festa_campeggio")
+      .select("id, nome, cognome, email, telefono, num_adulti, num_ragazzi, num_staff, contributo, arrivato, pagato")
+      .in("id", recIds);
+    if (fErr) return json({ error: "Errore caricamento festa campeggio", detail: fErr.message }, 500);
+    const valid = (rows || []).filter((r: any) => r.email);
+    recipients = valid.map((r: any) => {
+      const nome = `${r.cognome || ""} ${r.nome || ""}`.trim() || "Partecipante";
+      return {
+        source_id: r.id,
+        recipient_full_name: nome,
+        personalization_name: nome,
+        payload: {
+          full_name: nome,
+          email: r.email,
+          cognome: r.cognome,
+          nome: r.nome,
+          telefono: r.telefono,
+          num_adulti: r.num_adulti,
+          num_ragazzi: r.num_ragazzi,
+          num_staff: r.num_staff,
+          contributo: r.contributo,
+          arrivato: r.arrivato,
+          pagato: r.pagato,
+          genitori: [{ nome_cognome: nome, email: r.email }],
         },
       };
     });
@@ -460,6 +490,8 @@ async function runJob(jobId: string) {
           azione: "invio_massivo",
           dettaglio: `${success ? "OK" : "ERRORE"} — ${dettaglio}`,
         });
+      } else if (entityType === "festa") {
+        // nessuna tabella di log dedicata per la festa campeggio
       } else if (entityType === "montaggio") {
         await a.from("anagrafica_invio_logs").insert({
           iscrizione_montaggio_id: sourceId,

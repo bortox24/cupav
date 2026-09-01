@@ -38,14 +38,17 @@ export interface GenericRecipient {
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  entityType: 'animatori' | 'montaggio';
+  entityType: 'animatori' | 'montaggio' | 'festa';
   recipients: GenericRecipient[];
   filterGroups: FilterGroup[];
   recipientsLabel: string;
+  /** mostra checkbox per selezionare/deselezionare singoli destinatari */
+  allowIndividualSelection?: boolean;
 }
 
 export function InvioMassivoGenericDialog({
   open, onOpenChange, entityType, recipients, filterGroups, recipientsLabel,
+  allowIndividualSelection = false,
 }: Props) {
   const { activeJob } = useInvioMassivoJob();
   const [showMonitor, setShowMonitor] = useState(false);
@@ -57,6 +60,7 @@ export function InvioMassivoGenericDialog({
   const [ctaUrl, setCtaUrl] = useState('');
 
   const [selections, setSelections] = useState<Record<string, string[]>>({});
+  const [excluded, setExcluded] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -71,11 +75,12 @@ export function InvioMassivoGenericDialog({
       setStep('message');
       setTitolo(''); setTesto(''); setCtaLabel(''); setCtaUrl('');
       setSelections({});
+      setExcluded([]);
       setSubmitting(false);
     }
   }, [open]);
 
-  const filtered = recipients.filter(r => {
+  const matched = recipients.filter(r => {
     for (const g of filterGroups) {
       const sel = selections[g.key] || [];
       if (sel.length === 0) continue;
@@ -84,6 +89,17 @@ export function InvioMassivoGenericDialog({
     }
     return true;
   });
+
+  const filtered = allowIndividualSelection
+    ? matched.filter(r => !excluded.includes(r.id))
+    : matched;
+
+  const toggleRecipient = (id: string) =>
+    setExcluded(p => (p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
+  const selectAll = () => setExcluded(p => p.filter(id => !matched.some(m => m.id === id)));
+  const deselectAll = () =>
+    setExcluded(p => Array.from(new Set([...p, ...matched.map(m => m.id)])));
+
 
   const toggleValue = (key: string, value: string) =>
     setSelections(p => {
@@ -302,22 +318,40 @@ export function InvioMassivoGenericDialog({
                     <Users className="h-4 w-4 text-primary" />
                     <span className="text-sm text-primary">
                       <span className="font-bold text-lg mr-1">{filtered.length}</span>
-                      {recipientsLabel} corrispondono ai filtri
+                      {recipientsLabel} {allowIndividualSelection ? 'selezionati' : 'corrispondono ai filtri'}
                     </span>
                   </div>
                 </div>
 
                 <Separator />
 
-                {filtered.length > 0 && (
+                {matched.length > 0 && (
                   <div className="space-y-2">
-                    <h3 className="text-sm font-semibold">Anteprima destinatari</h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-semibold">
+                        {allowIndividualSelection ? 'Destinatari selezionati' : 'Anteprima destinatari'}
+                      </h3>
+                      {allowIndividualSelection && (
+                        <div className="flex gap-1">
+                          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={selectAll}>Seleziona tutti</Button>
+                          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={deselectAll}>Deseleziona tutti</Button>
+                        </div>
+                      )}
+                    </div>
                     <ScrollArea className="h-[180px] rounded-md border">
                       <div className="p-2 space-y-1">
-                        {filtered.map(r => (
-                          <div key={r.id} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-muted/50">
-                            <span className="font-medium">{r.full_name}</span>
-                            <div className="flex items-center gap-2">
+                        {matched.map(r => (
+                          <div key={r.id} className="flex items-center justify-between gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {allowIndividualSelection && (
+                                <Checkbox
+                                  checked={!excluded.includes(r.id)}
+                                  onCheckedChange={() => toggleRecipient(r.id)}
+                                />
+                              )}
+                              <span className="font-medium truncate">{r.full_name}</span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
                               {(r.badges || []).map((b, i) => (
                                 <Badge key={i} variant={b.variant || 'secondary'} className="text-xs">{b.label}</Badge>
                               ))}
