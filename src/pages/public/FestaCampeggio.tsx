@@ -138,7 +138,7 @@ export default function FestaCampeggio() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <span className="bg-fuchsia-100 text-fuchsia-600 rounded-full w-7 h-7 flex items-center justify-center text-sm">1</span>
-              Chi sei
+              Anagrafica
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -158,7 +158,7 @@ export default function FestaCampeggio() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <span className="bg-fuchsia-100 text-fuchsia-600 rounded-full w-7 h-7 flex items-center justify-center text-sm">2</span>
-              Chi partecipa
+              Partecipanti
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
