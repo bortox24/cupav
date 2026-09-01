@@ -53,9 +53,14 @@ export default function FestaCampeggio() {
     [numAdulti, numRagazzi, numStaff]
   );
 
-  const isValid = nome.trim() && cognome.trim() && email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const hasPartecipanti = numAdulti + numRagazzi + numStaff > 0;
+  const isValid = nome.trim() && cognome.trim() && email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && hasPartecipanti;
 
   const handleSubmit = async () => {
+    if (!hasPartecipanti) {
+      toast({ title: "Seleziona almeno un partecipante", description: "Inserisci almeno un adulto, ragazzo o staff.", variant: "destructive" });
+      return;
+    }
     if (!isValid) {
       toast({ title: "Compila tutti i campi obbligatori", variant: "destructive" });
       return;
@@ -208,7 +213,11 @@ export default function FestaCampeggio() {
             >
               {submitting ? "Invio in corso..." : "Conferma adesione"}
             </Button>
-            {!isValid && <p className="text-xs text-center text-muted-foreground">Compila nome, cognome ed email obbligatori.</p>}
+            {!isValid && (
+              <p className="text-xs text-center text-muted-foreground">
+                {!hasPartecipanti ? "Inserisci almeno un partecipante (adulti, ragazzi o staff)." : "Compila nome, cognome ed email obbligatori."}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
