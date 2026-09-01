@@ -115,7 +115,6 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   y += 100;
 
 
-  y += 100;
 
   // Fasce
   doc.setTextColor(...DARK);
