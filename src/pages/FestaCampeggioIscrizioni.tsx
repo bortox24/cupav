@@ -47,6 +47,7 @@ export default function FestaCampeggioIscrizioni() {
     return {
       iscrizioni: items.length,
       persone: totAdulti + totRagazzi + totStaff,
+      personeArrivate: items.filter(i => i.arrivato).reduce((s, i) => s + i.num_adulti + i.num_ragazzi + i.num_staff, 0),
       adulti: totAdulti,
       ragazzi: totRagazzi,
       staff: totStaff,
