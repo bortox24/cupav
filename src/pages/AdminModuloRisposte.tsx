@@ -45,6 +45,8 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { DynamicStats } from '@/components/forms/DynamicStats';
 import { AIAnalysis } from '@/components/forms/AIAnalysis';
+import { InvioMassivoGenericDialog } from '@/components/InvioMassivoGenericDialog';
+import { buildFormRecipients } from '@/lib/formRecipients';
 import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
 
 export default function AdminModuloRisposte() {
@@ -56,6 +58,7 @@ export default function AdminModuloRisposte() {
   const [filterField, setFilterField] = useState<string>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
   const [editingResponse, setEditingResponse] = useState<FormResponse | null>(null);
+  const [invioOpen, setInvioOpen] = useState(false);
 
   const isLoading = formLoading || responsesLoading;
 
