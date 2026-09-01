@@ -536,8 +536,9 @@ async function runJob(jobId: string) {
           azione: "invio_massivo",
           dettaglio: `${success ? "OK" : "ERRORE"} — ${dettaglio}`,
         });
-      } else if (entityType === "festa") {
-        // nessuna tabella di log dedicata per la festa campeggio
+      } else if (entityType === "festa" || entityType === "modulo") {
+        // nessuna tabella di log dedicata per festa campeggio / risposte moduli
+
       } else if (entityType === "montaggio") {
         await a.from("anagrafica_invio_logs").insert({
           iscrizione_montaggio_id: sourceId,
