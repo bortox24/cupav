@@ -339,6 +339,17 @@ export default function Home() {
     },
   });
 
+  const { data: festaCount = 0 } = useQuery({
+    queryKey: ['festa-campeggio-count'],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from('festa_campeggio')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   const turnoCounts: Record<string, number> = {};
   turnoCountsRaw.forEach((row: { turno: string }) => {
     turnoCounts[row.turno] = (turnoCounts[row.turno] || 0) + 1;
