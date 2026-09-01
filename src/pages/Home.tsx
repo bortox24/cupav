@@ -489,13 +489,14 @@ export default function Home() {
         )}
 
         {/* Altre iscrizioni */}
-        {(isAdmin || canAccessPage('/turno/montaggio-campeggio')) && (
+        {(isAdmin || canAccessPage('/turno/montaggio-campeggio') || canAccessPage('/festa-campeggio-iscrizioni')) && (
           <div>
             <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <Hammer className="h-5 w-5 text-amber-600" />
               Altre iscrizioni
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {canAccessPage('/turno/montaggio-campeggio') && (
               <Link to="/turno/montaggio-campeggio" className="group block">
                 <Card className="h-full hover:shadow-xl transition-all duration-300 hover:scale-[1.03] cursor-pointer border-2 border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-100 via-orange-50 to-yellow-50 dark:from-amber-950/50 dark:via-orange-950/30 dark:to-yellow-950/30">
                   <CardContent className="flex flex-col items-center justify-center py-6 px-3">
@@ -511,6 +512,24 @@ export default function Home() {
                   </CardContent>
                 </Card>
               </Link>
+              )}
+              {(isAdmin || canAccessPage('/festa-campeggio-iscrizioni')) && (
+              <Link to="/festa-campeggio-iscrizioni" className="group block">
+                <Card className="h-full hover:shadow-xl transition-all duration-300 hover:scale-[1.03] cursor-pointer border-2 border-fuchsia-300 dark:border-fuchsia-700 bg-gradient-to-br from-fuchsia-100 via-pink-50 to-rose-50 dark:from-fuchsia-950/50 dark:via-pink-950/30 dark:to-rose-950/30">
+                  <CardContent className="flex flex-col items-center justify-center py-6 px-3">
+                    <div className="w-14 h-14 bg-gradient-to-br from-fuchsia-500 to-pink-600 rounded-xl shadow-lg flex items-center justify-center mb-3 transition-transform group-hover:scale-110 group-hover:rotate-3 text-white">
+                      <PartyPopper className="h-7 w-7" />
+                    </div>
+                    <CardTitle className="text-center text-sm sm:text-base font-semibold text-foreground">
+                      Festa Campeggio
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {festaCount} iscritt{festaCount === 1 ? 'o' : 'i'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+              )}
             </div>
           </div>
         )}
