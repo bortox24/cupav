@@ -255,6 +255,90 @@ export default function FestaCampeggio() {
           </CardContent>
         </Card>
 
+        {/* Allergie */}
+        <Card className="rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="bg-fuchsia-100 text-fuchsia-600 rounded-full w-7 h-7 flex items-center justify-center text-sm">3</span>
+              Allergie o intolleranze?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant={haAllergie === true ? "default" : "outline"}
+                className={`rounded-xl h-12 ${haAllergie === true ? "bg-fuchsia-600 hover:bg-fuchsia-700 text-white" : ""}`}
+                onClick={() => setHaAllergie(true)}
+              >
+                Sì
+              </Button>
+              <Button
+                type="button"
+                variant={haAllergie === false ? "default" : "outline"}
+                className={`rounded-xl h-12 ${haAllergie === false ? "bg-fuchsia-600 hover:bg-fuchsia-700 text-white" : ""}`}
+                onClick={() => setHaAllergie(false)}
+              >
+                No
+              </Button>
+            </div>
+
+            {haAllergie && (
+              <div className="space-y-3">
+                {totPartecipanti === 0 && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Inserisci prima i partecipanti.
+                  </p>
+                )}
+                {allergie.map((riga, idx) => {
+                  const altri = totAllergici - riga.quantita;
+                  const maxRiga = Math.max(0, totPartecipanti - altri);
+                  return (
+                    <div key={idx} className="bg-muted/30 rounded-xl p-3 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={riga.nome}
+                          onChange={e => updateAllergia(idx, { nome: e.target.value })}
+                          placeholder="Es. celiaco, lattosio, frutta secca..."
+                        />
+                        {allergie.length > 1 && (
+                          <Button type="button" variant="ghost" size="icon" className="shrink-0 text-destructive" onClick={() => setAllergie(prev => prev.filter((_, i) => i !== idx))}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">Quante persone (max {maxRiga})</p>
+                        <div className="flex items-center gap-3">
+                          <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-full" disabled={riga.quantita <= 0} onClick={() => updateAllergia(idx, { quantita: Math.max(0, riga.quantita - 1) })}>
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="w-8 text-center text-lg font-bold tabular-nums">{riga.quantita}</span>
+                          <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-full" disabled={riga.quantita >= maxRiga} onClick={() => updateAllergia(idx, { quantita: Math.min(maxRiga, riga.quantita + 1) })}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-xl"
+                  disabled={totAllergici >= totPartecipanti}
+                  onClick={() => setAllergie(prev => [...prev, { nome: "", quantita: 1 }])}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Aggiungi allergia
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Persone con allergie/intolleranze: {totAllergici} su {totPartecipanti} partecipanti
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Riepilogo */}
         <Card className="rounded-2xl border-fuchsia-300 bg-fuchsia-50/40 dark:bg-fuchsia-950/20">
           <CardHeader>
