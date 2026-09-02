@@ -85,42 +85,18 @@ export default function VisualizzaModuloRisposte() {
     [schema, responses],
   );
 
-  const handleExportCSV = () => {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportPDF = async () => {
     if (!form || responses.length === 0) return;
-
-    // Build CSV header
-    const headers = ['Data Risposta', ...schema.map(f => f.label)];
-    
-    // Build CSV rows
-    const rows = responses.map(response => {
-      const data = response.data as Record<string, unknown>;
-      const createdAt = format(new Date(response.created_at), 'dd/MM/yyyy HH:mm', { locale: it });
-      
-      const values = schema.map(field => {
-        const value = data[field.name];
-        // Escape quotes and handle commas
-        const strValue = String(value ?? '').replace(/"/g, '""');
-        return `"${strValue}"`;
-      });
-      
-      return [`"${createdAt}"`, ...values].join(',');
-    });
-
-    const csv = [headers.map(h => `"${h}"`).join(','), ...rows].join('\n');
-    
-    // Add BOM for Excel compatibility with UTF-8
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${form.slug}-risposte-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    setExporting(true);
+    try {
+      await exportModuloRispostePdf(form.name, form.slug, schema, responses);
+    } finally {
+      setExporting(false);
+    }
   };
+
 
   if (isLoading) {
     return (
