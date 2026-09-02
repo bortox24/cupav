@@ -144,6 +144,9 @@ export default function FestaCampeggioIscrizioni() {
               <p className="text-sm text-muted-foreground">Gestione adesioni e contributi</p>
             </div>
           </div>
+          <Badge variant="outline" className={realtimeConnected ? "border-green-500 text-green-600 gap-1 w-fit" : "border-muted text-muted-foreground gap-1 w-fit"}>
+            <Radio className="h-3 w-3" /> {realtimeConnected ? "In tempo reale" : "Connessione..."}
+          </Badge>
         </div>
         {/* KPI */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
