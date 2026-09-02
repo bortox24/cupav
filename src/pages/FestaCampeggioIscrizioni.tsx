@@ -111,7 +111,8 @@ export default function FestaCampeggioIscrizioni() {
   const saveEdit = async () => {
     if (!editItem) return;
     const contributo = calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff);
-    await update.mutateAsync({ id: editItem.id, updates: { ...editItem, contributo } }, {
+    const righeValide = parseAllergie(editItem.allergie);
+    await update.mutateAsync({ id: editItem.id, updates: { ...editItem, contributo, allergie: righeValide.length ? righeValide : null, ha_allergie: righeValide.length > 0 } }, {
       onSuccess: () => { toast({ title: "Iscrizione aggiornata" }); setEditItem(null); },
       onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
     });
