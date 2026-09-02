@@ -32,6 +32,14 @@ export default function Impostazioni() {
   const logoUrl = useCustomLogo();
   const { data: settings, isLoading } = useSiteSettings();
   const updateSetting = useUpdateSiteSetting();
+  const { data: forms = [], isLoading: formsLoading } = useForms();
+  const updateForm = useUpdateForm();
+
+  const copyLink = (path: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}${path}`);
+    toast({ title: 'Link copiato', description: `${window.location.origin}${path}` });
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [defaultPages, setDefaultPages] = useState<string[]>(['/home']);
