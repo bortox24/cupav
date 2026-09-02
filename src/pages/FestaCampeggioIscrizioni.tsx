@@ -24,7 +24,7 @@ function StatoBadge({ item }: { item: FestaCampeggio }) {
 export default function FestaCampeggioIscrizioni() {
   const { profile } = useAuth();
   const fullName = profile?.full_name || 'Sistema';
-  const { data: items = [], isLoading } = useFestaCampeggio();
+  const { data: items = [], isLoading, realtimeConnected } = useFestaCampeggio();
   const update = useUpdateFestaCampeggio();
   const remove = useDeleteFestaCampeggio();
 
@@ -32,6 +32,8 @@ export default function FestaCampeggioIscrizioni() {
   const [editItem, setEditItem] = useState<FestaCampeggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FestaCampeggio | null>(null);
   const [invioOpen, setInvioOpen] = useState(false);
+  const [checkInOpen, setCheckInOpen] = useState(false);
+
 
   const invioRecipients: GenericRecipient[] = useMemo(() => items
     .filter(i => i.email)
