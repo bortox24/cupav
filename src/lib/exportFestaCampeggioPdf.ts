@@ -149,6 +149,22 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
 
   y += fasce.length * 24 + 24;
 
+  // Riepilogo allergie
+  if (allergieAgg.size > 0) {
+    doc.setTextColor(...DARK);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Allergie e intolleranze', margin, y);
+    y += 16;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const righe = [...allergieAgg.entries()].sort((a, b) => b[1] - a[1]);
+    righe.forEach(([nome, q], i) => {
+      doc.text(`${nome}: ${q} ${q === 1 ? 'persona' : 'persone'}`, margin, y + i * 14);
+    });
+    y += righe.length * 14 + 18;
+  }
+
   // Table
   doc.setTextColor(...DARK);
   doc.setFontSize(16);
