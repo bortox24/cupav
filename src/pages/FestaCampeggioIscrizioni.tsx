@@ -80,12 +80,12 @@ export default function FestaCampeggioIscrizioni() {
     };
   }, [items]);
 
-  const updateEditAllergia = (idx: number, patch: Partial<AllergiaRiga>) => {
-    setEditItem(prev => {
-      if (!prev) return prev;
-      const righe = parseAllergieRaw(prev.allergie).map((r, i) => (i === idx ? { ...r, ...patch } : r));
-      return { ...prev, allergie: righe };
-    });
+  const editRighe: AllergiaRiga[] = Array.isArray(editItem?.allergie)
+    ? (editItem!.allergie as AllergiaRiga[]).map(r => ({ nome: String(r?.nome ?? ''), quantita: Number(r?.quantita ?? 0) }))
+    : [];
+
+  const setEditRighe = (righe: AllergiaRiga[]) => {
+    setEditItem(prev => (prev ? { ...prev, allergie: righe, ha_allergie: righe.length > 0 } : prev));
   };
 
   const toggleArrivato = async (item: FestaCampeggio) => {
