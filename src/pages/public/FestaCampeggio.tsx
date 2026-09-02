@@ -175,6 +175,51 @@ export default function FestaCampeggio() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {/* Info giornata */}
+        <Card className="rounded-2xl border-fuchsia-300 overflow-hidden">
+          <div className="bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white px-4 py-5 text-center">
+            <p className="text-xs uppercase tracking-widest text-white/80">CUPAV</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold uppercase leading-tight">Festa del Campeggio</h2>
+            <p className="mt-1 flex items-center justify-center gap-2 text-sm font-semibold">
+              <CalendarDays className="h-4 w-4" /> Domenica 20 settembre
+            </p>
+          </div>
+          <CardContent className="space-y-4 pt-5">
+            <div className="rounded-xl bg-amber-100 dark:bg-amber-950/30 border border-amber-300 p-3 text-center">
+              <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                Prenotazione obbligatoria entro martedì 15 settembre
+              </p>
+            </div>
+
+            <div>
+              <p className="font-semibold flex items-center gap-2 mb-2"><Clock className="h-4 w-4 text-fuchsia-600" /> Programma</p>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li><strong className="text-foreground">ore 10.00</strong> — Santa Messa</li>
+                <li><strong className="text-foreground">ore 12.30</strong> — Pranzo conviviale</li>
+                <li><strong className="text-foreground">ore 14.30</strong> — Intrattenimento</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-semibold flex items-center gap-2 mb-2"><UtensilsCrossed className="h-4 w-4 text-fuchsia-600" /> Menù</p>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li><strong className="text-foreground">Primo:</strong> trofie fredde con pesto, pancetta, pomodorini e noci</li>
+                <li><strong className="text-foreground">Secondo:</strong> arrosto di maiale, fagioli all'uccelletto con erbe di campo spadellate</li>
+                <li>Acqua, vino, bibite, caffè</li>
+              </ul>
+              <div className="mt-3 rounded-xl bg-fuchsia-100 dark:bg-fuchsia-950/30 border border-fuchsia-300 p-3 flex items-center gap-2">
+                <Cake className="h-5 w-5 text-fuchsia-600 shrink-0" />
+                <p className="text-sm font-bold text-fuchsia-800 dark:text-fuchsia-200">Per i dolci pensateci voi !</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-muted/40 p-3 flex items-center gap-2">
+              <CloudRain className="h-5 w-5 text-muted-foreground shrink-0" />
+              <p className="text-sm text-muted-foreground">In caso di maltempo l'evento sarà annullato.</p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Dati */}
         <Card className="rounded-2xl">
           <CardHeader>
