@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Minus, Plus, CheckCircle2, Mail, Facebook, PartyPopper } from "lucide-react";
+import { Minus, Plus, Mail, Facebook, PartyPopper, CalendarDays, Clock, CloudRain, UtensilsCrossed, Cake, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { calcolaContributoFesta, COSTO_FESTA_ADULTO, COSTO_FESTA_RAGAZZO, COSTO_FESTA_STAFF } from "@/hooks/useFestaCampeggio";
+import { calcolaContributoFesta, COSTO_FESTA_ADULTO, COSTO_FESTA_RAGAZZO, COSTO_FESTA_STAFF, type AllergiaRiga } from "@/hooks/useFestaCampeggio";
 
 const capitalizeWords = (s: string) =>
   s.toLowerCase().replace(/(^|[\s'’\-])(\p{L})/gu, (_m, sep, ch) => sep + ch.toUpperCase());
