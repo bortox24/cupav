@@ -105,6 +105,7 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   drawCards([
     { label: 'Persone previste', value: String(totPers) },
     { label: 'Persone arrivate', value: String(persArrivate) },
+    { label: 'Allergie / intoll.', value: String(totAllergici) },
   ], y);
 
   y += 80;
