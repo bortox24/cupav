@@ -307,6 +307,53 @@ export default function FestaCampeggioIscrizioni() {
                 <div><Label>Ragazzi</Label><Input type="number" min={0} value={editItem.num_ragazzi} onChange={e => setEditItem({ ...editItem, num_ragazzi: Number(e.target.value) })} /></div>
                 <div><Label>Staff</Label><Input type="number" min={0} value={editItem.num_staff} onChange={e => setEditItem({ ...editItem, num_staff: Number(e.target.value) })} /></div>
               </div>
+
+              {/* Allergie */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /> Allergie / intolleranze</Label>
+                {(() => {
+                  const totPart = editItem.num_adulti + editItem.num_ragazzi + editItem.num_staff;
+                  const totAll = editRighe.reduce((s, r) => s + r.quantita, 0);
+                  return (
+                    <>
+                      {editRighe.map((riga, idx) => {
+                        const maxRiga = Math.max(0, totPart - (totAll - riga.quantita));
+                        return (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Input
+                              value={riga.nome}
+                              placeholder="Es. celiaco"
+                              onChange={e => setEditRighe(editRighe.map((r, i) => i === idx ? { ...r, nome: e.target.value } : r))}
+                            />
+                            <Input
+                              type="number"
+                              min={0}
+                              max={maxRiga}
+                              className="w-20"
+                              value={riga.quantita}
+                              onChange={e => setEditRighe(editRighe.map((r, i) => i === idx ? { ...r, quantita: Math.max(0, Math.min(maxRiga, Number(e.target.value))) } : r))}
+                            />
+                            <Button variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => setEditRighe(editRighe.filter((_, i) => i !== idx))}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        disabled={totAll >= totPart}
+                        onClick={() => setEditRighe([...editRighe, { nome: '', quantita: 1 }])}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Aggiungi allergia
+                      </Button>
+                      <p className="text-xs text-muted-foreground">{totAll} su {totPart} partecipanti</p>
+                    </>
+                  );
+                })()}
+              </div>
+
               <div className="bg-fuchsia-50 dark:bg-fuchsia-950/20 rounded-xl p-3 text-center">
                 <p className="text-sm text-muted-foreground">Contributo calcolato</p>
                 <p className="text-2xl font-bold text-fuchsia-600">
