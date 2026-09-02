@@ -292,7 +292,7 @@ export default function FestaCampeggioIscrizioni() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editItem} onOpenChange={open => !open && setEditItem(null)}>
-        <DialogContent className="max-w-md rounded-2xl">
+        <DialogContent className="max-w-md rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Modifica adesione</DialogTitle></DialogHeader>
           {editItem && (
             <div className="space-y-4 py-2">
