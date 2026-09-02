@@ -247,6 +247,15 @@ export default function FestaCampeggioIscrizioni() {
                             <span className="text-muted-foreground">Contributo</span>
                             <span className="font-bold text-fuchsia-600">{item.contributo}€</span>
                           </div>
+                          {parseAllergie(item.allergie).length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {parseAllergie(item.allergie).map((r, idx) => (
+                                <Badge key={idx} variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300 gap-1">
+                                  <AlertTriangle className="h-3 w-3" /> {r.nome} ×{r.quantita}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                           {item.telefono && <p className="text-muted-foreground text-xs">Tel: {item.telefono}</p>}
                           {item.email && <p className="text-muted-foreground text-xs truncate">{item.email}</p>}
                           <div className="flex gap-2 pt-1">
