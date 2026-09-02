@@ -76,8 +76,17 @@ export default function FestaCampeggioIscrizioni() {
       totale: items.reduce((s, i) => s + i.contributo, 0),
       incassato: items.filter(i => i.pagato).reduce((s, i) => s + i.contributo, 0),
       daIncassare: items.filter(i => !i.pagato).reduce((s, i) => s + i.contributo, 0),
+      allergici: items.reduce((s, i) => s + totalePersoneAllergiche(i.allergie), 0),
     };
   }, [items]);
+
+  const updateEditAllergia = (idx: number, patch: Partial<AllergiaRiga>) => {
+    setEditItem(prev => {
+      if (!prev) return prev;
+      const righe = parseAllergieRaw(prev.allergie).map((r, i) => (i === idx ? { ...r, ...patch } : r));
+      return { ...prev, allergie: righe };
+    });
+  };
 
   const toggleArrivato = async (item: FestaCampeggio) => {
     const updates: Partial<FestaCampeggio> = item.arrivato
