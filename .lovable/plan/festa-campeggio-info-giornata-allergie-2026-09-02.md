@@ -13,9 +13,9 @@ Nuova sezione in cima a `/festa-campeggio` (prima di "Anagrafica"), grafica coer
 - Avviso: in caso di maltempo l'evento sarà annullato
 - Menù:
   - Primo: trofie fredde con pesto, pancetta, pomodorini e noci
-  - Secondo: arrosto di maiale, fagioli all'uccelletto, erbe di campo spadellate
+  - Secondo: arrosto di maiale, fagioli all'uccelletto con erbe di campo spadellate
   - Acqua, vino, bibite, caffè
-  - In evidenza: **per i dolci pensateci voi**
+  - In evidenza: **per i dolci pensateci voi !**
 
 ## 2. Allergie / intolleranze
 

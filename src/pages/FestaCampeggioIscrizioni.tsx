@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone } from "lucide-react";
+import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, calcolaContributoFesta } from "@/hooks/useFestaCampeggio";
+import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, type AllergiaRiga, calcolaContributoFesta, parseAllergie, totalePersoneAllergiche } from "@/hooks/useFestaCampeggio";
 import { exportFestaCampeggioPdf } from "@/lib/exportFestaCampeggioPdf";
 
 function StatoBadge({ item }: { item: FestaCampeggio }) {
@@ -76,8 +76,17 @@ export default function FestaCampeggioIscrizioni() {
       totale: items.reduce((s, i) => s + i.contributo, 0),
       incassato: items.filter(i => i.pagato).reduce((s, i) => s + i.contributo, 0),
       daIncassare: items.filter(i => !i.pagato).reduce((s, i) => s + i.contributo, 0),
+      allergici: items.reduce((s, i) => s + totalePersoneAllergiche(i.allergie), 0),
     };
   }, [items]);
+
+  const editRighe: AllergiaRiga[] = Array.isArray(editItem?.allergie)
+    ? (editItem!.allergie as AllergiaRiga[]).map(r => ({ nome: String(r?.nome ?? ''), quantita: Number(r?.quantita ?? 0) }))
+    : [];
+
+  const setEditRighe = (righe: AllergiaRiga[]) => {
+    setEditItem(prev => (prev ? { ...prev, allergie: righe, ha_allergie: righe.length > 0 } : prev));
+  };
 
   const toggleArrivato = async (item: FestaCampeggio) => {
     const updates: Partial<FestaCampeggio> = item.arrivato
@@ -102,7 +111,8 @@ export default function FestaCampeggioIscrizioni() {
   const saveEdit = async () => {
     if (!editItem) return;
     const contributo = calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff);
-    await update.mutateAsync({ id: editItem.id, updates: { ...editItem, contributo } }, {
+    const righeValide = parseAllergie(editItem.allergie);
+    await update.mutateAsync({ id: editItem.id, updates: { ...editItem, contributo, allergie: righeValide.length ? righeValide : null, ha_allergie: righeValide.length > 0 } }, {
       onSuccess: () => { toast({ title: "Iscrizione aggiornata" }); setEditItem(null); },
       onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
     });
@@ -133,10 +143,11 @@ export default function FestaCampeggioIscrizioni() {
           </div>
         </div>
         {/* KPI */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
             { label: 'Persone previste', value: stats.persone, icon: Users },
             { label: 'Persone arrivate', value: stats.personeArrivate, icon: CheckCircle2 },
+            { label: 'Allergie/intoll.', value: stats.allergici, icon: AlertTriangle },
             { label: 'Totale previsto', value: `${stats.totale}€`, icon: Banknote },
             { label: 'Totale incassato', value: `${stats.incassato}€`, icon: CheckCircle2 },
             { label: 'Da incassare', value: `${stats.daIncassare}€`, icon: Banknote },
@@ -236,6 +247,15 @@ export default function FestaCampeggioIscrizioni() {
                             <span className="text-muted-foreground">Contributo</span>
                             <span className="font-bold text-fuchsia-600">{item.contributo}€</span>
                           </div>
+                          {parseAllergie(item.allergie).length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {parseAllergie(item.allergie).map((r, idx) => (
+                                <Badge key={idx} variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300 gap-1">
+                                  <AlertTriangle className="h-3 w-3" /> {r.nome} ×{r.quantita}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                           {item.telefono && <p className="text-muted-foreground text-xs">Tel: {item.telefono}</p>}
                           {item.email && <p className="text-muted-foreground text-xs truncate">{item.email}</p>}
                           <div className="flex gap-2 pt-1">
@@ -272,7 +292,7 @@ export default function FestaCampeggioIscrizioni() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editItem} onOpenChange={open => !open && setEditItem(null)}>
-        <DialogContent className="max-w-md rounded-2xl">
+        <DialogContent className="max-w-md rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Modifica adesione</DialogTitle></DialogHeader>
           {editItem && (
             <div className="space-y-4 py-2">
@@ -287,6 +307,53 @@ export default function FestaCampeggioIscrizioni() {
                 <div><Label>Ragazzi</Label><Input type="number" min={0} value={editItem.num_ragazzi} onChange={e => setEditItem({ ...editItem, num_ragazzi: Number(e.target.value) })} /></div>
                 <div><Label>Staff</Label><Input type="number" min={0} value={editItem.num_staff} onChange={e => setEditItem({ ...editItem, num_staff: Number(e.target.value) })} /></div>
               </div>
+
+              {/* Allergie */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /> Allergie / intolleranze</Label>
+                {(() => {
+                  const totPart = editItem.num_adulti + editItem.num_ragazzi + editItem.num_staff;
+                  const totAll = editRighe.reduce((s, r) => s + r.quantita, 0);
+                  return (
+                    <>
+                      {editRighe.map((riga, idx) => {
+                        const maxRiga = Math.max(0, totPart - (totAll - riga.quantita));
+                        return (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Input
+                              value={riga.nome}
+                              placeholder="Es. celiaco"
+                              onChange={e => setEditRighe(editRighe.map((r, i) => i === idx ? { ...r, nome: e.target.value } : r))}
+                            />
+                            <Input
+                              type="number"
+                              min={0}
+                              max={maxRiga}
+                              className="w-20"
+                              value={riga.quantita}
+                              onChange={e => setEditRighe(editRighe.map((r, i) => i === idx ? { ...r, quantita: Math.max(0, Math.min(maxRiga, Number(e.target.value))) } : r))}
+                            />
+                            <Button variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => setEditRighe(editRighe.filter((_, i) => i !== idx))}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        disabled={totAll >= totPart}
+                        onClick={() => setEditRighe([...editRighe, { nome: '', quantita: 1 }])}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Aggiungi allergia
+                      </Button>
+                      <p className="text-xs text-muted-foreground">{totAll} su {totPart} partecipanti</p>
+                    </>
+                  );
+                })()}
+              </div>
+
               <div className="bg-fuchsia-50 dark:bg-fuchsia-950/20 rounded-xl p-3 text-center">
                 <p className="text-sm text-muted-foreground">Contributo calcolato</p>
                 <p className="text-2xl font-bold text-fuchsia-600">

@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { FestaCampeggio } from '@/hooks/useFestaCampeggio';
+import { parseAllergie, type FestaCampeggio } from '@/hooks/useFestaCampeggio';
 import { supabase } from '@/integrations/supabase/client';
 import fallbackLogo from '@/assets/logo-cupav.png';
 
@@ -57,6 +57,12 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   const totPagati = sorted.filter(i => i.pagato).length;
   const totArrivati = sorted.filter(i => i.arrivato).length;
   const persArrivate = sorted.filter(i => i.arrivato).reduce((s, i) => s + totalPersone(i), 0);
+  const allergieAgg = new Map<string, number>();
+  sorted.forEach(i => parseAllergie(i.allergie).forEach(r => {
+    const key = r.nome.trim();
+    allergieAgg.set(key, (allergieAgg.get(key) || 0) + r.quantita);
+  }));
+  const totAllergici = [...allergieAgg.values()].reduce((s, v) => s + v, 0);
 
   const logo = await loadLogo();
 
@@ -99,6 +105,7 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   drawCards([
     { label: 'Persone previste', value: String(totPers) },
     { label: 'Persone arrivate', value: String(persArrivate) },
+    { label: 'Allergie / intoll.', value: String(totAllergici) },
   ], y);
 
   y += 80;
@@ -142,6 +149,22 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
 
   y += fasce.length * 24 + 24;
 
+  // Riepilogo allergie
+  if (allergieAgg.size > 0) {
+    doc.setTextColor(...DARK);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Allergie e intolleranze', margin, y);
+    y += 16;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const righe = [...allergieAgg.entries()].sort((a, b) => b[1] - a[1]);
+    righe.forEach(([nome, q], i) => {
+      doc.text(`${nome}: ${q} ${q === 1 ? 'persona' : 'persone'}`, margin, y + i * 14);
+    });
+    y += righe.length * 14 + 18;
+  }
+
   // Table
   doc.setTextColor(...DARK);
   doc.setFontSize(16);
@@ -151,13 +174,14 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
 
   autoTable(doc, {
     startY: y,
-    head: [['Cognome Nome', 'Ad.', 'Rag.', 'Staff', 'Tot.', 'Previsto', 'Incassato', 'Stato']],
+    head: [['Cognome Nome', 'Ad.', 'Rag.', 'Staff', 'Tot.', 'Allergie', 'Previsto', 'Incassato', 'Stato']],
     body: sorted.map(i => [
       `${i.cognome} ${i.nome}`,
       i.num_adulti,
       i.num_ragazzi,
       i.num_staff,
       totalPersone(i),
+      parseAllergie(i.allergie).map(r => `${r.nome} x${r.quantita}`).join(', ') || '-',
       `${i.contributo}\u20AC`,
       i.pagato ? `${i.contributo}\u20AC` : '0\u20AC',
       i.pagato ? 'Pagato' : i.arrivato ? 'Arrivato' : 'Da arrivare',
@@ -168,22 +192,24 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
       { content: String(totRagazzi), styles: { halign: 'center', fontStyle: 'bold' } },
       { content: String(totStaff), styles: { halign: 'center', fontStyle: 'bold' } },
       { content: String(totPers), styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: String(totAllergici), styles: { halign: 'center', fontStyle: 'bold' } },
       { content: `${totContributo}\u20AC`, styles: { halign: 'center', fontStyle: 'bold' } },
       { content: `${totIncassato}\u20AC`, styles: { halign: 'center', fontStyle: 'bold' } },
-      { content: `Arriv. ${totArrivati} / Pag. ${totPagati}`, styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: `${totArrivati}/${totPagati}`, styles: { halign: 'center', fontStyle: 'bold' } },
     ]],
-    headStyles: { fillColor: FUCHSIA, textColor: 255, fontStyle: 'bold', fontSize: 8 },
-    footStyles: { fillColor: LIGHT, textColor: DARK, fontStyle: 'bold', fontSize: 8 },
-    styles: { fontSize: 8, cellPadding: 4, overflow: 'linebreak' },
+    headStyles: { fillColor: FUCHSIA, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    footStyles: { fillColor: LIGHT, textColor: DARK, fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7.5, cellPadding: 3, overflow: 'linebreak' },
     columnStyles: {
-      0: { cellWidth: 116, fontStyle: 'bold' },
-      1: { halign: 'center', cellWidth: 30 },
-      2: { halign: 'center', cellWidth: 32 },
-      3: { halign: 'center', cellWidth: 34 },
-      4: { halign: 'center', cellWidth: 30 },
-      5: { halign: 'center', cellWidth: 52 },
-      6: { halign: 'center', cellWidth: 54 },
-      7: { halign: 'center', cellWidth: 67 },
+      0: { cellWidth: 96, fontStyle: 'bold' },
+      1: { halign: 'center', cellWidth: 24 },
+      2: { halign: 'center', cellWidth: 26 },
+      3: { halign: 'center', cellWidth: 28 },
+      4: { halign: 'center', cellWidth: 26 },
+      5: { cellWidth: 105 },
+      6: { halign: 'center', cellWidth: 48 },
+      7: { halign: 'center', cellWidth: 50 },
+      8: { halign: 'center', cellWidth: 62 },
     },
 
     margin: { left: margin, right: margin },
