@@ -52,6 +52,7 @@ export function calcolaContributoFesta(numAdulti: number, numRagazzi: number, nu
 
 export function useFestaCampeggio() {
   const queryClient = useQueryClient();
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
   useEffect(() => {
     const channel = supabase
@@ -60,11 +61,13 @@ export function useFestaCampeggio() {
         queryClient.invalidateQueries({ queryKey: ['festa-campeggio'] });
         queryClient.invalidateQueries({ queryKey: ['festa-campeggio-count'] });
       })
-      .subscribe();
+      .subscribe((status) => {
+        setRealtimeConnected(status === 'SUBSCRIBED');
+      });
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['festa-campeggio'],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -79,7 +82,10 @@ export function useFestaCampeggio() {
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
+
+  return { ...query, realtimeConnected };
 }
+
 
 export function useCreateFestaCampeggio() {
   const queryClient = useQueryClient();
