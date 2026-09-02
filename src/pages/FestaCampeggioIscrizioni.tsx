@@ -143,10 +143,11 @@ export default function FestaCampeggioIscrizioni() {
           </div>
         </div>
         {/* KPI */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
             { label: 'Persone previste', value: stats.persone, icon: Users },
             { label: 'Persone arrivate', value: stats.personeArrivate, icon: CheckCircle2 },
+            { label: 'Allergie/intoll.', value: stats.allergici, icon: AlertTriangle },
             { label: 'Totale previsto', value: `${stats.totale}€`, icon: Banknote },
             { label: 'Totale incassato', value: `${stats.incassato}€`, icon: CheckCircle2 },
             { label: 'Da incassare', value: `${stats.daIncassare}€`, icon: Banknote },
