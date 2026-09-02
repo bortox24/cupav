@@ -403,6 +403,23 @@ export default function FestaCampeggioIscrizioni() {
         </DialogContent>
       </Dialog>
 
+      <CheckInFestaDialog
+        open={checkInOpen}
+        onOpenChange={setCheckInOpen}
+        items={items}
+        realtimeConnected={realtimeConnected}
+        onCheckIn={async (item) => {
+          await update.mutateAsync({ id: item.id, updates: { arrivato: true, arrivato_da: fullName || 'Sistema', arrivato_at: new Date().toISOString() } });
+        }}
+        onUndoCheckIn={async (item) => {
+          await update.mutateAsync({ id: item.id, updates: { arrivato: false, arrivato_da: null, arrivato_at: null } });
+        }}
+        onMarkPagato={async (item) => {
+          await update.mutateAsync({ id: item.id, updates: { pagato: true, pagato_da: fullName || 'Sistema', pagato_at: new Date().toISOString() } });
+        }}
+      />
+
+
       <InvioMassivoGenericDialog
         open={invioOpen}
         onOpenChange={setInvioOpen}
