@@ -113,9 +113,21 @@ export function useUpdateFestaCampeggio() {
       const { error } = await (supabase as any).from('festa_campeggio').update(updates).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['festa-campeggio'] }),
+    onMutate: async ({ id, updates }) => {
+      const previous = queryClient.getQueryData<FestaCampeggio[]>(['festa-campeggio']);
+      if (previous) {
+        queryClient.setQueryData<FestaCampeggio[]>(['festa-campeggio'],
+          previous.map(i => (i.id === id ? { ...i, ...updates } : i)));
+      }
+      return { previous };
+    },
+    onError: (_e, _vars, ctx: any) => {
+      if (ctx?.previous) queryClient.setQueryData(['festa-campeggio'], ctx.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['festa-campeggio'] }),
   });
 }
+
 
 export function useDeleteFestaCampeggio() {
   const queryClient = useQueryClient();
