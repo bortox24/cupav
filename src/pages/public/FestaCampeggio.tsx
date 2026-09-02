@@ -387,7 +387,13 @@ export default function FestaCampeggio() {
             </Button>
             {!isValid && (
               <p className="text-xs text-center text-muted-foreground">
-                {!hasPartecipanti ? "Inserisci almeno un partecipante (adulti, ragazzi o staff)." : "Compila nome, cognome ed email obbligatori."}
+                {!hasPartecipanti
+                  ? "Inserisci almeno un partecipante (adulti, ragazzi o staff)."
+                  : haAllergie === null
+                    ? "Indica se ci sono allergie o intolleranze."
+                    : !allergieOk
+                      ? "Completa le allergie indicate (tipo e numero di persone)."
+                      : "Compila nome, cognome ed email obbligatori."}
               </p>
             )}
           </CardContent>
