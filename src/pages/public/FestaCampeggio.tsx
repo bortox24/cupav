@@ -111,6 +111,8 @@ export default function FestaCampeggio() {
         num_ragazzi: numRagazzi,
         num_staff: numStaff,
         contributo,
+        ha_allergie: !!haAllergie,
+        allergie: haAllergie ? allergieValide.map(r => ({ nome: r.nome.trim(), quantita: r.quantita })) : null,
         firma_data: format(new Date(), "yyyy-MM-dd"),
         firma_nome_cognome: `${capitalizeWords(nome.trim())} ${capitalizeWords(cognome.trim())}`,
       };
