@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { ModuloChiuso } from "@/components/ModuloChiuso";
 
 // Capitalizes first letter of every word, lowercases the rest
 const capitalizeWords = (s: string) =>
@@ -48,6 +50,7 @@ function Stepper({ label, hint, value, onChange }: { label: string; hint: string
 export default function GiornataGenitori() {
   const { toast } = useToast();
   const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -154,6 +157,10 @@ export default function GiornataGenitori() {
     }
   };
 
+
+  if (!settingsLoading && siteSettings?.giornata_genitori_enabled === "false") {
+    return <ModuloChiuso titolo="Iscrizioni chiuse" descrizione="Le iscrizioni alla Giornata Genitori sono attualmente chiuse." />;
+  }
 
   if (submitted) {
     return (
