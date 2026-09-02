@@ -4,15 +4,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, Image, Link2, Users, CalendarDays } from 'lucide-react';
+import { Loader2, Upload, Image, Link2, Users, CalendarDays, Copy, FileText } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings, useUpdateSiteSetting } from '@/hooks/useSiteSettings';
+import { useForms, useUpdateForm } from '@/hooks/useForms';
 import { useCustomLogo } from '@/hooks/useCustomLogo';
 import { availablePages } from '@/hooks/usePagePermissions';
 import { useQueryClient } from '@tanstack/react-query';
 import { TariffeFamiglieCard } from '@/components/TariffeFamiglieCard';
+
+const PUBLIC_LINKS: { key: string; label: string; description: string; path: string }[] = [
+  { key: 'preiscrizione_enabled', label: 'Preiscrizioni', description: 'Modulo preiscrizione CUPAV', path: '/preiscrizione-cupav' },
+  { key: 'iscrizione_enabled', label: 'Iscrizioni Campeggio', description: 'Modulo iscrizione campeggio ragazzi', path: '/iscrizione' },
+  { key: 'iscrizione_famiglie_enabled', label: 'Iscrizione Turno Famiglie', description: 'Modulo iscrizione turno famiglie', path: '/iscrizione-famiglie' },
+  { key: 'iscrizione_montaggio_enabled', label: 'Montaggio Campeggio', description: 'Modulo iscrizione giornate di montaggio', path: '/iscrizione-montaggio' },
+  { key: 'giornata_genitori_enabled', label: 'Giornata Genitori', description: 'Modulo adesione giornata genitori (4ª e 5ª elementare)', path: '/giornata-genitori' },
+  { key: 'festa_campeggio_enabled', label: 'Festa Campeggio', description: 'Modulo adesione festa del campeggio', path: '/festa-campeggio' },
+  { key: 'modulo_staff_enabled', label: 'Modulo Staff', description: 'Registrazione staff campeggio', path: '/modulo-staff' },
+];
+
 
 export default function Impostazioni() {
   const { toast } = useToast();
