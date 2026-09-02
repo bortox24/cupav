@@ -88,6 +88,14 @@ export default function FestaCampeggio() {
       toast({ title: "Seleziona almeno un partecipante", description: "Inserisci almeno un adulto, ragazzo o staff.", variant: "destructive" });
       return;
     }
+    if (haAllergie === null) {
+      toast({ title: "Indica se ci sono allergie o intolleranze", variant: "destructive" });
+      return;
+    }
+    if (haAllergie && allergieValide.length === 0) {
+      toast({ title: "Completa le allergie", description: "Inserisci il tipo di allergia e il numero di persone.", variant: "destructive" });
+      return;
+    }
     if (!isValid) {
       toast({ title: "Compila tutti i campi obbligatori", variant: "destructive" });
       return;
