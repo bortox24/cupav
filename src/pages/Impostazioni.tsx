@@ -168,77 +168,85 @@ export default function Impostazioni() {
               Link Pubblici
             </CardTitle>
             <CardDescription>
-              Attiva o disattiva i moduli di iscrizione e preiscrizione pubblici.
+              Attiva o disattiva tutti i moduli pubblici. Se un modulo è disattivato, chi apre il link vede un avviso di chiusura.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-base font-medium">Iscrizioni</Label>
-                <p className="text-sm text-muted-foreground">
-                  Modulo iscrizione campeggio (/iscrizione)
-                </p>
-              </div>
-              <Switch
-                checked={iscrizioneEnabled}
-                onCheckedChange={(checked) => handleToggle('iscrizione_enabled', checked)}
-                disabled={updateSetting.isPending}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-base font-medium">Iscrizione Turno Famiglie</Label>
-                <p className="text-sm text-muted-foreground">
-                  Modulo iscrizione turno famiglie (/iscrizione-famiglie)
-                </p>
-              </div>
-              <Switch
-                checked={iscrizioneFamiglieEnabled}
-                onCheckedChange={(checked) => handleToggle('iscrizione_famiglie_enabled', checked)}
-                disabled={updateSetting.isPending}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-base font-medium">Preiscrizioni</Label>
-                <p className="text-sm text-muted-foreground">
-                  Modulo preiscrizione CUPAV (/preiscrizione-cupav)
-                </p>
-              </div>
-              <Switch
-                checked={preiscrizioneEnabled}
-                onCheckedChange={(checked) => handleToggle('preiscrizione_enabled', checked)}
-                disabled={updateSetting.isPending}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-base font-medium">Modulo Staff</Label>
-                <p className="text-sm text-muted-foreground">
-                  Registrazione staff campeggio (/modulo-staff)
-                </p>
-              </div>
-              <Switch
-                checked={moduloStaffEnabled}
-                onCheckedChange={(checked) => handleToggle('modulo_staff_enabled', checked)}
-                disabled={updateSetting.isPending}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-base font-medium">Festa Campeggio</Label>
-                <p className="text-sm text-muted-foreground">
-                  Modulo pubblico adesione festa campeggio (/festa-campeggio)
-                </p>
-              </div>
-              <Switch
-                checked={festaCampeggioEnabled}
-                onCheckedChange={(checked) => handleToggle('festa_campeggio_enabled', checked)}
-                disabled={updateSetting.isPending}
-              />
-            </div>
+          <CardContent className="space-y-4">
+            {PUBLIC_LINKS.map((link) => {
+              const enabled = settings?.[link.key] !== 'false';
+              return (
+                <div key={link.key} className="flex items-start justify-between gap-3 rounded-xl border border-border p-3">
+                  <div className="min-w-0">
+                    <Label className="text-base font-medium">{link.label}</Label>
+                    <p className="text-sm text-muted-foreground">{link.description}</p>
+                    <button
+                      type="button"
+                      onClick={() => copyLink(link.path)}
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline w-fit"
+                    >
+                      <Copy className="h-3 w-3" /> {link.path}
+                    </button>
+                  </div>
+                  <Switch
+                    checked={enabled}
+                    onCheckedChange={(checked) => handleToggle(link.key, checked)}
+                    disabled={updateSetting.isPending}
+                  />
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
+
+        {/* Moduli personalizzati */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Moduli Personalizzati
+            </CardTitle>
+            <CardDescription>
+              Moduli creati dal generatore moduli. Il toggle attiva o disattiva il link pubblico.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {formsLoading ? (
+              <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+            ) : forms.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nessun modulo personalizzato creato.</p>
+            ) : (
+              forms.map((form) => (
+                <div key={form.id} className="flex items-start justify-between gap-3 rounded-xl border border-border p-3">
+                  <div className="min-w-0">
+                    <Label className="text-base font-medium break-words">{form.name}</Label>
+                    {form.description && <p className="text-sm text-muted-foreground">{form.description}</p>}
+                    <button
+                      type="button"
+                      onClick={() => copyLink(`/modulo/${form.slug}`)}
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline w-fit"
+                    >
+                      <Copy className="h-3 w-3" /> /modulo/{form.slug}
+                    </button>
+                  </div>
+                  <Switch
+                    checked={form.is_active}
+                    onCheckedChange={(checked) =>
+                      updateForm.mutate(
+                        { id: form.id, is_active: checked },
+                        {
+                          onSuccess: () => toast({ title: checked ? 'Modulo attivato' : 'Modulo disattivato' }),
+                          onError: (err: any) => toast({ title: 'Errore', description: err.message, variant: 'destructive' }),
+                        }
+                      )
+                    }
+                    disabled={updateForm.isPending}
+                  />
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
 
         {/* Turni Preiscrizione */}
         <Card>
