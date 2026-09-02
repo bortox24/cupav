@@ -6,6 +6,11 @@ export const COSTO_FESTA_ADULTO = 15;
 export const COSTO_FESTA_RAGAZZO = 10;
 export const COSTO_FESTA_STAFF = 10;
 
+export interface AllergiaRiga {
+  nome: string;
+  quantita: number;
+}
+
 export interface FestaCampeggio {
   id: string;
   created_at: string;
