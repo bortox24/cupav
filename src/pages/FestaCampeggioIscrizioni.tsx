@@ -200,7 +200,11 @@ export default function FestaCampeggioIscrizioni() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca per nome o email..." className="pl-9 rounded-xl" />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setCheckInOpen(true)} className="gap-2 rounded-xl">
+              <ScanLine className="h-4 w-4" /> Modalità Check-in
+            </Button>
+
             <Button onClick={exportPdf} variant="outline" className="gap-2 rounded-xl">
               <FileDown className="h-4 w-4" /> Scarica PDF
             </Button>
