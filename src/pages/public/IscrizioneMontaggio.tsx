@@ -15,6 +15,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { ModuloChiuso } from "@/components/ModuloChiuso";
 import {
   GIORNI_MONTAGGIO, GiornoMontaggio,
   TARIFFA_MONTAGGIO, calcolaTotaleMontaggio, formatEuro,
@@ -28,6 +30,7 @@ type Recapito = { nome: string; telefono: string };
 export default function IscrizioneMontaggio() {
   const { toast } = useToast();
   const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -142,6 +145,10 @@ export default function IscrizioneMontaggio() {
       setSubmitting(false);
     }
   };
+
+  if (!settingsLoading && siteSettings?.iscrizione_montaggio_enabled === "false") {
+    return <ModuloChiuso titolo="Iscrizioni chiuse" descrizione="Le iscrizioni al montaggio campeggio sono attualmente chiuse." />;
+  }
 
   if (submitted) {
     return (

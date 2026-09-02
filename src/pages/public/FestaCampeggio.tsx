@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Minus, Plus, Mail, Facebook, PartyPopper, CalendarDays, Clock, CloudRain, UtensilsCrossed, Cake, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { ModuloChiuso } from "@/components/ModuloChiuso";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { calcolaContributoFesta, COSTO_FESTA_ADULTO, COSTO_FESTA_RAGAZZO, COSTO_FESTA_STAFF, type AllergiaRiga } from "@/hooks/useFestaCampeggio";
@@ -37,6 +39,7 @@ function Stepper({ label, hint, value, onChange }: { label: string; hint: string
 export default function FestaCampeggio() {
   const { toast } = useToast();
   const logoUrl = useCustomLogo();
+  const { data: siteSettings, isLoading: settingsLoading } = useSiteSettings();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -125,6 +128,10 @@ export default function FestaCampeggio() {
       setSubmitting(false);
     }
   };
+
+  if (!settingsLoading && siteSettings?.festa_campeggio_enabled === "false") {
+    return <ModuloChiuso titolo="Adesioni chiuse" descrizione="Le adesioni alla Festa Campeggio sono attualmente chiuse." />;
+  }
 
   if (submitted) {
     return (
