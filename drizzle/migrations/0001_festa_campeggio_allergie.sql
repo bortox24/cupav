@@ -1,0 +1,3 @@
+ALTER TABLE public.festa_campeggio
+  ADD COLUMN IF NOT EXISTS ha_allergie BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS allergie JSONB;

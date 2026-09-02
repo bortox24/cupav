@@ -8,6 +8,13 @@
       "when": 1788280494276,
       "tag": "0000_create_festa_campeggio",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788329423149,
+      "tag": "0001_festa_campeggio_allergie",
+      "breakpoints": true
     }
   ]
 }
