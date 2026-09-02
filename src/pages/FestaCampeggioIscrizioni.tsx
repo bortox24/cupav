@@ -218,14 +218,22 @@ export default function FestaCampeggioIscrizioni() {
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         ) : (
           <Tabs defaultValue="tutte">
-            <TabsList className="rounded-2xl bg-muted/50 p-1 mb-4">
+            <TabsList className="rounded-2xl bg-muted/50 p-1 mb-4 flex-wrap h-auto">
               <TabsTrigger value="tutte" className="rounded-xl">Tutte ({items.length})</TabsTrigger>
+              <TabsTrigger value="da-arrivare" className="rounded-xl">
+                Da arrivare ({items.filter(i => !i.arrivato).reduce((s, i) => s + i.num_adulti + i.num_ragazzi + i.num_staff, 0)})
+              </TabsTrigger>
               <TabsTrigger value="arrivati" className="rounded-xl">Arrivati ({items.filter(i => i.arrivato).length})</TabsTrigger>
               <TabsTrigger value="pagati" className="rounded-xl">Pagati ({items.filter(i => i.pagato).length})</TabsTrigger>
             </TabsList>
 
-            {['tutte', 'arrivati', 'pagati'].map(tab => {
-              const list = tab === 'tutte' ? filtered : tab === 'arrivati' ? filtered.filter(i => i.arrivato) : filtered.filter(i => i.pagato);
+            {['tutte', 'da-arrivare', 'arrivati', 'pagati'].map(tab => {
+              const list = tab === 'tutte'
+                ? filtered
+                : tab === 'da-arrivare' ? filtered.filter(i => !i.arrivato)
+                : tab === 'arrivati' ? filtered.filter(i => i.arrivato)
+                : filtered.filter(i => i.pagato);
+
               return (
                 <TabsContent key={tab} value={tab}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
