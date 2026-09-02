@@ -57,6 +57,12 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   const totPagati = sorted.filter(i => i.pagato).length;
   const totArrivati = sorted.filter(i => i.arrivato).length;
   const persArrivate = sorted.filter(i => i.arrivato).reduce((s, i) => s + totalPersone(i), 0);
+  const allergieAgg = new Map<string, number>();
+  sorted.forEach(i => parseAllergie(i.allergie).forEach(r => {
+    const key = r.nome.trim();
+    allergieAgg.set(key, (allergieAgg.get(key) || 0) + r.quantita);
+  }));
+  const totAllergici = [...allergieAgg.values()].reduce((s, v) => s + v, 0);
 
   const logo = await loadLogo();
 
