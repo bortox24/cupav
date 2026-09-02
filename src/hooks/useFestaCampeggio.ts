@@ -31,6 +31,19 @@ export interface FestaCampeggio {
   pagato_at: string | null;
   firma_nome_cognome: string;
   firma_data: string;
+  ha_allergie: boolean;
+  allergie: AllergiaRiga[] | null;
+}
+
+export function parseAllergie(value: unknown): AllergiaRiga[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((r: any) => ({ nome: String(r?.nome ?? '').trim(), quantita: Number(r?.quantita ?? 0) }))
+    .filter(r => r.nome && r.quantita > 0);
+}
+
+export function totalePersoneAllergiche(value: unknown): number {
+  return parseAllergie(value).reduce((s, r) => s + r.quantita, 0);
 }
 
 export function calcolaContributoFesta(numAdulti: number, numRagazzi: number, numStaff: number) {
