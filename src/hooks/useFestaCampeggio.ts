@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -52,6 +52,7 @@ export function calcolaContributoFesta(numAdulti: number, numRagazzi: number, nu
 
 export function useFestaCampeggio() {
   const queryClient = useQueryClient();
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
   useEffect(() => {
     const channel = supabase
@@ -60,11 +61,13 @@ export function useFestaCampeggio() {
         queryClient.invalidateQueries({ queryKey: ['festa-campeggio'] });
         queryClient.invalidateQueries({ queryKey: ['festa-campeggio-count'] });
       })
-      .subscribe();
+      .subscribe((status) => {
+        setRealtimeConnected(status === 'SUBSCRIBED');
+      });
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['festa-campeggio'],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -79,7 +82,10 @@ export function useFestaCampeggio() {
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
+
+  return { ...query, realtimeConnected };
 }
+
 
 export function useCreateFestaCampeggio() {
   const queryClient = useQueryClient();
@@ -107,9 +113,21 @@ export function useUpdateFestaCampeggio() {
       const { error } = await (supabase as any).from('festa_campeggio').update(updates).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['festa-campeggio'] }),
+    onMutate: async ({ id, updates }) => {
+      const previous = queryClient.getQueryData<FestaCampeggio[]>(['festa-campeggio']);
+      if (previous) {
+        queryClient.setQueryData<FestaCampeggio[]>(['festa-campeggio'],
+          previous.map(i => (i.id === id ? { ...i, ...updates } : i)));
+      }
+      return { previous };
+    },
+    onError: (_e, _vars, ctx: any) => {
+      if (ctx?.previous) queryClient.setQueryData(['festa-campeggio'], ctx.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['festa-campeggio'] }),
   });
 }
+
 
 export function useDeleteFestaCampeggio() {
   const queryClient = useQueryClient();

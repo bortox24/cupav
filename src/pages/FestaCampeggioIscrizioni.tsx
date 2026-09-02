@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X } from "lucide-react";
+import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X, Radio, ScanLine } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, type AllergiaRiga, calcolaContributoFesta, parseAllergie, totalePersoneAllergiche } from "@/hooks/useFestaCampeggio";
 import { exportFestaCampeggioPdf } from "@/lib/exportFestaCampeggioPdf";
+import { CheckInFestaDialog } from "@/components/CheckInFestaDialog";
 
 function StatoBadge({ item }: { item: FestaCampeggio }) {
   if (item.pagato) return <Badge className="bg-green-500 hover:bg-green-600 text-white">Pagato</Badge>;
@@ -23,7 +24,7 @@ function StatoBadge({ item }: { item: FestaCampeggio }) {
 export default function FestaCampeggioIscrizioni() {
   const { profile } = useAuth();
   const fullName = profile?.full_name || 'Sistema';
-  const { data: items = [], isLoading } = useFestaCampeggio();
+  const { data: items = [], isLoading, realtimeConnected } = useFestaCampeggio();
   const update = useUpdateFestaCampeggio();
   const remove = useDeleteFestaCampeggio();
 
@@ -31,6 +32,8 @@ export default function FestaCampeggioIscrizioni() {
   const [editItem, setEditItem] = useState<FestaCampeggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FestaCampeggio | null>(null);
   const [invioOpen, setInvioOpen] = useState(false);
+  const [checkInOpen, setCheckInOpen] = useState(false);
+
 
   const invioRecipients: GenericRecipient[] = useMemo(() => items
     .filter(i => i.email)
@@ -141,6 +144,9 @@ export default function FestaCampeggioIscrizioni() {
               <p className="text-sm text-muted-foreground">Gestione adesioni e contributi</p>
             </div>
           </div>
+          <Badge variant="outline" className={realtimeConnected ? "border-green-500 text-green-600 gap-1 w-fit" : "border-muted text-muted-foreground gap-1 w-fit"}>
+            <Radio className="h-3 w-3" /> {realtimeConnected ? "In tempo reale" : "Connessione..."}
+          </Badge>
         </div>
         {/* KPI */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -197,7 +203,11 @@ export default function FestaCampeggioIscrizioni() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca per nome o email..." className="pl-9 rounded-xl" />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setCheckInOpen(true)} className="gap-2 rounded-xl">
+              <ScanLine className="h-4 w-4" /> Modalità Check-in
+            </Button>
+
             <Button onClick={exportPdf} variant="outline" className="gap-2 rounded-xl">
               <FileDown className="h-4 w-4" /> Scarica PDF
             </Button>
@@ -218,14 +228,22 @@ export default function FestaCampeggioIscrizioni() {
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         ) : (
           <Tabs defaultValue="tutte">
-            <TabsList className="rounded-2xl bg-muted/50 p-1 mb-4">
+            <TabsList className="rounded-2xl bg-muted/50 p-1 mb-4 flex-wrap h-auto">
               <TabsTrigger value="tutte" className="rounded-xl">Tutte ({items.length})</TabsTrigger>
+              <TabsTrigger value="da-arrivare" className="rounded-xl">
+                Da arrivare ({items.filter(i => !i.arrivato).reduce((s, i) => s + i.num_adulti + i.num_ragazzi + i.num_staff, 0)})
+              </TabsTrigger>
               <TabsTrigger value="arrivati" className="rounded-xl">Arrivati ({items.filter(i => i.arrivato).length})</TabsTrigger>
               <TabsTrigger value="pagati" className="rounded-xl">Pagati ({items.filter(i => i.pagato).length})</TabsTrigger>
             </TabsList>
 
-            {['tutte', 'arrivati', 'pagati'].map(tab => {
-              const list = tab === 'tutte' ? filtered : tab === 'arrivati' ? filtered.filter(i => i.arrivato) : filtered.filter(i => i.pagato);
+            {['tutte', 'da-arrivare', 'arrivati', 'pagati'].map(tab => {
+              const list = tab === 'tutte'
+                ? filtered
+                : tab === 'da-arrivare' ? filtered.filter(i => !i.arrivato)
+                : tab === 'arrivati' ? filtered.filter(i => i.arrivato)
+                : filtered.filter(i => i.pagato);
+
               return (
                 <TabsContent key={tab} value={tab}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -384,6 +402,23 @@ export default function FestaCampeggioIscrizioni() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CheckInFestaDialog
+        open={checkInOpen}
+        onOpenChange={setCheckInOpen}
+        items={items}
+        realtimeConnected={realtimeConnected}
+        onCheckIn={async (item) => {
+          await update.mutateAsync({ id: item.id, updates: { arrivato: true, arrivato_da: fullName || 'Sistema', arrivato_at: new Date().toISOString() } });
+        }}
+        onUndoCheckIn={async (item) => {
+          await update.mutateAsync({ id: item.id, updates: { arrivato: false, arrivato_da: null, arrivato_at: null } });
+        }}
+        onMarkPagato={async (item) => {
+          await update.mutateAsync({ id: item.id, updates: { pagato: true, pagato_da: fullName || 'Sistema', pagato_at: new Date().toISOString() } });
+        }}
+      />
+
 
       <InvioMassivoGenericDialog
         open={invioOpen}

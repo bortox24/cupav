@@ -15,6 +15,13 @@
       "when": 1788329423149,
       "tag": "0001_festa_campeggio_allergie",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788336863932,
+      "tag": "0002_festa_campeggio_realtime",
+      "breakpoints": true
     }
   ]
 }
