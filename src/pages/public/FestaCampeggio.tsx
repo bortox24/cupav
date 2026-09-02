@@ -47,14 +47,41 @@ export default function FestaCampeggio() {
   const [numAdulti, setNumAdulti] = useState(0);
   const [numRagazzi, setNumRagazzi] = useState(0);
   const [numStaff, setNumStaff] = useState(0);
+  const [haAllergie, setHaAllergie] = useState<boolean | null>(null);
+  const [allergie, setAllergie] = useState<AllergiaRiga[]>([{ nome: "", quantita: 1 }]);
 
   const contributo = useMemo(
     () => calcolaContributoFesta(numAdulti, numRagazzi, numStaff),
     [numAdulti, numRagazzi, numStaff]
   );
 
-  const hasPartecipanti = numAdulti + numRagazzi + numStaff > 0;
-  const isValid = nome.trim() && cognome.trim() && email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && hasPartecipanti;
+  const totPartecipanti = numAdulti + numRagazzi + numStaff;
+
+  // Riduce automaticamente le quantità allergie se i partecipanti diminuiscono
+  useEffect(() => {
+    setAllergie(prev => {
+      let restanti = totPartecipanti;
+      let changed = false;
+      const next = prev.map(r => {
+        const q = Math.max(0, Math.min(r.quantita, restanti));
+        restanti -= q;
+        if (q !== r.quantita) changed = true;
+        return { ...r, quantita: q };
+      });
+      return changed ? next : prev;
+    });
+  }, [totPartecipanti]);
+
+  const totAllergici = allergie.reduce((s, r) => s + r.quantita, 0);
+  const allergieValide = allergie.filter(r => r.nome.trim() && r.quantita > 0);
+
+  const hasPartecipanti = totPartecipanti > 0;
+  const allergieOk = haAllergie === false || (haAllergie === true && allergieValide.length > 0);
+  const isValid = !!(nome.trim() && cognome.trim() && email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && hasPartecipanti && allergieOk);
+
+  const updateAllergia = (idx: number, patch: Partial<AllergiaRiga>) => {
+    setAllergie(prev => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  };
 
   const handleSubmit = async () => {
     if (!hasPartecipanti) {
