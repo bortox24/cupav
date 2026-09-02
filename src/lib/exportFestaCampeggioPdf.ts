@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { FestaCampeggio } from '@/hooks/useFestaCampeggio';
+import { parseAllergie, type FestaCampeggio } from '@/hooks/useFestaCampeggio';
 import { supabase } from '@/integrations/supabase/client';
 import fallbackLogo from '@/assets/logo-cupav.png';
 
