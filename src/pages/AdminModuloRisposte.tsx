@@ -61,6 +61,7 @@ export default function AdminModuloRisposte() {
   const [filterValue, setFilterValue] = useState<string>('all');
   const [editingResponse, setEditingResponse] = useState<FormResponse | null>(null);
   const [invioOpen, setInvioOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const isLoading = formLoading || responsesLoading;
 
