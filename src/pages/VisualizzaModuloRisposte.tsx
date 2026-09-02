@@ -11,6 +11,7 @@ import { useFormById, useFormResponses, FormField, FormResponse } from '@/hooks/
 import { InvioMassivoGenericDialog } from '@/components/InvioMassivoGenericDialog';
 import { buildFormRecipients, buildFormFilterGroups } from '@/lib/formRecipients';
 import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
+import { exportModuloRispostePdf } from '@/lib/exportModuloPdf';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import {
@@ -152,12 +153,12 @@ export default function VisualizzaModuloRisposte() {
               Comunicazioni
             </Button>
             <Button
-              onClick={handleExportCSV}
-              disabled={responses.length === 0}
+              onClick={handleExportPDF}
+              disabled={responses.length === 0 || exporting}
               className="w-full sm:w-auto"
             >
               <Download className="h-4 w-4 mr-2" />
-              Scarica CSV
+              Scarica PDF
             </Button>
           </div>
         </div>

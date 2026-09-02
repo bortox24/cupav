@@ -49,6 +49,7 @@ import { AIAnalysis } from '@/components/forms/AIAnalysis';
 import { InvioMassivoGenericDialog } from '@/components/InvioMassivoGenericDialog';
 import { buildFormRecipients, buildFormFilterGroups } from '@/lib/formRecipients';
 import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
+import { exportModuloRispostePdf } from '@/lib/exportModuloPdf';
 
 export default function AdminModuloRisposte() {
   const { id } = useParams<{ id: string }>();
@@ -248,12 +249,12 @@ export default function AdminModuloRisposte() {
               Comunicazioni
             </Button>
             <Button
-              onClick={handleExportCSV}
-              disabled={responses.length === 0}
+              onClick={handleExportPDF}
+              disabled={responses.length === 0 || exporting}
               className="w-full sm:w-auto"
             >
               <Download className="h-4 w-4 mr-2" />
-              Scarica CSV
+              Scarica PDF
             </Button>
           </div>
         </div>
