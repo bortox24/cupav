@@ -365,6 +365,12 @@ export default function FestaCampeggio() {
                 {numStaff > 0 && <p>Staff: {numStaff} × {COSTO_FESTA_STAFF}€ = {numStaff * COSTO_FESTA_STAFF}€</p>}
               </div>
             )}
+            {haAllergie && allergieValide.length > 0 && (
+              <div className="text-sm text-muted-foreground space-y-1 border-t pt-3">
+                <p className="font-medium text-foreground">Allergie / intolleranze</p>
+                {allergieValide.map((r, i) => <p key={i}>{r.nome}: {r.quantita} {r.quantita === 1 ? 'persona' : 'persone'}</p>)}
+              </div>
+            )}
             <div className="pt-2">
               <p className="text-sm font-medium text-foreground">Firma digitale</p>
               <p className="text-sm text-muted-foreground">
