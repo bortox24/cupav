@@ -343,7 +343,7 @@ export default function FestaCampeggio() {
         <Card className="rounded-2xl border-fuchsia-300 bg-fuchsia-50/40 dark:bg-fuchsia-950/20">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <span className="bg-fuchsia-100 text-fuchsia-600 rounded-full w-7 h-7 flex items-center justify-center text-sm">3</span>
+              <span className="bg-fuchsia-100 text-fuchsia-600 rounded-full w-7 h-7 flex items-center justify-center text-sm">4</span>
               Riepilogo
             </CardTitle>
           </CardHeader>
