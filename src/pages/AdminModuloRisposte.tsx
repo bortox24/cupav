@@ -49,6 +49,7 @@ import { AIAnalysis } from '@/components/forms/AIAnalysis';
 import { InvioMassivoGenericDialog } from '@/components/InvioMassivoGenericDialog';
 import { buildFormRecipients, buildFormFilterGroups } from '@/lib/formRecipients';
 import { EditResponseDialog } from '@/components/forms/EditResponseDialog';
+import { exportModuloRispostePdf } from '@/lib/exportModuloPdf';
 
 export default function AdminModuloRisposte() {
   const { id } = useParams<{ id: string }>();
@@ -60,6 +61,7 @@ export default function AdminModuloRisposte() {
   const [filterValue, setFilterValue] = useState<string>('all');
   const [editingResponse, setEditingResponse] = useState<FormResponse | null>(null);
   const [invioOpen, setInvioOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const isLoading = formLoading || responsesLoading;
 
@@ -186,38 +188,16 @@ export default function AdminModuloRisposte() {
     [schema, responses],
   );
 
-  const handleExportCSV = () => {
+  const handleExportPDF = async () => {
     if (!form || responses.length === 0) return;
-
-    const headers = ['Data Risposta', ...schema.map(f => f.label)];
-    
-    const rows = responses.map(response => {
-      const data = response.data as Record<string, unknown>;
-      const createdAt = format(new Date(response.created_at), 'dd/MM/yyyy HH:mm', { locale: it });
-      
-      const values = schema.map(field => {
-        const value = data[field.name];
-        const strValue = String(value ?? '').replace(/"/g, '""');
-        return `"${strValue}"`;
-      });
-      
-      return [`"${createdAt}"`, ...values].join(',');
-    });
-
-    const csv = [headers.map(h => `"${h}"`).join(','), ...rows].join('\n');
-    
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${form.slug}-risposte-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    setExporting(true);
+    try {
+      await exportModuloRispostePdf(form.name, form.slug, schema, responses);
+    } finally {
+      setExporting(false);
+    }
   };
+
 
   return (
     <MainLayout title={`Risposte: ${form.name}`}>
@@ -248,12 +228,12 @@ export default function AdminModuloRisposte() {
               Comunicazioni
             </Button>
             <Button
-              onClick={handleExportCSV}
-              disabled={responses.length === 0}
+              onClick={handleExportPDF}
+              disabled={responses.length === 0 || exporting}
               className="w-full sm:w-auto"
             >
               <Download className="h-4 w-4 mr-2" />
-              Scarica CSV
+              Scarica PDF
             </Button>
           </div>
         </div>
