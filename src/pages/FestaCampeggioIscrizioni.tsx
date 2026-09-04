@@ -316,7 +316,12 @@ export default function FestaCampeggioIscrizioni() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-border/50">
+                            <Clock className="h-3 w-3" />
+                            <span>Iscritto il {new Date(item.created_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
                         </CardContent>
+
                       </Card>
                     ))}
                     {list.length === 0 && (
