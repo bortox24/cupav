@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X, Radio, ScanLine } from "lucide-react";
+import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X, Radio, ScanLine, ArrowUpDown, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, type AllergiaRiga, calcolaContributoFesta, parseAllergie, totalePersoneAllergiche } from "@/hooks/useFestaCampeggio";
 import { exportFestaCampeggioPdf } from "@/lib/exportFestaCampeggioPdf";
@@ -29,10 +29,12 @@ export default function FestaCampeggioIscrizioni() {
   const remove = useDeleteFestaCampeggio();
 
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<'recente' | 'alfabetico'>('recente');
   const [editItem, setEditItem] = useState<FestaCampeggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FestaCampeggio | null>(null);
   const [invioOpen, setInvioOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
+
 
 
   const invioRecipients: GenericRecipient[] = useMemo(() => items
@@ -199,11 +201,25 @@ export default function FestaCampeggioIscrizioni() {
 
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca per nome o email..." className="pl-9 rounded-xl" />
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca per nome o email..." className="pl-9 rounded-xl" />
+            </div>
+            <div className="relative w-full sm:w-56">
+              <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as 'recente' | 'alfabetico')}
+                className="h-10 w-full rounded-xl border border-input bg-background px-3 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="recente">Più recente</option>
+                <option value="alfabetico">Alfabetico</option>
+              </select>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
+
             <Button onClick={() => setCheckInOpen(true)} className="gap-2 rounded-xl">
               <ScanLine className="h-4 w-4" /> Modalità Check-in
             </Button>
@@ -244,10 +260,18 @@ export default function FestaCampeggioIscrizioni() {
                 : tab === 'arrivati' ? filtered.filter(i => i.arrivato)
                 : filtered.filter(i => i.pagato);
 
+              const sortedList = [...list].sort((a, b) => {
+                if (sortBy === 'alfabetico') {
+                  return `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`);
+                }
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+              });
+
               return (
                 <TabsContent key={tab} value={tab}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {list.map(item => (
+                    {sortedList.map(item => (
+
                       <Card key={item.id} className="rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                         <CardHeader className="pb-2">
                           <div className="flex items-start justify-between gap-2">
@@ -292,7 +316,12 @@ export default function FestaCampeggioIscrizioni() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-border/50">
+                            <Clock className="h-3 w-3" />
+                            <span>Iscritto il {new Date(item.created_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
                         </CardContent>
+
                       </Card>
                     ))}
                     {list.length === 0 && (
