@@ -260,10 +260,18 @@ export default function FestaCampeggioIscrizioni() {
                 : tab === 'arrivati' ? filtered.filter(i => i.arrivato)
                 : filtered.filter(i => i.pagato);
 
+              const sortedList = [...list].sort((a, b) => {
+                if (sortBy === 'alfabetico') {
+                  return `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`);
+                }
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+              });
+
               return (
                 <TabsContent key={tab} value={tab}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {list.map(item => (
+                    {sortedList.map(item => (
+
                       <Card key={item.id} className="rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                         <CardHeader className="pb-2">
                           <div className="flex items-start justify-between gap-2">
