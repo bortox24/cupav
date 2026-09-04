@@ -29,10 +29,12 @@ export default function FestaCampeggioIscrizioni() {
   const remove = useDeleteFestaCampeggio();
 
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<'recente' | 'alfabetico'>('recente');
   const [editItem, setEditItem] = useState<FestaCampeggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FestaCampeggio | null>(null);
   const [invioOpen, setInvioOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
+
 
 
   const invioRecipients: GenericRecipient[] = useMemo(() => items
