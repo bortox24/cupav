@@ -24,9 +24,12 @@ export function Header({ title }: HeaderProps) {
               className="h-20 md:h-24 w-auto object-contain"
             />
           </Link>
-          <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight text-center">
-            {title}
-          </h1>
+          {title !== 'Home' && (
+            <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight text-center">
+              {title}
+            </h1>
+          )}
+
         </div>
       </div>
     </header>
