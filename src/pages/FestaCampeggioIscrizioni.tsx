@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X, Radio, ScanLine, ArrowUpDown, Clock } from "lucide-react";
+import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X, Radio, ScanLine, ArrowUpDown, Clock, ChevronsUpDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, type AllergiaRiga, calcolaContributoFesta, parseAllergie, totalePersoneAllergiche } from "@/hooks/useFestaCampeggio";
 import { exportFestaCampeggioPdf } from "@/lib/exportFestaCampeggioPdf";
@@ -200,30 +200,32 @@ export default function FestaCampeggioIscrizioni() {
 
 
         {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-between">
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca per nome o email..." className="pl-9 rounded-xl" />
+        <div className="space-y-3">
+          {/* Riga 1: ricerca e ordinamento */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative w-full sm:w-72 h-10">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca per nome o email..." className="pl-9 rounded-xl h-10" />
             </div>
-            <div className="relative w-full sm:w-56">
-              <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative w-full sm:w-56 h-10">
+              <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as 'recente' | 'alfabetico')}
-                className="h-10 w-full rounded-xl border border-input bg-background px-3 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="h-10 w-full rounded-xl border border-input bg-background px-3 pl-9 pr-8 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="recente">Più recente</option>
                 <option value="alfabetico">Alfabetico</option>
               </select>
+              <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
 
+          {/* Riga 2: azioni */}
+          <div className="flex flex-wrap gap-2">
             <Button onClick={() => setCheckInOpen(true)} className="gap-2 rounded-xl">
               <ScanLine className="h-4 w-4" /> Modalità Check-in
             </Button>
-
             <Button onClick={exportPdf} variant="outline" className="gap-2 rounded-xl">
               <FileDown className="h-4 w-4" /> Scarica PDF
             </Button>
@@ -239,6 +241,7 @@ export default function FestaCampeggioIscrizioni() {
             </Button>
           </div>
         </div>
+
 
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
