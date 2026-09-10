@@ -492,8 +492,12 @@ export default function FestaCampeggio() {
               {submitting ? "Invio in corso..." : "Conferma adesione"}
             </Button>
             {!isValid && (
-              <p className="text-xs text-center text-muted-foreground">
-                {!hasPartecipanti
+              <p className={`text-xs text-center ${emailCheck.stato === "duplicate" ? "text-destructive" : "text-muted-foreground"}`}>
+                {emailCheck.stato === "duplicate"
+                  ? `${descrizioneDuplicato(emailCheck)} Non è possibile iscriversi due volte.`
+                  : emailCheck.stato === "checking"
+                  ? "Verifica dell'email in corso..."
+                  : !hasPartecipanti
                   ? "Inserisci almeno un partecipante (adulti, ragazzi o staff)."
                   : haAllergie === null
                     ? "Indica se ci sono allergie o intolleranze."
