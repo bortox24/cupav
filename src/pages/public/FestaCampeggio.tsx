@@ -138,7 +138,7 @@ export default function FestaCampeggio() {
 
   const hasPartecipanti = totPartecipanti > 0;
   const allergieOk = haAllergie === false || (haAllergie === true && allergieValide.length > 0);
-  const isValid = !!(nome.trim() && cognome.trim() && email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && hasPartecipanti && allergieOk);
+  const isValid = !!(nome.trim() && cognome.trim() && emailValida && hasPartecipanti && allergieOk && emailCheck.stato !== "duplicate" && emailCheck.stato !== "checking");
 
   const updateAllergia = (idx: number, patch: Partial<AllergiaRiga>) => {
     setAllergie(prev => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
