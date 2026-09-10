@@ -7,7 +7,7 @@ Su 84 adesioni ci sono 83 email diverse: esiste **un solo doppione reale**, la s
 1. L'email nel punto 1 "Anagrafica" resta obbligatoria (già lo è) e viene mostrata come tale.
 2. Appena la persona finisce di scrivere l'email e sposta il dito/cursore altrove (o dopo circa un secondo di pausa), il modulo controlla da solo se quell'email ha già un'adesione.
 3. Durante il controllo compare una piccola scritta "Verifica in corso...".
-4. Se l'email è **già iscritta**: appare un avviso rosso sotto il campo — "Con questa email risulta già un'adesione a nome Nome Cognome del gg/mm. Non è possibile iscriversi due volte." — e il pulsante "Conferma adesione" resta bloccato, con la stessa spiegazione sotto.
+4. Se l'email è **già iscritta**: appare un avviso rosso sotto il campo, **senza nomi e cognomi**, che indica solo la composizione già registrata — es. "Con questa email risulta già un'adesione per 2 adulti e 1 ragazzo. Non è possibile iscriversi due volte." (le voci con valore zero non vengono elencate) — e il pulsante "Conferma adesione" resta bloccato, con la stessa spiegazione sotto.
 5. Se l'email è libera: nessun messaggio, si continua normalmente.
 6. Se cambia l'email, il controllo si rifà da zero.
 7. Controllo ripetuto anche al momento dell'invio, così due invii contemporanei non passano.
