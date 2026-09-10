@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Minus, Plus, Mail, Facebook, PartyPopper, CalendarDays, Clock, CloudRain, UtensilsCrossed, Cake, X, AlertTriangle } from "lucide-react";
+import { Minus, Plus, Mail, Facebook, PartyPopper, CalendarDays, Clock, CloudRain, UtensilsCrossed, Cake, X, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomLogo } from "@/hooks/useCustomLogo";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -53,6 +53,64 @@ export default function FestaCampeggio() {
   const [haAllergie, setHaAllergie] = useState<boolean | null>(null);
   const [allergie, setAllergie] = useState<AllergiaRiga[]>([{ nome: "", quantita: 1 }]);
 
+  type EmailCheck =
+    | { stato: "idle" | "checking" | "free" | "error" }
+    | { stato: "duplicate"; num_adulti: number; num_ragazzi: number; num_staff: number };
+  const [emailCheck, setEmailCheck] = useState<EmailCheck>({ stato: "idle" });
+
+  const emailValida = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  const verificaEmail = async (value: string): Promise<EmailCheck> => {
+    const clean = value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) return { stato: "idle" };
+    try {
+      const { data, error } = await supabase.functions.invoke("check-festa-duplicate", {
+        body: { email: clean },
+      });
+      if (error) throw error;
+      if (data?.exists) {
+        return {
+          stato: "duplicate",
+          num_adulti: data.num_adulti || 0,
+          num_ragazzi: data.num_ragazzi || 0,
+          num_staff: data.num_staff || 0,
+        };
+      }
+      return { stato: "free" };
+    } catch {
+      return { stato: "error" };
+    }
+  };
+
+  // Verifica automatica con debounce mentre si scrive l'email
+  useEffect(() => {
+    const clean = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+      setEmailCheck({ stato: "idle" });
+      return;
+    }
+    let annullato = false;
+    setEmailCheck({ stato: "checking" });
+    const t = setTimeout(async () => {
+      const res = await verificaEmail(clean);
+      if (!annullato) setEmailCheck(res);
+    }, 700);
+    return () => {
+      annullato = true;
+      clearTimeout(t);
+    };
+  }, [email]);
+
+  const descrizioneDuplicato = (c: Extract<EmailCheck, { stato: "duplicate" }>) => {
+    const parti: string[] = [];
+    if (c.num_adulti > 0) parti.push(`${c.num_adulti} ${c.num_adulti === 1 ? "adulto" : "adulti"}`);
+    if (c.num_ragazzi > 0) parti.push(`${c.num_ragazzi} ${c.num_ragazzi === 1 ? "ragazzo" : "ragazzi"}`);
+    if (c.num_staff > 0) parti.push(`${c.num_staff} ${c.num_staff === 1 ? "persona dello staff" : "persone dello staff"}`);
+    if (parti.length === 0) return "Con questa email risulta già un'adesione registrata.";
+    const elenco = parti.length > 1 ? `${parti.slice(0, -1).join(", ")} e ${parti[parti.length - 1]}` : parti[0];
+    return `Con questa email risulta già un'adesione per ${elenco}.`;
+  };
+
   const contributo = useMemo(
     () => calcolaContributoFesta(numAdulti, numRagazzi, numStaff),
     [numAdulti, numRagazzi, numStaff]
@@ -80,7 +138,7 @@ export default function FestaCampeggio() {
 
   const hasPartecipanti = totPartecipanti > 0;
   const allergieOk = haAllergie === false || (haAllergie === true && allergieValide.length > 0);
-  const isValid = !!(nome.trim() && cognome.trim() && email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && hasPartecipanti && allergieOk);
+  const isValid = !!(nome.trim() && cognome.trim() && emailValida && hasPartecipanti && allergieOk && emailCheck.stato !== "duplicate" && emailCheck.stato !== "checking");
 
   const updateAllergia = (idx: number, patch: Partial<AllergiaRiga>) => {
     setAllergie(prev => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
@@ -105,6 +163,14 @@ export default function FestaCampeggio() {
     }
     setSubmitting(true);
     try {
+      // Ricontrollo finale: evita doppioni da invii contemporanei
+      const check = await verificaEmail(email);
+      if (check.stato === "duplicate") {
+        setEmailCheck(check);
+        toast({ title: "Adesione già registrata", description: descrizioneDuplicato(check), variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
       const payload = {
         nome: capitalizeWords(nome.trim()),
         cognome: capitalizeWords(cognome.trim()),
@@ -241,7 +307,40 @@ export default function FestaCampeggio() {
               <div><Label>Cognome *</Label><Input value={cognome} onChange={e => setCognome(capitalizeWords(e.target.value))} placeholder="Rossi" /></div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>Email *</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@esempio.it" /></div>
+              <div>
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onBlur={async () => {
+                    if (!emailValida) return;
+                    setEmailCheck({ stato: "checking" });
+                    setEmailCheck(await verificaEmail(email));
+                  }}
+                  placeholder="email@esempio.it"
+                  aria-invalid={emailCheck.stato === "duplicate"}
+                  className={emailCheck.stato === "duplicate" ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                {emailCheck.stato === "checking" && (
+                  <p className="mt-1.5 text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Verifica in corso...
+                  </p>
+                )}
+                {emailCheck.stato === "free" && (
+                  <p className="mt-1.5 text-xs text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Email disponibile
+                  </p>
+                )}
+                {emailCheck.stato === "duplicate" && (
+                  <div className="mt-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 flex gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                    <p className="text-xs text-destructive">
+                      {descrizioneDuplicato(emailCheck)} Non è possibile iscriversi due volte.
+                    </p>
+                  </div>
+                )}
+              </div>
               <div><Label>Telefono</Label><Input type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="+39 3xx xxx xxxx" /></div>
             </div>
           </CardContent>
@@ -393,8 +492,12 @@ export default function FestaCampeggio() {
               {submitting ? "Invio in corso..." : "Conferma adesione"}
             </Button>
             {!isValid && (
-              <p className="text-xs text-center text-muted-foreground">
-                {!hasPartecipanti
+              <p className={`text-xs text-center ${emailCheck.stato === "duplicate" ? "text-destructive" : "text-muted-foreground"}`}>
+                {emailCheck.stato === "duplicate"
+                  ? `${descrizioneDuplicato(emailCheck)} Non è possibile iscriversi due volte.`
+                  : emailCheck.stato === "checking"
+                  ? "Verifica dell'email in corso..."
+                  : !hasPartecipanti
                   ? "Inserisci almeno un partecipante (adulti, ragazzi o staff)."
                   : haAllergie === null
                     ? "Indica se ci sono allergie o intolleranze."
