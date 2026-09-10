@@ -15,7 +15,7 @@ Su 84 adesioni ci sono 83 email diverse: esiste **un solo doppione reale**, la s
 Nota: chi vede l'avviso può contattare l'indirizzo email CUPAV già presente nel modulo se pensa che sia un errore.
 
 ## Dettagli tecnici
-- Nuova Edge Function `check-festa-duplicate` (service role, pubblica, `verify_jwt = false`): riceve `{ email }`, normalizza (trim + lowercase), interroga `festa_campeggio` e ritorna `{ exists, nome, cognome, created_at }`. Stesso schema di `check-iscrizione-duplicate`, incluso limite di lunghezza input e CORS.
+- Nuova Edge Function `check-festa-duplicate` (service role, pubblica, `verify_jwt = false`): riceve `{ email }`, normalizza (trim + lowercase), interroga `festa_campeggio` e ritorna solo dati aggregati `{ exists, num_adulti, num_ragazzi, num_staff }` — nessun nome, cognome o altro dato personale nella risposta. Stesso schema di `check-iscrizione-duplicate`, incluso limite di lunghezza input e CORS.
 - Motivo dell'Edge Function: la tabella non è leggibile in anonimo, quindi il controllo non può avvenire dal client.
 - In `src/pages/public/FestaCampeggio.tsx`: stato `emailCheck` (`idle | checking | free | duplicate`), debounce ~700 ms + trigger su `onBlur`, chiamata via `supabase.functions.invoke`, avviso inline sotto il campo email, `isValid` esteso con `emailCheck !== 'duplicate'`, e ricontrollo dentro `handleSubmit` prima dell'insert.
 - Nessun indice unico a livello database (romperebbe casi legittimi come due nuclei familiari che condividono un indirizzo email); il vincolo resta a livello di modulo.
