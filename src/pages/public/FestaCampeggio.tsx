@@ -53,6 +53,64 @@ export default function FestaCampeggio() {
   const [haAllergie, setHaAllergie] = useState<boolean | null>(null);
   const [allergie, setAllergie] = useState<AllergiaRiga[]>([{ nome: "", quantita: 1 }]);
 
+  type EmailCheck =
+    | { stato: "idle" | "checking" | "free" | "error" }
+    | { stato: "duplicate"; num_adulti: number; num_ragazzi: number; num_staff: number };
+  const [emailCheck, setEmailCheck] = useState<EmailCheck>({ stato: "idle" });
+
+  const emailValida = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  const verificaEmail = async (value: string): Promise<EmailCheck> => {
+    const clean = value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) return { stato: "idle" };
+    try {
+      const { data, error } = await supabase.functions.invoke("check-festa-duplicate", {
+        body: { email: clean },
+      });
+      if (error) throw error;
+      if (data?.exists) {
+        return {
+          stato: "duplicate",
+          num_adulti: data.num_adulti || 0,
+          num_ragazzi: data.num_ragazzi || 0,
+          num_staff: data.num_staff || 0,
+        };
+      }
+      return { stato: "free" };
+    } catch {
+      return { stato: "error" };
+    }
+  };
+
+  // Verifica automatica con debounce mentre si scrive l'email
+  useEffect(() => {
+    const clean = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+      setEmailCheck({ stato: "idle" });
+      return;
+    }
+    let annullato = false;
+    setEmailCheck({ stato: "checking" });
+    const t = setTimeout(async () => {
+      const res = await verificaEmail(clean);
+      if (!annullato) setEmailCheck(res);
+    }, 700);
+    return () => {
+      annullato = true;
+      clearTimeout(t);
+    };
+  }, [email]);
+
+  const descrizioneDuplicato = (c: Extract<EmailCheck, { stato: "duplicate" }>) => {
+    const parti: string[] = [];
+    if (c.num_adulti > 0) parti.push(`${c.num_adulti} ${c.num_adulti === 1 ? "adulto" : "adulti"}`);
+    if (c.num_ragazzi > 0) parti.push(`${c.num_ragazzi} ${c.num_ragazzi === 1 ? "ragazzo" : "ragazzi"}`);
+    if (c.num_staff > 0) parti.push(`${c.num_staff} ${c.num_staff === 1 ? "persona dello staff" : "persone dello staff"}`);
+    if (parti.length === 0) return "Con questa email risulta già un'adesione registrata.";
+    const elenco = parti.length > 1 ? `${parti.slice(0, -1).join(", ")} e ${parti[parti.length - 1]}` : parti[0];
+    return `Con questa email risulta già un'adesione per ${elenco}.`;
+  };
+
   const contributo = useMemo(
     () => calcolaContributoFesta(numAdulti, numRagazzi, numStaff),
     [numAdulti, numRagazzi, numStaff]
