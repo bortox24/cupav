@@ -307,7 +307,40 @@ export default function FestaCampeggio() {
               <div><Label>Cognome *</Label><Input value={cognome} onChange={e => setCognome(capitalizeWords(e.target.value))} placeholder="Rossi" /></div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>Email *</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@esempio.it" /></div>
+              <div>
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onBlur={async () => {
+                    if (!emailValida) return;
+                    setEmailCheck({ stato: "checking" });
+                    setEmailCheck(await verificaEmail(email));
+                  }}
+                  placeholder="email@esempio.it"
+                  aria-invalid={emailCheck.stato === "duplicate"}
+                  className={emailCheck.stato === "duplicate" ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                {emailCheck.stato === "checking" && (
+                  <p className="mt-1.5 text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Verifica in corso...
+                  </p>
+                )}
+                {emailCheck.stato === "free" && (
+                  <p className="mt-1.5 text-xs text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Email disponibile
+                  </p>
+                )}
+                {emailCheck.stato === "duplicate" && (
+                  <div className="mt-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 flex gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                    <p className="text-xs text-destructive">
+                      {descrizioneDuplicato(emailCheck)} Non è possibile iscriversi due volte.
+                    </p>
+                  </div>
+                )}
+              </div>
               <div><Label>Telefono</Label><Input type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="+39 3xx xxx xxxx" /></div>
             </div>
           </CardContent>
