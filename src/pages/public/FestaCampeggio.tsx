@@ -163,6 +163,14 @@ export default function FestaCampeggio() {
     }
     setSubmitting(true);
     try {
+      // Ricontrollo finale: evita doppioni da invii contemporanei
+      const check = await verificaEmail(email);
+      if (check.stato === "duplicate") {
+        setEmailCheck(check);
+        toast({ title: "Adesione già registrata", description: descrizioneDuplicato(check), variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
       const payload = {
         nome: capitalizeWords(nome.trim()),
         cognome: capitalizeWords(cognome.trim()),
