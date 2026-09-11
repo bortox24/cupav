@@ -84,6 +84,9 @@ function GestioneUtentiTab() {
   const toggleAdmin = useToggleAdmin();
   const toggleActive = useToggleActive();
   const deleteUser = useDeleteUser();
+  const [permessiUser, setPermessiUser] = useState<UserWithStatus | null>(null);
+  const { data: pagePermissions = [] } = useAllPagePermissions();
+  const { data: turnoPermissions = [] } = useAllTurnoPermissions();
 
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
