@@ -16,8 +16,12 @@ import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, ty
 import { exportFestaCampeggioPdf } from "@/lib/exportFestaCampeggioPdf";
 
 function StatoBadge({ item }: { item: FestaCampeggio }) {
-  if (item.pagato) return <Badge className="bg-green-500 hover:bg-green-600 text-white">Pagato</Badge>;
-  if (item.arrivato) return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Arrivato</Badge>;
+  const entrati = personeArrivate(item);
+  const tot = totalePersone(item);
+  const saldato = (item.importo_incassato ?? 0) >= item.contributo;
+  if (saldato && entrati >= tot) return <Badge className="bg-green-500 hover:bg-green-600 text-white">Pagato</Badge>;
+  if (entrati >= tot && tot > 0) return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Arrivato</Badge>;
+  if (entrati > 0) return <Badge className="bg-sky-500 hover:bg-sky-600 text-white">Parziale</Badge>;
   return <Badge variant="outline" className="text-muted-foreground">In attesa</Badge>;
 }
 
