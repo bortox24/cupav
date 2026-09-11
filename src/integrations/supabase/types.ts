@@ -229,6 +229,9 @@ export type Database = {
       festa_campeggio: {
         Row: {
           allergie: Json | null
+          arrivati_adulti: number
+          arrivati_ragazzi: number
+          arrivati_staff: number
           arrivato: boolean
           arrivato_at: string | null
           arrivato_da: string | null
@@ -240,6 +243,7 @@ export type Database = {
           firma_nome_cognome: string
           ha_allergie: boolean
           id: string
+          importo_incassato: number
           nome: string
           num_adulti: number
           num_ragazzi: number
@@ -252,6 +256,9 @@ export type Database = {
         }
         Insert: {
           allergie?: Json | null
+          arrivati_adulti?: number
+          arrivati_ragazzi?: number
+          arrivati_staff?: number
           arrivato?: boolean
           arrivato_at?: string | null
           arrivato_da?: string | null
@@ -263,6 +270,7 @@ export type Database = {
           firma_nome_cognome: string
           ha_allergie?: boolean
           id?: string
+          importo_incassato?: number
           nome: string
           num_adulti?: number
           num_ragazzi?: number
@@ -275,6 +283,9 @@ export type Database = {
         }
         Update: {
           allergie?: Json | null
+          arrivati_adulti?: number
+          arrivati_ragazzi?: number
+          arrivati_staff?: number
           arrivato?: boolean
           arrivato_at?: string | null
           arrivato_da?: string | null
@@ -286,6 +297,7 @@ export type Database = {
           firma_nome_cognome?: string
           ha_allergie?: boolean
           id?: string
+          importo_incassato?: number
           nome?: string
           num_adulti?: number
           num_ragazzi?: number

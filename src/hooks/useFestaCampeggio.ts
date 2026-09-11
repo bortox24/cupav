@@ -29,6 +29,10 @@ export interface FestaCampeggio {
   pagato: boolean;
   pagato_da: string | null;
   pagato_at: string | null;
+  arrivati_adulti: number;
+  arrivati_ragazzi: number;
+  arrivati_staff: number;
+  importo_incassato: number;
   firma_nome_cognome: string;
   firma_data: string;
   ha_allergie: boolean;
@@ -44,6 +48,18 @@ export function parseAllergie(value: unknown): AllergiaRiga[] {
 
 export function totalePersoneAllergiche(value: unknown): number {
   return parseAllergie(value).reduce((s, r) => s + r.quantita, 0);
+}
+
+export function totalePersone(i: FestaCampeggio) {
+  return i.num_adulti + i.num_ragazzi + i.num_staff;
+}
+
+export function personeArrivate(i: FestaCampeggio) {
+  return (i.arrivati_adulti ?? 0) + (i.arrivati_ragazzi ?? 0) + (i.arrivati_staff ?? 0);
+}
+
+export function residuoDaPagare(i: FestaCampeggio) {
+  return Math.max(0, i.contributo - (i.importo_incassato ?? 0));
 }
 
 export function calcolaContributoFesta(numAdulti: number, numRagazzi: number, numStaff: number) {

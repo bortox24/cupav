@@ -52,11 +52,12 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   const totStaff = sorted.reduce((s, i) => s + i.num_staff, 0);
   const totPers = totAdulti + totRagazzi + totStaff;
   const totContributo = sorted.reduce((s, i) => s + i.contributo, 0);
-  const totIncassato = sorted.filter(i => i.pagato).reduce((s, i) => s + i.contributo, 0);
+  const arrivatiDi = (i: FestaCampeggio) => (i.arrivati_adulti ?? 0) + (i.arrivati_ragazzi ?? 0) + (i.arrivati_staff ?? 0);
+  const totIncassato = sorted.reduce((s, i) => s + (i.importo_incassato ?? 0), 0);
   const totDaIncassare = totContributo - totIncassato;
-  const totPagati = sorted.filter(i => i.pagato).length;
-  const totArrivati = sorted.filter(i => i.arrivato).length;
-  const persArrivate = sorted.filter(i => i.arrivato).reduce((s, i) => s + totalPersone(i), 0);
+  const totPagati = sorted.filter(i => (i.importo_incassato ?? 0) >= i.contributo).length;
+  const totArrivati = sorted.filter(i => totalPersone(i) > 0 && arrivatiDi(i) >= totalPersone(i)).length;
+  const persArrivate = sorted.reduce((s, i) => s + arrivatiDi(i), 0);
   const allergieAgg = new Map<string, number>();
   sorted.forEach(i => parseAllergie(i.allergie).forEach(r => {
     const key = r.nome.trim();
@@ -183,8 +184,12 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
       totalPersone(i),
       parseAllergie(i.allergie).map(r => `${r.nome} x${r.quantita}`).join(', ') || '-',
       `${i.contributo}\u20AC`,
-      i.pagato ? `${i.contributo}\u20AC` : '0\u20AC',
-      i.pagato ? 'Pagato' : i.arrivato ? 'Arrivato' : 'Da arrivare',
+      `${i.importo_incassato ?? 0}\u20AC`,
+      (i.importo_incassato ?? 0) >= i.contributo
+        ? 'Pagato'
+        : arrivatiDi(i) >= totalPersone(i) && totalPersone(i) > 0
+          ? 'Arrivato'
+          : `Entrati ${arrivatiDi(i)}/${totalPersone(i)}`,
     ]),
     foot: [[
       { content: 'TOTALI', styles: { halign: 'left', fontStyle: 'bold' } },

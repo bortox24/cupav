@@ -25,6 +25,7 @@ import IscrizioneFamiglie from "./pages/public/IscrizioneFamiglie";
 import IscrizioneMontaggio from "./pages/public/IscrizioneMontaggio";
 import FestaCampeggio from "./pages/public/FestaCampeggio";
 import FestaCampeggioIscrizioni from "./pages/FestaCampeggioIscrizioni";
+import FestaCampeggioCheckIn from "./pages/FestaCampeggioCheckIn";
 import ModuloStaff from "./pages/public/ModuloStaff";
 import GiornataGenitori from "./pages/public/GiornataGenitori";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
@@ -235,6 +236,7 @@ function AppRoutes() {
       <Route path="/turno/montaggio-campeggio" element={<ProtectedRoute><TurnoMontaggioPage /></ProtectedRoute>} />
       <Route path="/anagrafica-montaggio-campeggio" element={<ProtectedRoute><AnagraficaMontaggioCampeggio /></ProtectedRoute>} />
       <Route path="/festa-campeggio-iscrizioni" element={<ProtectedRoute><FestaCampeggioIscrizioni /></ProtectedRoute>} />
+      <Route path="/festa-campeggio-checkin" element={<ProtectedRoute><FestaCampeggioCheckIn /></ProtectedRoute>} />
 
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
