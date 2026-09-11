@@ -25,6 +25,7 @@ import IscrizioneFamiglie from "./pages/public/IscrizioneFamiglie";
 import IscrizioneMontaggio from "./pages/public/IscrizioneMontaggio";
 import FestaCampeggio from "./pages/public/FestaCampeggio";
 import FestaCampeggioIscrizioni from "./pages/FestaCampeggioIscrizioni";
+import FestaCampeggioCheckIn from "./pages/FestaCampeggioCheckIn";
 import ModuloStaff from "./pages/public/ModuloStaff";
 import GiornataGenitori from "./pages/public/GiornataGenitori";
 import AnagraficaRagazzi from "./pages/AnagraficaRagazzi";
