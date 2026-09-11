@@ -321,30 +321,29 @@ function UserPermessiDialog({ utente, open, onOpenChange }: { utente: UserWithSt
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileKey className="h-4 w-4" />Permessi di {utente.full_name}
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0 space-y-1 text-left p-6 pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-left pr-6">
+            <FileKey className="h-4 w-4 shrink-0" />Permessi di {utente.full_name}
           </DialogTitle>
-          <DialogDescription>{utente.email}</DialogDescription>
+          <DialogDescription className="text-left">{utente.email}</DialogDescription>
         </DialogHeader>
 
         {utente.is_admin ? (
-          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm flex items-start gap-2">
+          <div className="m-6 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm flex items-start gap-2">
             <Shield className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
             <span>Questo utente è amministratore: ha già accesso completo a tutte le pagine e a tutti i turni.</span>
           </div>
         ) : isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : (
-          <div className="space-y-6">
-            {!utente.is_active && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-                Account disattivato: i permessi restano salvati ma non sono utilizzabili finché non lo riattivi.
-              </div>
-            )}
-
-            <div className="space-y-3">
+          <>
+            <div className="shrink-0 space-y-3 px-6 pt-4 pb-3 border-b bg-background">
+              {!utente.is_active && (
+                <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+                  Account disattivato: i permessi restano salvati ma non sono utilizzabili finché non lo riattivi.
+                </div>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h4 className="text-sm font-semibold">Pagine <span className="text-muted-foreground font-normal">({attivePages}/{displayPages.length} abilitate)</span></h4>
                 <div className="flex gap-2">
@@ -353,6 +352,9 @@ function UserPermessiDialog({ utente, open, onOpenChange }: { utente: UserWithSt
                 </div>
               </div>
               <Input placeholder="Cerca pagina..." value={search} onChange={(e) => setSearch(e.target.value)} className="h-10" />
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
               <div className="grid gap-1.5 sm:grid-cols-2">
                 {filteredPages.map(page => {
                   const active = hasAccess(page.path);
