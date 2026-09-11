@@ -340,21 +340,21 @@ export default function FestaCampeggioIscrizioni() {
                             const arrivatoCompleto = totP > 0 && entratiP >= totP;
                             const saldato = (item.importo_incassato ?? 0) >= item.contributo;
                             return (
-                              <div className="flex gap-2 pt-1">
-                                <Button size="sm" variant={arrivatoCompleto ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => toggleArrivato(item)}>
+                              <div className="grid grid-cols-2 gap-2 pt-1">
+                                <Button size="sm" variant={arrivatoCompleto ? "default" : "outline"} className="w-full min-w-0 rounded-xl justify-center text-center text-xs px-2 whitespace-normal leading-tight h-9" onClick={() => toggleArrivato(item)}>
                                   {arrivatoCompleto ? "Annulla arrivo" : entratiP > 0 ? "Segna tutti arrivati" : "Arrivato"}
                                 </Button>
-                                <Button size="sm" variant={saldato ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => togglePagato(item)}>
+                                <Button size="sm" variant={saldato ? "default" : "outline"} className="w-full min-w-0 rounded-xl justify-center text-center text-xs px-2 whitespace-normal leading-tight h-9" onClick={() => togglePagato(item)}>
                                   {saldato ? "Pagato" : "Segna pagato"}
                                 </Button>
                               </div>
                             );
                           })()}
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="ghost" className="flex-1 rounded-xl" onClick={() => setEditItem(item)}>
+                          <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                            <Button size="sm" variant="ghost" className="w-full rounded-xl justify-center h-9" onClick={() => setEditItem(item)}>
                               <Pencil className="h-4 w-4 mr-1" /> Modifica
                             </Button>
-                            <Button size="sm" variant="ghost" className="text-destructive rounded-xl" onClick={() => setConfirmDelete(item)}>
+                            <Button size="sm" variant="ghost" className="text-destructive rounded-xl h-9 w-9 p-0 justify-center" onClick={() => setConfirmDelete(item)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
