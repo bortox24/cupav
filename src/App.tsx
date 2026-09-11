@@ -236,6 +236,7 @@ function AppRoutes() {
       <Route path="/turno/montaggio-campeggio" element={<ProtectedRoute><TurnoMontaggioPage /></ProtectedRoute>} />
       <Route path="/anagrafica-montaggio-campeggio" element={<ProtectedRoute><AnagraficaMontaggioCampeggio /></ProtectedRoute>} />
       <Route path="/festa-campeggio-iscrizioni" element={<ProtectedRoute><FestaCampeggioIscrizioni /></ProtectedRoute>} />
+      <Route path="/festa-campeggio-checkin" element={<ProtectedRoute><FestaCampeggioCheckIn /></ProtectedRoute>} />
 
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
