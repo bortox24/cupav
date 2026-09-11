@@ -249,7 +249,12 @@ export default function FestaCampeggioCheckIn() {
                     className={`w-full text-left rounded-2xl border p-3 shadow-sm hover:shadow-md transition-shadow flex items-center gap-3 ${statoClasse}`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold truncate">{item.cognome} {item.nome}</p>
+                      <p className="font-semibold truncate flex items-center gap-1">
+                        <span className="truncate">{item.cognome} {item.nome}</span>
+                        {completo && saldato && (
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                        )}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {item.num_adulti} ad. · {item.num_ragazzi} rag. · {item.num_staff} staff · {item.contributo}€
                       </p>
