@@ -110,7 +110,9 @@ export default function FestaCampeggioIscrizioni() {
   };
 
   const toggleArrivato = async (item: FestaCampeggio) => {
-    const updates: Partial<FestaCampeggio> = item.arrivato
+    const tot = totalePersone(item);
+    const arrivatoCompleto = tot > 0 && personeArrivate(item) >= tot;
+    const updates: Partial<FestaCampeggio> = arrivatoCompleto
       ? { arrivato: false, arrivato_da: null, arrivato_at: null, arrivati_adulti: 0, arrivati_ragazzi: 0, arrivati_staff: 0 }
       : {
           arrivato: true, arrivato_da: fullName || 'Sistema', arrivato_at: new Date().toISOString(),
@@ -123,7 +125,8 @@ export default function FestaCampeggioIscrizioni() {
   };
 
   const togglePagato = async (item: FestaCampeggio) => {
-    const updates: Partial<FestaCampeggio> = item.pagato
+    const saldato = (item.importo_incassato ?? 0) >= item.contributo;
+    const updates: Partial<FestaCampeggio> = saldato
       ? { pagato: false, pagato_da: null, pagato_at: null, importo_incassato: 0 }
       : { pagato: true, pagato_da: fullName || 'Sistema', pagato_at: new Date().toISOString(), importo_incassato: item.contributo };
     await update.mutateAsync({ id: item.id, updates }, {
@@ -136,7 +139,12 @@ export default function FestaCampeggioIscrizioni() {
     if (!editItem) return;
     const contributo = calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff);
     const righeValide = parseAllergie(editItem.allergie);
-    await update.mutateAsync({ id: editItem.id, updates: { ...editItem, contributo, allergie: righeValide.length ? righeValide : null, ha_allergie: righeValide.length > 0 } }, {
+    // Se la modifica aggiunge partecipanti o alza il contributo, lo stato torna "parziale"
+    const tot = editItem.num_adulti + editItem.num_ragazzi + editItem.num_staff;
+    const entrati = (editItem.arrivati_adulti ?? 0) + (editItem.arrivati_ragazzi ?? 0) + (editItem.arrivati_staff ?? 0);
+    const arrivato = tot > 0 && entrati >= tot;
+    const pagato = (editItem.importo_incassato ?? 0) >= contributo && contributo > 0;
+    await update.mutateAsync({ id: editItem.id, updates: { ...editItem, contributo, arrivato, pagato, allergie: righeValide.length ? righeValide : null, ha_allergie: righeValide.length > 0 } }, {
       onSuccess: () => { toast({ title: "Iscrizione aggiornata" }); setEditItem(null); },
       onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
     });
@@ -326,14 +334,22 @@ export default function FestaCampeggioIscrizioni() {
                           )}
                           {item.telefono && <p className="text-muted-foreground text-xs">Tel: {item.telefono}</p>}
                           {item.email && <p className="text-muted-foreground text-xs truncate">{item.email}</p>}
-                          <div className="flex gap-2 pt-1">
-                            <Button size="sm" variant={item.arrivato ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => toggleArrivato(item)}>
-                              {item.arrivato ? "Annulla arrivo" : "Arrivato"}
-                            </Button>
-                            <Button size="sm" variant={item.pagato ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => togglePagato(item)}>
-                              {item.pagato ? "Pagato" : "Segna pagato"}
-                            </Button>
-                          </div>
+                          {(() => {
+                            const totP = totalePersone(item);
+                            const entratiP = personeArrivate(item);
+                            const arrivatoCompleto = totP > 0 && entratiP >= totP;
+                            const saldato = (item.importo_incassato ?? 0) >= item.contributo;
+                            return (
+                              <div className="flex gap-2 pt-1">
+                                <Button size="sm" variant={arrivatoCompleto ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => toggleArrivato(item)}>
+                                  {arrivatoCompleto ? "Annulla arrivo" : entratiP > 0 ? "Segna tutti arrivati" : "Arrivato"}
+                                </Button>
+                                <Button size="sm" variant={saldato ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => togglePagato(item)}>
+                                  {saldato ? "Pagato" : "Segna pagato"}
+                                </Button>
+                              </div>
+                            );
+                          })()}
                           <div className="flex gap-2">
                             <Button size="sm" variant="ghost" className="flex-1 rounded-xl" onClick={() => setEditItem(item)}>
                               <Pencil className="h-4 w-4 mr-1" /> Modifica
