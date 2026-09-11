@@ -299,6 +299,10 @@ export default function FestaCampeggioIscrizioni() {
                             <span className="text-muted-foreground">Contributo</span>
                             <span className="font-bold text-fuchsia-600">{item.contributo}€</span>
                           </div>
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="outline" className="text-[11px]">Entrati {personeArrivate(item)}/{totalePersone(item)}</Badge>
+                            <Badge variant="outline" className="text-[11px]">Incassato {item.importo_incassato ?? 0}/{item.contributo}€</Badge>
+                          </div>
                           {parseAllergie(item.allergie).length > 0 && (
                             <div className="flex flex-wrap gap-1">
                               {parseAllergie(item.allergie).map((r, idx) => (
