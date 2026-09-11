@@ -419,7 +419,7 @@ function UserPermessiDialog({ utente, open, onOpenChange }: { utente: UserWithSt
               </Button>
             </div>
             </div>
-          </>ced_placeholder
+          </>
         )}
       </DialogContent>
     </Dialog>
