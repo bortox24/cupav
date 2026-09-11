@@ -233,12 +233,20 @@ export default function FestaCampeggioCheckIn() {
                 const entrate = personeArrivate(item);
                 const tot = totalePersone(item);
                 const allergie = parseAllergie(item.allergie);
+                const incassato = item.importo_incassato ?? 0;
+                const saldato = incassato >= item.contributo;
+                const completo = tot > 0 && entrate >= tot;
+                const statoClasse = completo && saldato
+                  ? "border-green-500/70 bg-green-500/10"
+                  : (entrate > 0 || incassato > 0)
+                    ? "border-amber-500/70 bg-amber-500/10"
+                    : "border-red-500/60 bg-red-500/10";
                 return (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => openItem(item)}
-                    className="w-full text-left rounded-2xl border bg-background/90 p-3 shadow-sm hover:shadow-md transition-shadow flex items-center gap-3"
+                    className={`w-full text-left rounded-2xl border p-3 shadow-sm hover:shadow-md transition-shadow flex items-center gap-3 ${statoClasse}`}
                   >
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold truncate">{item.cognome} {item.nome}</p>
