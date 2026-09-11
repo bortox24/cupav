@@ -242,9 +242,8 @@ function GestioneUtentiTab() {
   );
 }
 
-// ==================== TAB 2: Permessi Pagine ====================
-function PermessiPagineTab() {
-  const { data: users = [] } = useUsers();
+// ==================== Permessi di un singolo utente ====================
+function UserPermessiDialog({ utente, open, onOpenChange }: { utente: UserWithStatus; open: boolean; onOpenChange: (v: boolean) => void }) {
   const { data: allPermissions = [], isLoading: permissionsLoading } = useAllPagePermissions();
   const { data: allTurnoPermissions = [], isLoading: turnoPermissionsLoading } = useAllTurnoPermissions();
   const setPermission = useSetPagePermission();
@@ -253,169 +252,170 @@ function PermessiPagineTab() {
   const removeTurnoPermission = useRemoveTurnoPermission();
   const resetTurnoPermissions = useResetUserTurnoPermissions();
   const [pendingChanges, setPendingChanges] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
 
   const isLoading = permissionsLoading || turnoPermissionsLoading;
+  const displayPages = availablePages.filter(p => !p.path.includes(':id'));
+  const filteredPages = displayPages.filter(p => p.title.toLowerCase().includes(search.trim().toLowerCase()));
 
-  const getEffectiveAccess = (userId: string, pagePath: string): boolean => {
-    const customPermission = allPermissions.find(p => p.user_id === userId && p.page_path === pagePath);
-    return customPermission?.can_access ?? false;
-  };
+  const hasAccess = (pagePath: string) =>
+    allPermissions.find(p => p.user_id === utente.id && p.page_path === pagePath)?.can_access ?? false;
+  const hasTurno = (turnoValue: string) =>
+    allTurnoPermissions.some(p => p.user_id === utente.id && p.turno === turnoValue);
 
-  const hasCustomPermission = (userId: string, pagePath: string): boolean => {
-    return allPermissions.some(p => p.user_id === userId && p.page_path === pagePath);
-  };
+  const attivePages = displayPages.filter(p => hasAccess(p.path)).length;
 
-  const hasTurnoPermission = (userId: string, turnoValue: string): boolean => {
-    return allTurnoPermissions.some(p => p.user_id === userId && p.turno === turnoValue);
-  };
-
-  const handlePermissionChange = async (userId: string, pagePath: string, canAccess: boolean) => {
-    const key = `${userId}-${pagePath}`;
+  const handlePermissionChange = async (pagePath: string, canAccess: boolean, silent = false) => {
+    const key = `page-${pagePath}`;
     setPendingChanges(prev => new Set(prev).add(key));
     const relatedPages: string[] = [];
     if (pagePath === '/visualizza-moduli') relatedPages.push('/visualizza-moduli/:id/risposte');
     try {
-      await setPermission.mutateAsync({ userId, pagePath, canAccess });
+      await setPermission.mutateAsync({ userId: utente.id, pagePath, canAccess });
       for (const relatedPath of relatedPages) {
-        await setPermission.mutateAsync({ userId, pagePath: relatedPath, canAccess });
+        await setPermission.mutateAsync({ userId: utente.id, pagePath: relatedPath, canAccess });
       }
-      toast({ title: 'Permesso aggiornato', description: `Accesso ${canAccess ? 'abilitato' : 'disabilitato'}` });
+      if (!silent) toast({ title: 'Permesso aggiornato', description: `Accesso ${canAccess ? 'abilitato' : 'disabilitato'}` });
     } finally {
       setPendingChanges(prev => { const next = new Set(prev); next.delete(key); return next; });
     }
   };
 
-  const handleTurnoPermissionChange = async (userId: string, turnoValue: string, turnoLabel: string, userName: string) => {
-    const key = `${userId}-turno-${turnoValue}`;
+  const handleTurnoChange = async (turnoValue: string, turnoLabel: string) => {
+    const key = `turno-${turnoValue}`;
     setPendingChanges(prev => new Set(prev).add(key));
     try {
-      const hasPermission = hasTurnoPermission(userId, turnoValue);
-      if (hasPermission) {
-        await removeTurnoPermission.mutateAsync({ userId, turno: turnoValue });
-        toast({ title: 'Permesso turno rimosso', description: `${turnoLabel} rimosso da ${userName}` });
+      if (hasTurno(turnoValue)) {
+        await removeTurnoPermission.mutateAsync({ userId: utente.id, turno: turnoValue });
+        toast({ title: 'Permesso turno rimosso', description: `${turnoLabel} rimosso da ${utente.full_name}` });
       } else {
-        await setTurnoPermission.mutateAsync({ userId, turno: turnoValue });
-        toast({ title: 'Permesso turno assegnato', description: `${turnoLabel} assegnato a ${userName}` });
+        await setTurnoPermission.mutateAsync({ userId: utente.id, turno: turnoValue });
+        toast({ title: 'Permesso turno assegnato', description: `${turnoLabel} assegnato a ${utente.full_name}` });
       }
     } finally {
       setPendingChanges(prev => { const next = new Set(prev); next.delete(key); return next; });
     }
   };
 
-  const handleResetUser = async (userId: string) => {
-    await Promise.all([resetPermissions.mutateAsync(userId), resetTurnoPermissions.mutateAsync(userId)]);
+  const handleSelectAll = async (value: boolean) => {
+    for (const page of filteredPages) {
+      if (hasAccess(page.path) !== value) {
+        await handlePermissionChange(page.path, value, true);
+      }
+    }
+    toast({ title: value ? 'Pagine abilitate' : 'Pagine disabilitate', description: `${filteredPages.length} pagine aggiornate` });
   };
 
-  const nonAdminUsers = users.filter((u: UserWithStatus) => !u.is_admin);
-  const displayPages = availablePages.filter(p => !p.path.includes(':id'));
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
-
-  if (nonAdminUsers.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Nessun utente non-admin presente.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleReset = async () => {
+    await Promise.all([resetPermissions.mutateAsync(utente.id), resetTurnoPermissions.mutateAsync(utente.id)]);
+    toast({ title: 'Permessi azzerati', description: `Tutti i permessi di ${utente.full_name} sono stati rimossi` });
+  };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Configurazione Accesso Pagine</CardTitle>
-          <CardDescription>Abilita o disabilita l'accesso alle pagine per ogni utente. Gli amministratori hanno sempre accesso completo.</CardDescription>
-        </CardHeader>
-      </Card>
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[200px]">Permesso</TableHead>
-                  {nonAdminUsers.map((u: UserWithStatus) => (
-                    <TableHead key={u.id} className={`text-center min-w-[120px] ${!u.is_active ? 'opacity-50' : ''}`}>
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-xs font-medium">{u.full_name}</span>
-                        <span className="text-[10px] text-muted-foreground truncate max-w-[110px]">{u.email}</span>
-                        {!u.is_active && <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive">Disattivato</Badge>}
-                      </div>
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow className="bg-muted/30 hover:bg-muted/30">
-                  <TableCell colSpan={nonAdminUsers.length + 1} className="py-2">
-                    <span className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Pagine</span>
-                  </TableCell>
-                </TableRow>
-                {displayPages.map(page => (
-                  <TableRow key={page.path}>
-                    <TableCell className="font-medium text-sm">{page.title}</TableCell>
-                    {nonAdminUsers.map((u: UserWithStatus) => {
-                      const hasAccess = getEffectiveAccess(u.id, page.path);
-                      const isCustom = hasCustomPermission(u.id, page.path);
-                      const isPending = pendingChanges.has(`${u.id}-${page.path}`);
-                      return (
-                        <TableCell key={u.id} className={`text-center ${!u.is_active ? 'opacity-50' : ''}`}>
-                          <div className={`flex justify-center p-2 rounded ${isCustom && hasAccess ? 'bg-primary/10' : ''}`}>
-                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                              <Checkbox checked={hasAccess} onCheckedChange={(checked) => handlePermissionChange(u.id, page.path, !!checked)} disabled={!u.is_active} />
-                            )}
-                          </div>
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-                <TableRow className="bg-muted/30 hover:bg-muted/30">
-                  <TableCell colSpan={nonAdminUsers.length + 1} className="py-2">
-                    <span className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Turni</span>
-                  </TableCell>
-                </TableRow>
-                {TURNI.map(turno => (
-                  <TableRow key={turno.value}>
-                    <TableCell className="font-medium text-sm">{turno.label}</TableCell>
-                    {nonAdminUsers.map((u: UserWithStatus) => {
-                      const hasPermission = hasTurnoPermission(u.id, turno.value);
-                      const isPending = pendingChanges.has(`${u.id}-turno-${turno.value}`);
-                      return (
-                        <TableCell key={u.id} className={`text-center ${!u.is_active ? 'opacity-50' : ''}`}>
-                          <div className={`flex justify-center p-2 rounded ${hasPermission ? 'bg-primary/10' : ''}`}>
-                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                              <Checkbox checked={hasPermission} onCheckedChange={() => handleTurnoPermissionChange(u.id, turno.value, turno.label, u.full_name)} disabled={!u.is_active} />
-                            )}
-                          </div>
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-                <TableRow className="bg-muted/20 hover:bg-muted/20">
-                  <TableCell className="font-semibold text-xs uppercase tracking-wide text-muted-foreground py-2">Azioni</TableCell>
-                  {nonAdminUsers.map((u: UserWithStatus) => (
-                    <TableCell key={u.id} className="text-center">
-                      <Button variant="ghost" size="sm" onClick={() => handleResetUser(u.id)} disabled={resetPermissions.isPending || resetTurnoPermissions.isPending} className="gap-1">
-                        <RotateCcw className="h-3 w-3" />Reset
-                      </Button>
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableBody>
-            </Table>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileKey className="h-4 w-4" />Permessi di {utente.full_name}
+          </DialogTitle>
+          <DialogDescription>{utente.email}</DialogDescription>
+        </DialogHeader>
+
+        {utente.is_admin ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm flex items-start gap-2">
+            <Shield className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+            <span>Questo utente è amministratore: ha già accesso completo a tutte le pagine e a tutti i turni.</span>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        ) : isLoading ? (
+          <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        ) : (
+          <div className="space-y-6">
+            {!utente.is_active && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+                Account disattivato: i permessi restano salvati ma non sono utilizzabili finché non lo riattivi.
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold">Pagine <span className="text-muted-foreground font-normal">({attivePages}/{displayPages.length} abilitate)</span></h4>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleSelectAll(true)}>Seleziona tutto</Button>
+                  <Button variant="outline" size="sm" onClick={() => handleSelectAll(false)}>Nessuna</Button>
+                </div>
+              </div>
+              <Input placeholder="Cerca pagina..." value={search} onChange={(e) => setSearch(e.target.value)} className="h-10" />
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {filteredPages.map(page => {
+                  const active = hasAccess(page.path);
+                  const isPending = pendingChanges.has(`page-${page.path}`);
+                  return (
+                    <label
+                      key={page.path}
+                      className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${active ? 'border-primary/40 bg-primary/5' : 'hover:bg-muted/50'} ${!utente.is_active ? 'opacity-60' : ''}`}
+                    >
+                      {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                        <Checkbox
+                          className="h-5 w-5"
+                          checked={active}
+                          onCheckedChange={(checked) => handlePermissionChange(page.path, !!checked)}
+                          disabled={!utente.is_active}
+                        />
+                      )}
+                      <span className="text-sm">{page.title}</span>
+                    </label>
+                  );
+                })}
+                {filteredPages.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-2">Nessuna pagina trovata.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">Turni</h4>
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {TURNI.map(turno => {
+                  const active = hasTurno(turno.value);
+                  const isPending = pendingChanges.has(`turno-${turno.value}`);
+                  return (
+                    <label
+                      key={turno.value}
+                      className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${active ? 'border-primary/40 bg-primary/5' : 'hover:bg-muted/50'} ${!utente.is_active ? 'opacity-60' : ''}`}
+                    >
+                      {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                        <Checkbox
+                          className="h-5 w-5"
+                          checked={active}
+                          onCheckedChange={() => handleTurnoChange(turno.value, turno.label)}
+                          disabled={!utente.is_active}
+                        />
+                      )}
+                      <span className="text-sm">{turno.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-destructive hover:text-destructive"
+                onClick={handleReset}
+                disabled={resetPermissions.isPending || resetTurnoPermissions.isPending}
+              >
+                <RotateCcw className="h-3 w-3" />Azzera tutti i permessi
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
+
 
 // ==================== TAB 3: Account Staff ====================
 function AccountStaffTab() {
