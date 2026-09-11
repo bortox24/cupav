@@ -380,7 +380,6 @@ function UserPermessiDialog({ utente, open, onOpenChange }: { utente: UserWithSt
                   <p className="text-sm text-muted-foreground py-2">Nessuna pagina trovata.</p>
                 )}
               </div>
-            </div>
 
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Turni</h4>
