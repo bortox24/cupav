@@ -29,6 +29,10 @@ export interface FestaCampeggio {
   pagato: boolean;
   pagato_da: string | null;
   pagato_at: string | null;
+  arrivati_adulti: number;
+  arrivati_ragazzi: number;
+  arrivati_staff: number;
+  importo_incassato: number;
   firma_nome_cognome: string;
   firma_data: string;
   ha_allergie: boolean;
