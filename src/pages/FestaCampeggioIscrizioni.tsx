@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { InvioMassivoGenericDialog, GenericRecipient } from "@/components/InvioMassivoGenericDialog";
 import { useAuth } from "@/lib/auth";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -11,9 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X, Radio, ScanLine, ArrowUpDown, Clock, ChevronsUpDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, type AllergiaRiga, calcolaContributoFesta, parseAllergie, totalePersoneAllergiche } from "@/hooks/useFestaCampeggio";
+import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, type AllergiaRiga, calcolaContributoFesta, parseAllergie, totalePersoneAllergiche, totalePersone, personeArrivate } from "@/hooks/useFestaCampeggio";
 import { exportFestaCampeggioPdf } from "@/lib/exportFestaCampeggioPdf";
-import { CheckInFestaDialog } from "@/components/CheckInFestaDialog";
 
 function StatoBadge({ item }: { item: FestaCampeggio }) {
   if (item.pagato) return <Badge className="bg-green-500 hover:bg-green-600 text-white">Pagato</Badge>;
@@ -22,6 +22,7 @@ function StatoBadge({ item }: { item: FestaCampeggio }) {
 }
 
 export default function FestaCampeggioIscrizioni() {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const fullName = profile?.full_name || 'Sistema';
   const { data: items = [], isLoading, realtimeConnected } = useFestaCampeggio();
@@ -33,7 +34,6 @@ export default function FestaCampeggioIscrizioni() {
   const [editItem, setEditItem] = useState<FestaCampeggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FestaCampeggio | null>(null);
   const [invioOpen, setInvioOpen] = useState(false);
-  const [checkInOpen, setCheckInOpen] = useState(false);
 
 
 
@@ -74,13 +74,13 @@ export default function FestaCampeggioIscrizioni() {
     return {
       iscrizioni: items.length,
       persone: totAdulti + totRagazzi + totStaff,
-      personeArrivate: items.filter(i => i.arrivato).reduce((s, i) => s + i.num_adulti + i.num_ragazzi + i.num_staff, 0),
+      personeArrivate: items.reduce((s, i) => s + personeArrivate(i), 0),
       adulti: totAdulti,
       ragazzi: totRagazzi,
       staff: totStaff,
       totale: items.reduce((s, i) => s + i.contributo, 0),
-      incassato: items.filter(i => i.pagato).reduce((s, i) => s + i.contributo, 0),
-      daIncassare: items.filter(i => !i.pagato).reduce((s, i) => s + i.contributo, 0),
+      incassato: items.reduce((s, i) => s + (i.importo_incassato ?? 0), 0),
+      daIncassare: items.reduce((s, i) => s + Math.max(0, i.contributo - (i.importo_incassato ?? 0)), 0),
       allergici: items.reduce((s, i) => s + totalePersoneAllergiche(i.allergie), 0),
     };
   }, [items]);
@@ -95,8 +95,11 @@ export default function FestaCampeggioIscrizioni() {
 
   const toggleArrivato = async (item: FestaCampeggio) => {
     const updates: Partial<FestaCampeggio> = item.arrivato
-      ? { arrivato: false, arrivato_da: null, arrivato_at: null }
-      : { arrivato: true, arrivato_da: fullName || 'Sistema', arrivato_at: new Date().toISOString() };
+      ? { arrivato: false, arrivato_da: null, arrivato_at: null, arrivati_adulti: 0, arrivati_ragazzi: 0, arrivati_staff: 0 }
+      : {
+          arrivato: true, arrivato_da: fullName || 'Sistema', arrivato_at: new Date().toISOString(),
+          arrivati_adulti: item.num_adulti, arrivati_ragazzi: item.num_ragazzi, arrivati_staff: item.num_staff,
+        };
     await update.mutateAsync({ id: item.id, updates }, {
       onSuccess: () => toast({ title: "Stato aggiornato" }),
       onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
@@ -105,8 +108,8 @@ export default function FestaCampeggioIscrizioni() {
 
   const togglePagato = async (item: FestaCampeggio) => {
     const updates: Partial<FestaCampeggio> = item.pagato
-      ? { pagato: false, pagato_da: null, pagato_at: null }
-      : { pagato: true, pagato_da: fullName || 'Sistema', pagato_at: new Date().toISOString() };
+      ? { pagato: false, pagato_da: null, pagato_at: null, importo_incassato: 0 }
+      : { pagato: true, pagato_da: fullName || 'Sistema', pagato_at: new Date().toISOString(), importo_incassato: item.contributo };
     await update.mutateAsync({ id: item.id, updates }, {
       onSuccess: () => toast({ title: "Stato pagamento aggiornato" }),
       onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
@@ -223,7 +226,7 @@ export default function FestaCampeggioIscrizioni() {
 
           {/* Riga 2: azioni */}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setCheckInOpen(true)} className="gap-2 rounded-xl">
+            <Button onClick={() => navigate('/festa-campeggio-checkin')} className="gap-2 rounded-xl">
               <ScanLine className="h-4 w-4" /> Modalità Check-in
             </Button>
             <Button onClick={exportPdf} variant="outline" className="gap-2 rounded-xl">
@@ -250,18 +253,18 @@ export default function FestaCampeggioIscrizioni() {
             <TabsList className="rounded-2xl bg-muted/50 p-1 mb-4 flex-wrap h-auto">
               <TabsTrigger value="tutte" className="rounded-xl">Tutte ({items.length})</TabsTrigger>
               <TabsTrigger value="da-arrivare" className="rounded-xl">
-                Da arrivare ({items.filter(i => !i.arrivato).reduce((s, i) => s + i.num_adulti + i.num_ragazzi + i.num_staff, 0)})
+                Da arrivare ({items.reduce((s, i) => s + Math.max(0, totalePersone(i) - personeArrivate(i)), 0)})
               </TabsTrigger>
-              <TabsTrigger value="arrivati" className="rounded-xl">Arrivati ({items.filter(i => i.arrivato).length})</TabsTrigger>
-              <TabsTrigger value="pagati" className="rounded-xl">Pagati ({items.filter(i => i.pagato).length})</TabsTrigger>
+              <TabsTrigger value="arrivati" className="rounded-xl">Arrivati ({items.filter(i => personeArrivate(i) >= totalePersone(i) && totalePersone(i) > 0).length})</TabsTrigger>
+              <TabsTrigger value="pagati" className="rounded-xl">Pagati ({items.filter(i => (i.importo_incassato ?? 0) >= i.contributo).length})</TabsTrigger>
             </TabsList>
 
             {['tutte', 'da-arrivare', 'arrivati', 'pagati'].map(tab => {
               const list = tab === 'tutte'
                 ? filtered
-                : tab === 'da-arrivare' ? filtered.filter(i => !i.arrivato)
-                : tab === 'arrivati' ? filtered.filter(i => i.arrivato)
-                : filtered.filter(i => i.pagato);
+                : tab === 'da-arrivare' ? filtered.filter(i => personeArrivate(i) < totalePersone(i))
+                : tab === 'arrivati' ? filtered.filter(i => totalePersone(i) > 0 && personeArrivate(i) >= totalePersone(i))
+                : filtered.filter(i => (i.importo_incassato ?? 0) >= i.contributo);
 
               const sortedList = [...list].sort((a, b) => {
                 if (sortBy === 'alfabetico') {
