@@ -272,7 +272,15 @@ export default function FestaCampeggioCheckIn() {
                         ))}
                       </div>
                     </div>
-                    <span className="shrink-0 rounded-xl bg-fuchsia-500 text-white px-3 py-2 text-sm font-semibold">Check-in</span>
+                    {completo && saldato ? (
+                      <span className="shrink-0 rounded-xl border border-green-500 text-green-600 px-3 py-2 text-xs font-semibold text-center leading-tight">
+                        Check-in<br />effettuato
+                      </span>
+                    ) : (
+                      <span className="shrink-0 rounded-xl bg-fuchsia-500 text-white px-3 py-2 text-sm font-semibold">
+                        {entrate > 0 ? "Completa" : "Check-in"}
+                      </span>
+                    )}
                   </button>
                 );
               })}
