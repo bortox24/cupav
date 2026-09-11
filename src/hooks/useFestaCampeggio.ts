@@ -50,6 +50,18 @@ export function totalePersoneAllergiche(value: unknown): number {
   return parseAllergie(value).reduce((s, r) => s + r.quantita, 0);
 }
 
+export function totalePersone(i: FestaCampeggio) {
+  return i.num_adulti + i.num_ragazzi + i.num_staff;
+}
+
+export function personeArrivate(i: FestaCampeggio) {
+  return (i.arrivati_adulti ?? 0) + (i.arrivati_ragazzi ?? 0) + (i.arrivati_staff ?? 0);
+}
+
+export function residuoDaPagare(i: FestaCampeggio) {
+  return Math.max(0, i.contributo - (i.importo_incassato ?? 0));
+}
+
 export function calcolaContributoFesta(numAdulti: number, numRagazzi: number, numStaff: number) {
   return numAdulti * COSTO_FESTA_ADULTO + numRagazzi * COSTO_FESTA_RAGAZZO + numStaff * COSTO_FESTA_STAFF;
 }
