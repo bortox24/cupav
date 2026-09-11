@@ -585,14 +585,10 @@ export default function AdminPermessi() {
   return (
     <MainLayout title="Gestione Utenti & Permessi">
       <Tabs defaultValue="utenti" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="utenti" className="gap-1.5">
             <Users className="h-4 w-4 hidden sm:block" />
             Gestione Utenti
-          </TabsTrigger>
-          <TabsTrigger value="permessi" className="gap-1.5">
-            <FileKey className="h-4 w-4 hidden sm:block" />
-            Permessi Pagine
           </TabsTrigger>
           <TabsTrigger value="staff" className="gap-1.5">
             <UserPlus className="h-4 w-4 hidden sm:block" />
@@ -600,7 +596,6 @@ export default function AdminPermessi() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="utenti"><GestioneUtentiTab /></TabsContent>
-        <TabsContent value="permessi"><PermessiPagineTab /></TabsContent>
         <TabsContent value="staff"><AccountStaffTab /></TabsContent>
       </Tabs>
     </MainLayout>
