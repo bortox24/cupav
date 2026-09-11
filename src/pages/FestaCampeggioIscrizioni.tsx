@@ -21,8 +21,20 @@ function StatoBadge({ item }: { item: FestaCampeggio }) {
   const saldato = (item.importo_incassato ?? 0) >= item.contributo;
   if (saldato && entrati >= tot) return <Badge className="bg-green-500 hover:bg-green-600 text-white">Pagato</Badge>;
   if (entrati >= tot && tot > 0) return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Arrivato</Badge>;
-  if (entrati > 0) return <Badge className="bg-sky-500 hover:bg-sky-600 text-white">Parziale</Badge>;
+  if (entrati > 0 || (item.importo_incassato ?? 0) > 0) return <Badge className="bg-sky-500 hover:bg-sky-600 text-white">Parziale</Badge>;
   return <Badge variant="outline" className="text-muted-foreground">In attesa</Badge>;
+}
+
+// Verde: tutti entrati e saldato. Giallo: entrato o pagato solo in parte. Rosso: non ancora arrivato.
+function cardStatoClass(item: FestaCampeggio): string {
+  const entrati = personeArrivate(item);
+  const tot = totalePersone(item);
+  const incassato = item.importo_incassato ?? 0;
+  const saldato = incassato >= item.contributo;
+  const arrivatoCompleto = tot > 0 && entrati >= tot;
+  if (arrivatoCompleto && saldato) return "border-green-500/70 bg-green-500/10";
+  if (entrati > 0 || incassato > 0) return "border-amber-500/70 bg-amber-500/10";
+  return "border-red-500/70 bg-red-500/10";
 }
 
 export default function FestaCampeggioIscrizioni() {
@@ -282,7 +294,7 @@ export default function FestaCampeggioIscrizioni() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {sortedList.map(item => (
 
-                      <Card key={item.id} className="rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                      <Card key={item.id} className={`rounded-2xl shadow-sm hover:shadow-md transition-shadow border-2 ${cardStatoClass(item)}`}>
                         <CardHeader className="pb-2">
                           <div className="flex items-start justify-between gap-2">
                             <CardTitle className="text-base leading-tight">{item.cognome} {item.nome}</CardTitle>
