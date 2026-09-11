@@ -150,97 +150,102 @@ function GestioneUtentiTab() {
       <Card>
         <CardHeader>
           <CardTitle>Lista Utenti</CardTitle>
-          <CardDescription>{users?.length || 0} utenti totali</CardDescription>
+          <CardDescription>{users?.length || 0} utenti totali · clicca su un utente per gestire i suoi permessi</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead className="hidden sm:table-cell">Email</TableHead>
-                    <TableHead className="text-center">Admin</TableHead>
-                    <TableHead className="text-center">Attivo</TableHead>
-                    <TableHead className="text-center">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users?.map((u) => {
-                    const isCurrentUser = u.id === user?.id;
-                    return (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex flex-col">
-                            <span>{u.full_name}</span>
-                            {isCurrentUser && <Badge variant="outline" className="w-fit mt-1">Tu</Badge>}
-                            <span className="text-xs text-muted-foreground sm:hidden mt-1">{u.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground hidden sm:table-cell">{u.email}</TableCell>
-                        <TableCell className="text-center">
-                          {isCurrentUser ? (
-                            <div className="flex items-center justify-center">
-                              <Badge className="bg-destructive/10 text-destructive border-destructive/20" variant="outline">
-                                <Shield className="h-3 w-3 mr-1" />Admin
-                              </Badge>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center gap-2">
-                              <Switch checked={u.is_admin} onCheckedChange={() => toggleAdmin.mutateAsync({ userId: u.id, isAdmin: !u.is_admin })} disabled={toggleAdmin.isPending} />
-                              {u.is_admin && <Shield className="h-4 w-4 text-destructive" />}
-                            </div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {users?.map((u) => {
+                const isCurrentUser = u.id === user?.id;
+                const numPagine = pagePermissions.filter(p => p.user_id === u.id && p.can_access && !p.page_path.includes(':id')).length;
+                const numTurni = turnoPermissions.filter(p => p.user_id === u.id).length;
+                return (
+                  <div key={u.id} className="rounded-2xl border p-4 space-y-3 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold truncate">{u.full_name}</span>
+                          {isCurrentUser && <Badge variant="outline">Tu</Badge>}
+                          {u.is_admin && (
+                            <Badge className="bg-destructive/10 text-destructive border-destructive/20" variant="outline">
+                              <Shield className="h-3 w-3 mr-1" />Admin
+                            </Badge>
                           )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {isCurrentUser ? (
-                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                              <Info className="h-4 w-4 flex-shrink-0" /><span className="hidden sm:inline">Non modificabile</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center gap-2">
-                              <Switch checked={u.is_active} onCheckedChange={() => toggleActive.mutateAsync({ userId: u.id, isActive: !u.is_active })} disabled={toggleActive.isPending} />
-                              {u.is_active ? <Check className="h-4 w-4 text-primary" /> : <X className="h-4 w-4 text-destructive" />}
-                            </div>
+                          {!u.is_active && (
+                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Disattivato</Badge>
                           )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {!isCurrentUser && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Eliminare questo utente?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Stai per eliminare l'account di <strong>{u.full_name}</strong> ({u.email}). Questa azione è irreversibile.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Annulla</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deleteUser.mutateAsync(u.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    {deleteUser.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}Elimina
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">{u.email}</p>
+                        {!u.is_admin && (
+                          <p className="text-xs text-muted-foreground mt-1">{numPagine} pagine · {numTurni} turni</p>
+                        )}
+                      </div>
+                      {!isCurrentUser && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Eliminare questo utente?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Stai per eliminare l'account di <strong>{u.full_name}</strong> ({u.email}). Questa azione è irreversibile.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annulla</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteUser.mutateAsync(u.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                {deleteUser.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}Elimina
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4">
+                      {isCurrentUser ? (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Info className="h-4 w-4 shrink-0" />Il tuo account non è modificabile
+                        </div>
+                      ) : (
+                        <>
+                          <label className="flex items-center gap-2 text-sm">
+                            <Switch checked={u.is_admin} onCheckedChange={() => toggleAdmin.mutateAsync({ userId: u.id, isAdmin: !u.is_admin })} disabled={toggleAdmin.isPending} />
+                            <span className="text-muted-foreground">Admin</span>
+                          </label>
+                          <label className="flex items-center gap-2 text-sm">
+                            <Switch checked={u.is_active} onCheckedChange={() => toggleActive.mutateAsync({ userId: u.id, isActive: !u.is_active })} disabled={toggleActive.isPending} />
+                            <span className="text-muted-foreground">{u.is_active ? 'Attivo' : 'Disattivato'}</span>
+                          </label>
+                        </>
+                      )}
+                    </div>
+
+                    <Button variant="outline" className="w-full gap-2" onClick={() => setPermessiUser(u)}>
+                      <FileKey className="h-4 w-4" />Gestisci permessi
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {permessiUser && (
+        <UserPermessiDialog
+          utente={permessiUser}
+          open={!!permessiUser}
+          onOpenChange={(v) => { if (!v) setPermessiUser(null); }}
+        />
+      )}
     </div>
   );
 }
+
 
 // ==================== Permessi di un singolo utente ====================
 function UserPermessiDialog({ utente, open, onOpenChange }: { utente: UserWithStatus; open: boolean; onOpenChange: (v: boolean) => void }) {
