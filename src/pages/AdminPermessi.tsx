@@ -418,7 +418,8 @@ function UserPermessiDialog({ utente, open, onOpenChange }: { utente: UserWithSt
                 <RotateCcw className="h-3 w-3" />Azzera tutti i permessi
               </Button>
             </div>
-          </div>
+            </div>
+          </>ced_placeholder
         )}
       </DialogContent>
     </Dialog>
