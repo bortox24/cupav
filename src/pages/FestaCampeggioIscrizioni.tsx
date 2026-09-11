@@ -334,14 +334,22 @@ export default function FestaCampeggioIscrizioni() {
                           )}
                           {item.telefono && <p className="text-muted-foreground text-xs">Tel: {item.telefono}</p>}
                           {item.email && <p className="text-muted-foreground text-xs truncate">{item.email}</p>}
-                          <div className="flex gap-2 pt-1">
-                            <Button size="sm" variant={item.arrivato ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => toggleArrivato(item)}>
-                              {item.arrivato ? "Annulla arrivo" : "Arrivato"}
-                            </Button>
-                            <Button size="sm" variant={item.pagato ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => togglePagato(item)}>
-                              {item.pagato ? "Pagato" : "Segna pagato"}
-                            </Button>
-                          </div>
+                          {(() => {
+                            const totP = totalePersone(item);
+                            const entratiP = personeArrivate(item);
+                            const arrivatoCompleto = totP > 0 && entratiP >= totP;
+                            const saldato = (item.importo_incassato ?? 0) >= item.contributo;
+                            return (
+                              <div className="flex gap-2 pt-1">
+                                <Button size="sm" variant={arrivatoCompleto ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => toggleArrivato(item)}>
+                                  {arrivatoCompleto ? "Annulla arrivo" : entratiP > 0 ? "Segna tutti arrivati" : "Arrivato"}
+                                </Button>
+                                <Button size="sm" variant={saldato ? "default" : "outline"} className="flex-1 rounded-xl" onClick={() => togglePagato(item)}>
+                                  {saldato ? "Pagato" : "Segna pagato"}
+                                </Button>
+                              </div>
+                            );
+                          })()}
                           <div className="flex gap-2">
                             <Button size="sm" variant="ghost" className="flex-1 rounded-xl" onClick={() => setEditItem(item)}>
                               <Pencil className="h-4 w-4 mr-1" /> Modifica
