@@ -269,9 +269,19 @@ export default function FestaCampeggioIscrizioni() {
             <Button onClick={() => navigate('/festa-campeggio-checkin')} className="gap-2 rounded-xl">
               <ScanLine className="h-4 w-4" /> Modalità Check-in
             </Button>
-            <Button onClick={exportPdf} variant="outline" className="gap-2 rounded-xl">
-              <FileDown className="h-4 w-4" /> Scarica PDF
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2 rounded-xl">
+                  <FileDown className="h-4 w-4" /> Scarica PDF
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="rounded-xl">
+                <DropdownMenuItem onClick={() => exportPdf('tutte')}>Tutte le adesioni</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportPdf('adulti')}>Solo con almeno un adulto</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportPdf('ragazzi')}>Solo con almeno un ragazzo</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportPdf('staff')}>Solo con almeno uno staff</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               className="gap-2 rounded-xl"
