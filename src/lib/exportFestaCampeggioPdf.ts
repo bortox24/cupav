@@ -40,7 +40,10 @@ async function loadLogo(): Promise<string | null> {
   return null;
 }
 
-export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
+export async function exportFestaCampeggioPdf(
+  items: FestaCampeggio[],
+  options?: { label?: string; fileSuffix?: string },
+) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 40;
@@ -82,7 +85,7 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
-  doc.text(`Report generato il ${oggi}`, margin, 65);
+  doc.text(`Report generato il ${oggi}${options?.label ? ` — ${options.label}` : ''}`, margin, 65);
 
   // KPI Cards
   let y = 120;
