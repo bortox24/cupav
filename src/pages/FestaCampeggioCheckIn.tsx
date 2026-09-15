@@ -20,7 +20,7 @@ import {
 } from "@/hooks/useFestaCampeggio";
 import {
   Search, X, ArrowLeft, Radio, CheckCircle2, AlertTriangle, Minus, Plus,
-  Loader2, Undo2, Users, Banknote,
+  Loader2, Undo2, Users, Banknote, Gift,
 } from "lucide-react";
 
 type Stepper = { adulti: number; ragazzi: number; staff: number };
@@ -249,14 +249,19 @@ export default function FestaCampeggioCheckIn() {
                     className={`w-full text-left rounded-2xl border p-3 shadow-sm hover:shadow-md transition-shadow flex items-center gap-3 ${statoClasse}`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold truncate flex items-center gap-1">
+                      <p className="font-semibold truncate flex items-center gap-1 flex-wrap">
                         <span className="truncate">{item.cognome} {item.nome}</span>
+                        {item.invitato && (
+                          <Badge className="bg-violet-600 hover:bg-violet-700 text-white gap-1 text-[10px]">
+                            <Gift className="h-3 w-3" /> Invitato
+                          </Badge>
+                        )}
                         {completo && saldato && (
                           <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {item.num_adulti} ad. · {item.num_ragazzi} rag. · {item.num_staff} staff · {item.contributo}€
+                        {item.num_adulti} ad. · {item.num_ragazzi} rag. · {item.num_staff} staff · {item.invitato ? 'nessun contributo' : `${item.contributo}€`}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         <Badge variant="outline" className={entrate >= tot ? "border-green-500 text-green-600 text-[10px]" : "text-[10px] text-muted-foreground"}>
@@ -305,13 +310,22 @@ export default function FestaCampeggioCheckIn() {
             return (
               <div className="flex-1 py-4 space-y-4">
                 <div className="rounded-2xl border bg-background/90 p-4 shadow-sm">
-                  <p className="text-lg font-bold leading-tight">{selected.cognome} {selected.nome}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-lg font-bold leading-tight">{selected.cognome} {selected.nome}</p>
+                    {selected.invitato && (
+                      <Badge className="bg-violet-600 hover:bg-violet-700 text-white gap-1">
+                        <Gift className="h-3 w-3" /> Invitato
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Prenotazione: {selected.num_adulti} adulti · {selected.num_ragazzi} ragazzi · {selected.num_staff} staff
                   </p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge variant="outline" className="text-[11px]">Entrati {giaEntrati}/{tot}</Badge>
-                    <Badge variant="outline" className="text-[11px]">Incassato {selected.importo_incassato ?? 0}/{selected.contributo}€</Badge>
+                    {selected.invitato
+                      ? <Badge variant="outline" className="text-[11px] border-violet-400 text-violet-600">Nessun contributo</Badge>
+                      : <Badge variant="outline" className="text-[11px]">Incassato {selected.importo_incassato ?? 0}/{selected.contributo}€</Badge>}
                     {allergie.map((r, idx) => (
                       <Badge key={idx} variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300 gap-1 text-[11px]">
                         <AlertTriangle className="h-3 w-3" /> {r.nome} ×{r.quantita}
@@ -349,37 +363,47 @@ export default function FestaCampeggioCheckIn() {
                 </div>
 
                 {/* Pagamento */}
-                <div className="space-y-2">
-                  <Label className="text-base font-semibold">Quanto si incassa adesso</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button variant={pagaOra === importoChiEntra ? "default" : "outline"} className="rounded-xl h-12"
-                      onClick={() => setPagaOra(importoChiEntra)}>
-                      Solo chi entra · {importoChiEntra}€
-                    </Button>
-                    <Button variant={pagaOra === residuo ? "default" : "outline"} className="rounded-xl h-12"
-                      onClick={() => setPagaOra(residuo)}>
-                      Saldo totale · {residuo}€
-                    </Button>
+                {selected.invitato ? (
+                  <div className="rounded-2xl border border-violet-300 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/20 p-4 flex items-start gap-3">
+                    <Gift className="h-5 w-5 text-violet-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-violet-700 dark:text-violet-300">Invitato</p>
+                      <p className="text-sm text-muted-foreground">Nessun contributo da incassare.</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Input type="number" min={0} max={residuo} inputMode="numeric"
-                      value={pagaOra}
-                      onChange={e => setPagaOra(Math.max(0, Math.min(residuo, Number(e.target.value) || 0)))}
-                      className="h-12 rounded-xl text-base bg-background/90" />
-                    <span className="text-sm text-muted-foreground shrink-0">€ incassati ora</span>
+                ) : (
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">Quanto si incassa adesso</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant={pagaOra === importoChiEntra ? "default" : "outline"} className="rounded-xl h-12"
+                        onClick={() => setPagaOra(importoChiEntra)}>
+                        Solo chi entra · {importoChiEntra}€
+                      </Button>
+                      <Button variant={pagaOra === residuo ? "default" : "outline"} className="rounded-xl h-12"
+                        onClick={() => setPagaOra(residuo)}>
+                        Saldo totale · {residuo}€
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input type="number" min={0} max={residuo} inputMode="numeric"
+                        value={pagaOra}
+                        onChange={e => setPagaOra(Math.max(0, Math.min(residuo, Number(e.target.value) || 0)))}
+                        className="h-12 rounded-xl text-base bg-background/90" />
+                      <span className="text-sm text-muted-foreground shrink-0">€ incassati ora</span>
+                    </div>
+                    <div className="rounded-2xl bg-background/70 border p-3 text-sm grid grid-cols-3 gap-2 text-center">
+                      <div><p className="font-bold">{selected.contributo}€</p><p className="text-[11px] text-muted-foreground">Totale</p></div>
+                      <div><p className="font-bold">{(selected.importo_incassato ?? 0) + pagaOra}€</p><p className="text-[11px] text-muted-foreground">Incassato</p></div>
+                      <div><p className="font-bold text-fuchsia-600">{Math.max(0, residuo - pagaOra)}€</p><p className="text-[11px] text-muted-foreground">Residuo</p></div>
+                    </div>
                   </div>
-                  <div className="rounded-2xl bg-background/70 border p-3 text-sm grid grid-cols-3 gap-2 text-center">
-                    <div><p className="font-bold">{selected.contributo}€</p><p className="text-[11px] text-muted-foreground">Totale</p></div>
-                    <div><p className="font-bold">{(selected.importo_incassato ?? 0) + pagaOra}€</p><p className="text-[11px] text-muted-foreground">Incassato</p></div>
-                    <div><p className="font-bold text-fuchsia-600">{Math.max(0, residuo - pagaOra)}€</p><p className="text-[11px] text-muted-foreground">Residuo</p></div>
-                  </div>
-                </div>
+                )}
 
                 <div className="sticky bottom-4 pt-2">
                   <Button className="w-full h-14 rounded-2xl text-base gap-2" disabled={update.isPending || (oraTot === 0 && pagaOra === 0)}
                     onClick={conferma}>
                     {update.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                    Conferma · {oraTot} persone · {pagaOra}€
+                    Conferma · {oraTot} persone{selected.invitato ? '' : ` · ${pagaOra}€`}
                   </Button>
                 </div>
               </div>

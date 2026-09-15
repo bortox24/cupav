@@ -29,6 +29,13 @@
       "when": 1789107114572,
       "tag": "0003_festa_campeggio_arrivi_parziali",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789463762716,
+      "tag": "0004_festa_campeggio_invitato",
+      "breakpoints": true
     }
   ]
 }

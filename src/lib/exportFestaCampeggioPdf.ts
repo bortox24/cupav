@@ -40,7 +40,10 @@ async function loadLogo(): Promise<string | null> {
   return null;
 }
 
-export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
+export async function exportFestaCampeggioPdf(
+  items: FestaCampeggio[],
+  options?: { label?: string; fileSuffix?: string },
+) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 40;
@@ -82,7 +85,7 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
-  doc.text(`Report generato il ${oggi}`, margin, 65);
+  doc.text(`Report generato il ${oggi}${options?.label ? ` — ${options.label}` : ''}`, margin, 65);
 
   // KPI Cards
   let y = 120;
@@ -177,7 +180,7 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
     startY: y,
     head: [['Cognome Nome', 'Ad.', 'Rag.', 'Staff', 'Tot.', 'Allergie', 'Previsto', 'Incassato', 'Stato']],
     body: sorted.map(i => [
-      `${i.cognome} ${i.nome}`,
+      `${i.cognome} ${i.nome}${i.invitato ? ' (Invitato)' : ''}`,
       i.num_adulti,
       i.num_ragazzi,
       i.num_staff,
@@ -232,5 +235,5 @@ export async function exportFestaCampeggioPdf(items: FestaCampeggio[]) {
   }
 
   const dateStr = new Date().toISOString().slice(0, 10);
-  doc.save(`festa-campeggio-${dateStr}.pdf`);
+  doc.save(`festa-campeggio${options?.fileSuffix ? `-${options.fileSuffix}` : ''}-${dateStr}.pdf`);
 }

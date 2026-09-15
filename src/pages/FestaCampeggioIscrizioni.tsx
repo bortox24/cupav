@@ -10,7 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X, Radio, ScanLine, ArrowUpDown, Clock, ChevronsUpDown } from "lucide-react";
+import { Search, FileDown, Pencil, Trash2, Users, CheckCircle2, Banknote, PartyPopper, Loader2, Megaphone, AlertTriangle, Plus, X, Radio, ScanLine, ArrowUpDown, Clock, ChevronsUpDown, Mail, Gift } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { InviaComunicazioneFestaWizard } from "@/components/InviaComunicazioneFestaWizard";
 import { toast } from "@/hooks/use-toast";
 import { useFestaCampeggio, useDeleteFestaCampeggio, useUpdateFestaCampeggio, type FestaCampeggio, type AllergiaRiga, calcolaContributoFesta, parseAllergie, totalePersoneAllergiche, totalePersone, personeArrivate } from "@/hooks/useFestaCampeggio";
 import { exportFestaCampeggioPdf } from "@/lib/exportFestaCampeggioPdf";
@@ -50,6 +53,7 @@ export default function FestaCampeggioIscrizioni() {
   const [editItem, setEditItem] = useState<FestaCampeggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FestaCampeggio | null>(null);
   const [invioOpen, setInvioOpen] = useState(false);
+  const [comunicaItem, setComunicaItem] = useState<FestaCampeggio | null>(null);
 
 
 
@@ -137,13 +141,15 @@ export default function FestaCampeggioIscrizioni() {
 
   const saveEdit = async () => {
     if (!editItem) return;
-    const contributo = calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff);
+    const contributo = editItem.invitato
+      ? 0
+      : calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff);
     const righeValide = parseAllergie(editItem.allergie);
     // Se la modifica aggiunge partecipanti o alza il contributo, lo stato torna "parziale"
     const tot = editItem.num_adulti + editItem.num_ragazzi + editItem.num_staff;
     const entrati = (editItem.arrivati_adulti ?? 0) + (editItem.arrivati_ragazzi ?? 0) + (editItem.arrivati_staff ?? 0);
     const arrivato = tot > 0 && entrati >= tot;
-    const pagato = (editItem.importo_incassato ?? 0) >= contributo && contributo > 0;
+    const pagato = contributo === 0 ? true : (editItem.importo_incassato ?? 0) >= contributo;
     await update.mutateAsync({ id: editItem.id, updates: { ...editItem, contributo, arrivato, pagato, allergie: righeValide.length ? righeValide : null, ha_allergie: righeValide.length > 0 } }, {
       onSuccess: () => { toast({ title: "Iscrizione aggiornata" }); setEditItem(null); },
       onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
@@ -157,8 +163,18 @@ export default function FestaCampeggioIscrizioni() {
     });
   };
 
-  const exportPdf = async () => {
-    await exportFestaCampeggioPdf(filtered.length < items.length ? filtered : items);
+  const exportPdf = async (tipo: 'tutte' | 'adulti' | 'ragazzi' | 'staff' = 'tutte') => {
+    const base = filtered.length < items.length ? filtered : items;
+    const list = tipo === 'adulti' ? base.filter(i => i.num_adulti > 0)
+      : tipo === 'ragazzi' ? base.filter(i => i.num_ragazzi > 0)
+      : tipo === 'staff' ? base.filter(i => i.num_staff > 0)
+      : base;
+    if (list.length === 0) { toast({ title: "Nessuna adesione per questo filtro" }); return; }
+    const label = tipo === 'adulti' ? 'Adesioni con almeno un adulto'
+      : tipo === 'ragazzi' ? 'Adesioni con almeno un ragazzo'
+      : tipo === 'staff' ? 'Adesioni con almeno uno staff'
+      : undefined;
+    await exportFestaCampeggioPdf(list, { label, fileSuffix: tipo === 'tutte' ? undefined : tipo });
     toast({ title: "PDF scaricato" });
   };
 
@@ -253,9 +269,19 @@ export default function FestaCampeggioIscrizioni() {
             <Button onClick={() => navigate('/festa-campeggio-checkin')} className="gap-2 rounded-xl">
               <ScanLine className="h-4 w-4" /> Modalità Check-in
             </Button>
-            <Button onClick={exportPdf} variant="outline" className="gap-2 rounded-xl">
-              <FileDown className="h-4 w-4" /> Scarica PDF
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2 rounded-xl">
+                  <FileDown className="h-4 w-4" /> Scarica PDF
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="rounded-xl">
+                <DropdownMenuItem onClick={() => exportPdf('tutte')}>Tutte le adesioni</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportPdf('adulti')}>Solo con almeno un adulto</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportPdf('ragazzi')}>Solo con almeno un ragazzo</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportPdf('staff')}>Solo con almeno uno staff</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               className="gap-2 rounded-xl"
@@ -305,7 +331,14 @@ export default function FestaCampeggioIscrizioni() {
                       <Card key={item.id} className={`rounded-2xl shadow-sm hover:shadow-md transition-shadow border-2 ${cardStatoClass(item)}`}>
                         <CardHeader className="pb-2">
                           <div className="flex items-start justify-between gap-2">
-                            <CardTitle className="text-base leading-tight">{item.cognome} {item.nome}</CardTitle>
+                            <CardTitle className="text-base leading-tight flex flex-wrap items-center gap-1.5">
+                              <span>{item.cognome} {item.nome}</span>
+                              {item.invitato && (
+                                <Badge className="bg-violet-600 hover:bg-violet-700 text-white gap-1 text-[10px]">
+                                  <Gift className="h-3 w-3" /> Invitato
+                                </Badge>
+                              )}
+                            </CardTitle>
                             <StatoBadge item={item} />
                           </div>
                         </CardHeader>
@@ -317,7 +350,9 @@ export default function FestaCampeggioIscrizioni() {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Contributo</span>
-                            <span className="font-bold text-fuchsia-600">{item.contributo}€</span>
+                            <span className={item.invitato ? "font-bold text-violet-600" : "font-bold text-fuchsia-600"}>
+                              {item.contributo}€{item.invitato ? " — Invitato" : ""}
+                            </span>
                           </div>
                           <div className="flex flex-wrap gap-1">
                             <Badge variant="outline" className="text-[11px]">Entrati {personeArrivate(item)}/{totalePersone(item)}</Badge>
@@ -350,6 +385,15 @@ export default function FestaCampeggioIscrizioni() {
                               </div>
                             );
                           })()}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full rounded-xl justify-center h-9 text-xs"
+                            disabled={!item.email}
+                            onClick={() => setComunicaItem(item)}
+                          >
+                            <Mail className="h-4 w-4 mr-1" /> Invia comunicazione
+                          </Button>
                           <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
                             <Button size="sm" variant="ghost" className="w-full rounded-xl justify-center h-9" onClick={() => setEditItem(item)}>
                               <Pencil className="h-4 w-4 mr-1" /> Modifica
@@ -443,10 +487,23 @@ export default function FestaCampeggioIscrizioni() {
                 })()}
               </div>
 
-              <div className="bg-fuchsia-50 dark:bg-fuchsia-950/20 rounded-xl p-3 text-center">
-                <p className="text-sm text-muted-foreground">Contributo calcolato</p>
-                <p className="text-2xl font-bold text-fuchsia-600">
-                  {calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff)}€
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-violet-300 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/20 p-3">
+                <div>
+                  <Label className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+                    <Gift className="h-4 w-4" /> Invitato — contributo zero
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">Nessun contributo da incassare.</p>
+                </div>
+                <Switch
+                  checked={!!editItem.invitato}
+                  onCheckedChange={v => setEditItem({ ...editItem, invitato: v })}
+                />
+              </div>
+
+              <div className={`rounded-xl p-3 text-center ${editItem.invitato ? 'bg-violet-50 dark:bg-violet-950/20' : 'bg-fuchsia-50 dark:bg-fuchsia-950/20'}`}>
+                <p className="text-sm text-muted-foreground">{editItem.invitato ? 'Contributo (invitato)' : 'Contributo calcolato'}</p>
+                <p className={`text-2xl font-bold ${editItem.invitato ? 'text-violet-600' : 'text-fuchsia-600'}`}>
+                  {editItem.invitato ? 0 : calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff)}€
                 </p>
               </div>
             </div>
@@ -495,6 +552,14 @@ export default function FestaCampeggioIscrizioni() {
           },
         ]}
       />
+
+      {comunicaItem && (
+        <InviaComunicazioneFestaWizard
+          iscrizione={comunicaItem}
+          open={!!comunicaItem}
+          onOpenChange={open => !open && setComunicaItem(null)}
+        />
+      )}
     </MainLayout>
   );
 }

@@ -37,6 +37,7 @@ export interface FestaCampeggio {
   firma_data: string;
   ha_allergie: boolean;
   allergie: AllergiaRiga[] | null;
+  invitato: boolean;
 }
 
 export function parseAllergie(value: unknown): AllergiaRiga[] {
