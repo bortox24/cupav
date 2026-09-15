@@ -331,7 +331,14 @@ export default function FestaCampeggioIscrizioni() {
                       <Card key={item.id} className={`rounded-2xl shadow-sm hover:shadow-md transition-shadow border-2 ${cardStatoClass(item)}`}>
                         <CardHeader className="pb-2">
                           <div className="flex items-start justify-between gap-2">
-                            <CardTitle className="text-base leading-tight">{item.cognome} {item.nome}</CardTitle>
+                            <CardTitle className="text-base leading-tight flex flex-wrap items-center gap-1.5">
+                              <span>{item.cognome} {item.nome}</span>
+                              {item.invitato && (
+                                <Badge className="bg-violet-600 hover:bg-violet-700 text-white gap-1 text-[10px]">
+                                  <Gift className="h-3 w-3" /> Invitato
+                                </Badge>
+                              )}
+                            </CardTitle>
                             <StatoBadge item={item} />
                           </div>
                         </CardHeader>
@@ -343,7 +350,9 @@ export default function FestaCampeggioIscrizioni() {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Contributo</span>
-                            <span className="font-bold text-fuchsia-600">{item.contributo}€</span>
+                            <span className={item.invitato ? "font-bold text-violet-600" : "font-bold text-fuchsia-600"}>
+                              {item.contributo}€{item.invitato ? " — Invitato" : ""}
+                            </span>
                           </div>
                           <div className="flex flex-wrap gap-1">
                             <Badge variant="outline" className="text-[11px]">Entrati {personeArrivate(item)}/{totalePersone(item)}</Badge>
