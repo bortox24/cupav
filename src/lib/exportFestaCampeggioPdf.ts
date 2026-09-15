@@ -180,7 +180,7 @@ export async function exportFestaCampeggioPdf(
     startY: y,
     head: [['Cognome Nome', 'Ad.', 'Rag.', 'Staff', 'Tot.', 'Allergie', 'Previsto', 'Incassato', 'Stato']],
     body: sorted.map(i => [
-      `${i.cognome} ${i.nome}`,
+      `${i.cognome} ${i.nome}${i.invitato ? ' (Invitato)' : ''}`,
       i.num_adulti,
       i.num_ragazzi,
       i.num_staff,
@@ -235,5 +235,5 @@ export async function exportFestaCampeggioPdf(
   }
 
   const dateStr = new Date().toISOString().slice(0, 10);
-  doc.save(`festa-campeggio-${dateStr}.pdf`);
+  doc.save(`festa-campeggio${options?.fileSuffix ? `-${options.fileSuffix}` : ''}-${dateStr}.pdf`);
 }
