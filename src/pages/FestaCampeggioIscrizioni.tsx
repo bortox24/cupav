@@ -149,7 +149,7 @@ export default function FestaCampeggioIscrizioni() {
     const tot = editItem.num_adulti + editItem.num_ragazzi + editItem.num_staff;
     const entrati = (editItem.arrivati_adulti ?? 0) + (editItem.arrivati_ragazzi ?? 0) + (editItem.arrivati_staff ?? 0);
     const arrivato = tot > 0 && entrati >= tot;
-    const pagato = (editItem.importo_incassato ?? 0) >= contributo && contributo > 0;
+    const pagato = contributo === 0 ? true : (editItem.importo_incassato ?? 0) >= contributo;
     await update.mutateAsync({ id: editItem.id, updates: { ...editItem, contributo, arrivato, pagato, allergie: righeValide.length ? righeValide : null, ha_allergie: righeValide.length > 0 } }, {
       onSuccess: () => { toast({ title: "Iscrizione aggiornata" }); setEditItem(null); },
       onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
@@ -163,8 +163,18 @@ export default function FestaCampeggioIscrizioni() {
     });
   };
 
-  const exportPdf = async () => {
-    await exportFestaCampeggioPdf(filtered.length < items.length ? filtered : items);
+  const exportPdf = async (tipo: 'tutte' | 'adulti' | 'ragazzi' | 'staff' = 'tutte') => {
+    const base = filtered.length < items.length ? filtered : items;
+    const list = tipo === 'adulti' ? base.filter(i => i.num_adulti > 0)
+      : tipo === 'ragazzi' ? base.filter(i => i.num_ragazzi > 0)
+      : tipo === 'staff' ? base.filter(i => i.num_staff > 0)
+      : base;
+    if (list.length === 0) { toast({ title: "Nessuna adesione per questo filtro" }); return; }
+    const label = tipo === 'adulti' ? 'Adesioni con almeno un adulto'
+      : tipo === 'ragazzi' ? 'Adesioni con almeno un ragazzo'
+      : tipo === 'staff' ? 'Adesioni con almeno uno staff'
+      : undefined;
+    await exportFestaCampeggioPdf(list, { label, fileSuffix: tipo === 'tutte' ? undefined : tipo });
     toast({ title: "PDF scaricato" });
   };
 
