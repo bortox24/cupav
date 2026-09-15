@@ -86,6 +86,13 @@ export async function exportFestaCampeggioPdf(
   }));
   const totAllergici = [...allergieAgg.values()].reduce((s, v) => s + v, 0);
 
+  // Totali della singola categoria (PDF filtrato)
+  const catTotPers = cat ? sorted.reduce((s, i) => s + catNum(i, cat), 0) : 0;
+  const catTotArrivati = cat ? sorted.reduce((s, i) => s + catArrivati(i, cat), 0) : 0;
+  const catTotPrevisto = cat ? sorted.reduce((s, i) => s + catPrevisto(i, cat), 0) : 0;
+  const catTotIncassato = cat ? sorted.reduce((s, i) => s + catIncassato(i, cat), 0) : 0;
+
+
   const logo = await loadLogo();
 
   // Header
