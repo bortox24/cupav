@@ -310,13 +310,22 @@ export default function FestaCampeggioCheckIn() {
             return (
               <div className="flex-1 py-4 space-y-4">
                 <div className="rounded-2xl border bg-background/90 p-4 shadow-sm">
-                  <p className="text-lg font-bold leading-tight">{selected.cognome} {selected.nome}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-lg font-bold leading-tight">{selected.cognome} {selected.nome}</p>
+                    {selected.invitato && (
+                      <Badge className="bg-violet-600 hover:bg-violet-700 text-white gap-1">
+                        <Gift className="h-3 w-3" /> Invitato
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Prenotazione: {selected.num_adulti} adulti · {selected.num_ragazzi} ragazzi · {selected.num_staff} staff
                   </p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge variant="outline" className="text-[11px]">Entrati {giaEntrati}/{tot}</Badge>
-                    <Badge variant="outline" className="text-[11px]">Incassato {selected.importo_incassato ?? 0}/{selected.contributo}€</Badge>
+                    {selected.invitato
+                      ? <Badge variant="outline" className="text-[11px] border-violet-400 text-violet-600">Nessun contributo</Badge>
+                      : <Badge variant="outline" className="text-[11px]">Incassato {selected.importo_incassato ?? 0}/{selected.contributo}€</Badge>}
                     {allergie.map((r, idx) => (
                       <Badge key={idx} variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300 gap-1 text-[11px]">
                         <AlertTriangle className="h-3 w-3" /> {r.nome} ×{r.quantita}
