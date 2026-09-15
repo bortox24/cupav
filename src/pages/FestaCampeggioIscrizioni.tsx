@@ -487,10 +487,23 @@ export default function FestaCampeggioIscrizioni() {
                 })()}
               </div>
 
-              <div className="bg-fuchsia-50 dark:bg-fuchsia-950/20 rounded-xl p-3 text-center">
-                <p className="text-sm text-muted-foreground">Contributo calcolato</p>
-                <p className="text-2xl font-bold text-fuchsia-600">
-                  {calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff)}€
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-violet-300 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/20 p-3">
+                <div>
+                  <Label className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+                    <Gift className="h-4 w-4" /> Invitato — contributo zero
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">Nessun contributo da incassare.</p>
+                </div>
+                <Switch
+                  checked={!!editItem.invitato}
+                  onCheckedChange={v => setEditItem({ ...editItem, invitato: v })}
+                />
+              </div>
+
+              <div className={`rounded-xl p-3 text-center ${editItem.invitato ? 'bg-violet-50 dark:bg-violet-950/20' : 'bg-fuchsia-50 dark:bg-fuchsia-950/20'}`}>
+                <p className="text-sm text-muted-foreground">{editItem.invitato ? 'Contributo (invitato)' : 'Contributo calcolato'}</p>
+                <p className={`text-2xl font-bold ${editItem.invitato ? 'text-violet-600' : 'text-fuchsia-600'}`}>
+                  {editItem.invitato ? 0 : calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff)}€
                 </p>
               </div>
             </div>
