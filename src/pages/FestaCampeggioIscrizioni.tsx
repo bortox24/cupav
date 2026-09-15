@@ -552,6 +552,14 @@ export default function FestaCampeggioIscrizioni() {
           },
         ]}
       />
+
+      {comunicaItem && (
+        <InviaComunicazioneFestaWizard
+          iscrizione={comunicaItem}
+          open={!!comunicaItem}
+          onOpenChange={open => !open && setComunicaItem(null)}
+        />
+      )}
     </MainLayout>
   );
 }
