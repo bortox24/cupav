@@ -20,7 +20,7 @@ import {
 } from "@/hooks/useFestaCampeggio";
 import {
   Search, X, ArrowLeft, Radio, CheckCircle2, AlertTriangle, Minus, Plus,
-  Loader2, Undo2, Users, Banknote,
+  Loader2, Undo2, Users, Banknote, Gift,
 } from "lucide-react";
 
 type Stepper = { adulti: number; ragazzi: number; staff: number };
@@ -249,14 +249,19 @@ export default function FestaCampeggioCheckIn() {
                     className={`w-full text-left rounded-2xl border p-3 shadow-sm hover:shadow-md transition-shadow flex items-center gap-3 ${statoClasse}`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold truncate flex items-center gap-1">
+                      <p className="font-semibold truncate flex items-center gap-1 flex-wrap">
                         <span className="truncate">{item.cognome} {item.nome}</span>
+                        {item.invitato && (
+                          <Badge className="bg-violet-600 hover:bg-violet-700 text-white gap-1 text-[10px]">
+                            <Gift className="h-3 w-3" /> Invitato
+                          </Badge>
+                        )}
                         {completo && saldato && (
                           <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {item.num_adulti} ad. · {item.num_ragazzi} rag. · {item.num_staff} staff · {item.contributo}€
+                        {item.num_adulti} ad. · {item.num_ragazzi} rag. · {item.num_staff} staff · {item.invitato ? 'nessun contributo' : `${item.contributo}€`}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         <Badge variant="outline" className={entrate >= tot ? "border-green-500 text-green-600 text-[10px]" : "text-[10px] text-muted-foreground"}>
