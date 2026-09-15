@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { parseAllergie, type FestaCampeggio } from '@/hooks/useFestaCampeggio';
+import { parseAllergie, COSTO_FESTA_ADULTO, COSTO_FESTA_RAGAZZO, COSTO_FESTA_STAFF, type FestaCampeggio } from '@/hooks/useFestaCampeggio';
 import { supabase } from '@/integrations/supabase/client';
 import fallbackLogo from '@/assets/logo-cupav.png';
 
@@ -40,10 +40,28 @@ async function loadLogo(): Promise<string | null> {
   return null;
 }
 
+type Categoria = 'adulti' | 'ragazzi' | 'staff';
+
+const CAT_COSTO: Record<Categoria, number> = {
+  adulti: COSTO_FESTA_ADULTO,
+  ragazzi: COSTO_FESTA_RAGAZZO,
+  staff: COSTO_FESTA_STAFF,
+};
+const CAT_LABEL: Record<Categoria, string> = { adulti: 'Adulti', ragazzi: 'Ragazzi', staff: 'Staff' };
+const catNum = (i: FestaCampeggio, c: Categoria) =>
+  c === 'adulti' ? i.num_adulti : c === 'ragazzi' ? i.num_ragazzi : i.num_staff;
+const catArrivati = (i: FestaCampeggio, c: Categoria) =>
+  (c === 'adulti' ? i.arrivati_adulti : c === 'ragazzi' ? i.arrivati_ragazzi : i.arrivati_staff) ?? 0;
+const catPrevisto = (i: FestaCampeggio, c: Categoria) =>
+  i.invitato ? 0 : catNum(i, c) * CAT_COSTO[c];
+const catIncassato = (i: FestaCampeggio, c: Categoria) =>
+  Math.min(i.importo_incassato ?? 0, catPrevisto(i, c));
+
 export async function exportFestaCampeggioPdf(
   items: FestaCampeggio[],
-  options?: { label?: string; fileSuffix?: string },
+  options?: { label?: string; fileSuffix?: string; categoria?: Categoria },
 ) {
+  const cat = options?.categoria;
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 40;
@@ -67,6 +85,13 @@ export async function exportFestaCampeggioPdf(
     allergieAgg.set(key, (allergieAgg.get(key) || 0) + r.quantita);
   }));
   const totAllergici = [...allergieAgg.values()].reduce((s, v) => s + v, 0);
+
+  // Totali della singola categoria (PDF filtrato)
+  const catTotPers = cat ? sorted.reduce((s, i) => s + catNum(i, cat), 0) : 0;
+  const catTotArrivati = cat ? sorted.reduce((s, i) => s + catArrivati(i, cat), 0) : 0;
+  const catTotPrevisto = cat ? sorted.reduce((s, i) => s + catPrevisto(i, cat), 0) : 0;
+  const catTotIncassato = cat ? sorted.reduce((s, i) => s + catIncassato(i, cat), 0) : 0;
+
 
   const logo = await loadLogo();
 
@@ -106,7 +131,11 @@ export async function exportFestaCampeggioPdf(
     });
   };
 
-  drawCards([
+  drawCards(cat ? [
+    { label: `${CAT_LABEL[cat]} previsti`, value: String(catTotPers) },
+    { label: `${CAT_LABEL[cat]} arrivati`, value: String(catTotArrivati) },
+    { label: 'Adesioni', value: String(totIscr) },
+  ] : [
     { label: 'Persone previste', value: String(totPers) },
     { label: 'Persone arrivate', value: String(persArrivate) },
     { label: 'Allergie / intoll.', value: String(totAllergici) },
@@ -114,7 +143,11 @@ export async function exportFestaCampeggioPdf(
 
   y += 80;
 
-  drawCards([
+  drawCards(cat ? [
+    { label: 'Totale previsto', value: `${catTotPrevisto}\u20AC` },
+    { label: 'Totale incassato', value: `${catTotIncassato}\u20AC` },
+    { label: 'Da incassare', value: `${Math.max(0, catTotPrevisto - catTotIncassato)}\u20AC` },
+  ] : [
     { label: 'Totale previsto', value: `${totContributo}\u20AC` },
     { label: 'Totale incassato', value: `${totIncassato}\u20AC` },
     { label: 'Da incassare', value: `${totDaIncassare}\u20AC` },
@@ -130,7 +163,9 @@ export async function exportFestaCampeggioPdf(
   doc.setFont('helvetica', 'bold');
   doc.text('Suddivisione partecipanti', margin, y);
   y += 18;
-  const fasce = [
+  const fasce = cat ? [
+    { label: CAT_LABEL[cat], val: catTotPers },
+  ] : [
     { label: 'Adulti', val: totAdulti },
     { label: 'Ragazzi', val: totRagazzi },
     { label: 'Staff', val: totStaff },
@@ -153,8 +188,8 @@ export async function exportFestaCampeggioPdf(
 
   y += fasce.length * 24 + 24;
 
-  // Riepilogo allergie
-  if (allergieAgg.size > 0) {
+  // Riepilogo allergie (solo nel PDF completo)
+  if (!cat && allergieAgg.size > 0) {
     doc.setTextColor(...DARK);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
@@ -173,9 +208,40 @@ export async function exportFestaCampeggioPdf(
   doc.setTextColor(...DARK);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Elenco adesioni', margin, y);
+  doc.text(cat ? `Elenco ${CAT_LABEL[cat].toLowerCase()}` : 'Elenco adesioni', margin, y);
   y += 22;
 
+  if (cat) {
+    autoTable(doc, {
+      startY: y,
+      head: [['Cognome Nome', CAT_LABEL[cat], 'Arrivati', 'Previsto', 'Incassato']],
+      body: sorted.map(i => [
+        `${i.cognome} ${i.nome}${i.invitato ? ' (Invitato)' : ''}`,
+        catNum(i, cat),
+        `${catArrivati(i, cat)}/${catNum(i, cat)}`,
+        `${catPrevisto(i, cat)}\u20AC`,
+        `${catIncassato(i, cat)}\u20AC`,
+      ]),
+      foot: [[
+        { content: 'TOTALI', styles: { halign: 'left', fontStyle: 'bold' } },
+        { content: String(catTotPers), styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: `${catTotArrivati}/${catTotPers}`, styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: `${catTotPrevisto}\u20AC`, styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: `${catTotIncassato}\u20AC`, styles: { halign: 'center', fontStyle: 'bold' } },
+      ]],
+      headStyles: { fillColor: FUCHSIA, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+      footStyles: { fillColor: LIGHT, textColor: DARK, fontStyle: 'bold', fontSize: 9 },
+      styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+      columnStyles: {
+        0: { cellWidth: 200, fontStyle: 'bold' },
+        1: { halign: 'center', cellWidth: 70 },
+        2: { halign: 'center', cellWidth: 70 },
+        3: { halign: 'center', cellWidth: 75 },
+        4: { halign: 'center', cellWidth: 75 },
+      },
+      margin: { left: margin, right: margin },
+    });
+  } else {
   autoTable(doc, {
     startY: y,
     head: [['Cognome Nome', 'Ad.', 'Rag.', 'Staff', 'Tot.', 'Allergie', 'Previsto', 'Incassato', 'Stato']],
@@ -222,6 +288,7 @@ export async function exportFestaCampeggioPdf(
 
     margin: { left: margin, right: margin },
   });
+  }
 
   // Footer
   const pageCount = doc.getNumberOfPages();
