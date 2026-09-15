@@ -288,6 +288,7 @@ export async function exportFestaCampeggioPdf(
 
     margin: { left: margin, right: margin },
   });
+  }
 
   // Footer
   const pageCount = doc.getNumberOfPages();
