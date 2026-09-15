@@ -188,8 +188,8 @@ export async function exportFestaCampeggioPdf(
 
   y += fasce.length * 24 + 24;
 
-  // Riepilogo allergie
-  if (allergieAgg.size > 0) {
+  // Riepilogo allergie (solo nel PDF completo)
+  if (!cat && allergieAgg.size > 0) {
     doc.setTextColor(...DARK);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
@@ -208,9 +208,40 @@ export async function exportFestaCampeggioPdf(
   doc.setTextColor(...DARK);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Elenco adesioni', margin, y);
+  doc.text(cat ? `Elenco ${CAT_LABEL[cat].toLowerCase()}` : 'Elenco adesioni', margin, y);
   y += 22;
 
+  if (cat) {
+    autoTable(doc, {
+      startY: y,
+      head: [['Cognome Nome', CAT_LABEL[cat], 'Arrivati', 'Previsto', 'Incassato']],
+      body: sorted.map(i => [
+        `${i.cognome} ${i.nome}${i.invitato ? ' (Invitato)' : ''}`,
+        catNum(i, cat),
+        `${catArrivati(i, cat)}/${catNum(i, cat)}`,
+        `${catPrevisto(i, cat)}\u20AC`,
+        `${catIncassato(i, cat)}\u20AC`,
+      ]),
+      foot: [[
+        { content: 'TOTALI', styles: { halign: 'left', fontStyle: 'bold' } },
+        { content: String(catTotPers), styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: `${catTotArrivati}/${catTotPers}`, styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: `${catTotPrevisto}\u20AC`, styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: `${catTotIncassato}\u20AC`, styles: { halign: 'center', fontStyle: 'bold' } },
+      ]],
+      headStyles: { fillColor: FUCHSIA, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+      footStyles: { fillColor: LIGHT, textColor: DARK, fontStyle: 'bold', fontSize: 9 },
+      styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+      columnStyles: {
+        0: { cellWidth: 200, fontStyle: 'bold' },
+        1: { halign: 'center', cellWidth: 70 },
+        2: { halign: 'center', cellWidth: 70 },
+        3: { halign: 'center', cellWidth: 75 },
+        4: { halign: 'center', cellWidth: 75 },
+      },
+      margin: { left: margin, right: margin },
+    });
+  } else {
   autoTable(doc, {
     startY: y,
     head: [['Cognome Nome', 'Ad.', 'Rag.', 'Staff', 'Tot.', 'Allergie', 'Previsto', 'Incassato', 'Stato']],
