@@ -385,6 +385,15 @@ export default function FestaCampeggioIscrizioni() {
                               </div>
                             );
                           })()}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full rounded-xl justify-center h-9 text-xs"
+                            disabled={!item.email}
+                            onClick={() => setComunicaItem(item)}
+                          >
+                            <Mail className="h-4 w-4 mr-1" /> Invia comunicazione
+                          </Button>
                           <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
                             <Button size="sm" variant="ghost" className="w-full rounded-xl justify-center h-9" onClick={() => setEditItem(item)}>
                               <Pencil className="h-4 w-4 mr-1" /> Modifica
