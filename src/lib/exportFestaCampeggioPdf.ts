@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { parseAllergie, type FestaCampeggio } from '@/hooks/useFestaCampeggio';
+import { parseAllergie, COSTO_FESTA_ADULTO, COSTO_FESTA_RAGAZZO, COSTO_FESTA_STAFF, type FestaCampeggio } from '@/hooks/useFestaCampeggio';
 import { supabase } from '@/integrations/supabase/client';
 import fallbackLogo from '@/assets/logo-cupav.png';
 
@@ -40,10 +40,28 @@ async function loadLogo(): Promise<string | null> {
   return null;
 }
 
+type Categoria = 'adulti' | 'ragazzi' | 'staff';
+
+const CAT_COSTO: Record<Categoria, number> = {
+  adulti: COSTO_FESTA_ADULTO,
+  ragazzi: COSTO_FESTA_RAGAZZO,
+  staff: COSTO_FESTA_STAFF,
+};
+const CAT_LABEL: Record<Categoria, string> = { adulti: 'Adulti', ragazzi: 'Ragazzi', staff: 'Staff' };
+const catNum = (i: FestaCampeggio, c: Categoria) =>
+  c === 'adulti' ? i.num_adulti : c === 'ragazzi' ? i.num_ragazzi : i.num_staff;
+const catArrivati = (i: FestaCampeggio, c: Categoria) =>
+  (c === 'adulti' ? i.arrivati_adulti : c === 'ragazzi' ? i.arrivati_ragazzi : i.arrivati_staff) ?? 0;
+const catPrevisto = (i: FestaCampeggio, c: Categoria) =>
+  i.invitato ? 0 : catNum(i, c) * CAT_COSTO[c];
+const catIncassato = (i: FestaCampeggio, c: Categoria) =>
+  Math.min(i.importo_incassato ?? 0, catPrevisto(i, c));
+
 export async function exportFestaCampeggioPdf(
   items: FestaCampeggio[],
-  options?: { label?: string; fileSuffix?: string },
+  options?: { label?: string; fileSuffix?: string; categoria?: Categoria },
 ) {
+  const cat = options?.categoria;
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 40;
