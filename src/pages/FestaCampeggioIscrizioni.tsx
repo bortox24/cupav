@@ -53,6 +53,7 @@ export default function FestaCampeggioIscrizioni() {
   const [editItem, setEditItem] = useState<FestaCampeggio | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<FestaCampeggio | null>(null);
   const [invioOpen, setInvioOpen] = useState(false);
+  const [comunicaItem, setComunicaItem] = useState<FestaCampeggio | null>(null);
 
 
 
@@ -140,7 +141,9 @@ export default function FestaCampeggioIscrizioni() {
 
   const saveEdit = async () => {
     if (!editItem) return;
-    const contributo = calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff);
+    const contributo = editItem.invitato
+      ? 0
+      : calcolaContributoFesta(editItem.num_adulti, editItem.num_ragazzi, editItem.num_staff);
     const righeValide = parseAllergie(editItem.allergie);
     // Se la modifica aggiunge partecipanti o alza il contributo, lo stato torna "parziale"
     const tot = editItem.num_adulti + editItem.num_ragazzi + editItem.num_staff;
