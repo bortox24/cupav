@@ -131,7 +131,11 @@ export async function exportFestaCampeggioPdf(
     });
   };
 
-  drawCards([
+  drawCards(cat ? [
+    { label: `${CAT_LABEL[cat]} previsti`, value: String(catTotPers) },
+    { label: `${CAT_LABEL[cat]} arrivati`, value: String(catTotArrivati) },
+    { label: 'Adesioni', value: String(totIscr) },
+  ] : [
     { label: 'Persone previste', value: String(totPers) },
     { label: 'Persone arrivate', value: String(persArrivate) },
     { label: 'Allergie / intoll.', value: String(totAllergici) },
@@ -139,7 +143,11 @@ export async function exportFestaCampeggioPdf(
 
   y += 80;
 
-  drawCards([
+  drawCards(cat ? [
+    { label: 'Totale previsto', value: `${catTotPrevisto}\u20AC` },
+    { label: 'Totale incassato', value: `${catTotIncassato}\u20AC` },
+    { label: 'Da incassare', value: `${Math.max(0, catTotPrevisto - catTotIncassato)}\u20AC` },
+  ] : [
     { label: 'Totale previsto', value: `${totContributo}\u20AC` },
     { label: 'Totale incassato', value: `${totIncassato}\u20AC` },
     { label: 'Da incassare', value: `${totDaIncassare}\u20AC` },
