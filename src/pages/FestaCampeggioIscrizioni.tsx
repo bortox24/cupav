@@ -170,11 +170,15 @@ export default function FestaCampeggioIscrizioni() {
       : tipo === 'staff' ? base.filter(i => i.num_staff > 0)
       : base;
     if (list.length === 0) { toast({ title: "Nessuna adesione per questo filtro" }); return; }
-    const label = tipo === 'adulti' ? 'Adesioni con almeno un adulto'
-      : tipo === 'ragazzi' ? 'Adesioni con almeno un ragazzo'
-      : tipo === 'staff' ? 'Adesioni con almeno uno staff'
+    const label = tipo === 'adulti' ? 'Solo adulti'
+      : tipo === 'ragazzi' ? 'Solo ragazzi'
+      : tipo === 'staff' ? 'Solo staff'
       : undefined;
-    await exportFestaCampeggioPdf(list, { label, fileSuffix: tipo === 'tutte' ? undefined : tipo });
+    await exportFestaCampeggioPdf(list, {
+      label,
+      fileSuffix: tipo === 'tutte' ? undefined : tipo,
+      categoria: tipo === 'tutte' ? undefined : tipo,
+    });
     toast({ title: "PDF scaricato" });
   };
 
@@ -277,9 +281,9 @@ export default function FestaCampeggioIscrizioni() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="rounded-xl">
                 <DropdownMenuItem onClick={() => exportPdf('tutte')}>Tutte le adesioni</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportPdf('adulti')}>Solo con almeno un adulto</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportPdf('ragazzi')}>Solo con almeno un ragazzo</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportPdf('staff')}>Solo con almeno uno staff</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportPdf('adulti')}>Solo adulti</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportPdf('ragazzi')}>Solo ragazzi</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportPdf('staff')}>Solo staff</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
