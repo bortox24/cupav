@@ -163,7 +163,9 @@ export async function exportFestaCampeggioPdf(
   doc.setFont('helvetica', 'bold');
   doc.text('Suddivisione partecipanti', margin, y);
   y += 18;
-  const fasce = [
+  const fasce = cat ? [
+    { label: CAT_LABEL[cat], val: catTotPers },
+  ] : [
     { label: 'Adulti', val: totAdulti },
     { label: 'Ragazzi', val: totRagazzi },
     { label: 'Staff', val: totStaff },
