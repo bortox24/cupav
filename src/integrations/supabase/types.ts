@@ -244,6 +244,7 @@ export type Database = {
           ha_allergie: boolean
           id: string
           importo_incassato: number
+          invitato: boolean
           nome: string
           num_adulti: number
           num_ragazzi: number
@@ -271,6 +272,7 @@ export type Database = {
           ha_allergie?: boolean
           id?: string
           importo_incassato?: number
+          invitato?: boolean
           nome: string
           num_adulti?: number
           num_ragazzi?: number
@@ -298,6 +300,7 @@ export type Database = {
           ha_allergie?: boolean
           id?: string
           importo_incassato?: number
+          invitato?: boolean
           nome?: string
           num_adulti?: number
           num_ragazzi?: number

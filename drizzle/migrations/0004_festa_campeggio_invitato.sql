@@ -1,0 +1,1 @@
+ALTER TABLE public.festa_campeggio ADD COLUMN IF NOT EXISTS invitato boolean NOT NULL DEFAULT false;
