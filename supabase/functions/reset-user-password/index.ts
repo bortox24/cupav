@@ -35,14 +35,30 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: callingUser }, error: authError } = await adminClient.auth.getUser(token);
 
-    if (authError || !callingUser) {
+    // Validate the caller's JWT with an anon client (signing-keys compatible)
+    const authClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    let callerId: string | null = null;
+    const { data: claimsData } = await authClient.auth.getClaims(token);
+    if (claimsData?.claims?.sub) {
+      callerId = claimsData.claims.sub as string;
+    } else {
+      const { data: userData } = await authClient.auth.getUser(token);
+      callerId = userData?.user?.id ?? null;
+    }
+
+    if (!callerId) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const callingUser = { id: callerId };
 
     // Only admins can reset other users' passwords
     const { data: roleData } = await adminClient
