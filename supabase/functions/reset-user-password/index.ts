@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,14 +35,32 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: callingUser }, error: authError } = await adminClient.auth.getUser(token);
 
-    if (authError || !callingUser) {
+    // Validate the caller's JWT with an anon client (signing-keys compatible)
+    const authClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    let callerId: string | null = null;
+    const getClaims = (authClient.auth as unknown as { getClaims?: (t: string) => Promise<{ data: { claims?: { sub?: string } } | null }> }).getClaims;
+    if (typeof getClaims === 'function') {
+      const { data: claimsData } = await getClaims.call(authClient.auth, token);
+      callerId = claimsData?.claims?.sub ?? null;
+    }
+    if (!callerId) {
+      const { data: userData } = await authClient.auth.getUser(token);
+      callerId = userData?.user?.id ?? null;
+    }
+
+    if (!callerId) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
+        JSON.stringify({ error: "Sessione scaduta: accedi di nuovo e riprova" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const callingUser = { id: callerId };
 
     // Only admins can reset other users' passwords
     const { data: roleData } = await adminClient
