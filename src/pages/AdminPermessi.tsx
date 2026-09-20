@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -271,6 +271,10 @@ function ResetPasswordDialog({ utente, open, onOpenChange }: { utente: UserWithS
   const [show, setShow] = useState(false);
   const [done, setDone] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (open) { setValue(''); setShow(false); setDone(null); }
+  }, [open]);
+
   const genera = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     const bytes = new Uint8Array(10);
@@ -331,10 +335,10 @@ function ResetPasswordDialog({ utente, open, onOpenChange }: { utente: UserWithS
                     {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <Button type="button" variant="outline" className="gap-2 shrink-0" onClick={genera}>
-                  <RefreshCw className="h-4 w-4" />Genera
-                </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Scrivi la password che preferisci: sarà quella attiva. Premi "Genera" solo se vuoi una password casuale.
+              </p>
               {value.length > 0 && value.length < 6 && (
                 <p className="text-xs text-destructive">Servono almeno 6 caratteri.</p>
               )}
