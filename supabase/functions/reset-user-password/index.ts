@@ -105,9 +105,12 @@ serve(async (req) => {
     });
 
     if (updateError) {
-      console.error('Error updating password:', updateError);
+      console.error('Error updating password:', updateError.message);
+      const msg = /weak|pwned|easy to guess/i.test(updateError.message)
+        ? "Questa password è troppo comune e non è sicura: scegline una diversa (es. con lettere, numeri e un simbolo) oppure premi 'Genera'."
+        : updateError.message;
       return new Response(
-        JSON.stringify({ error: updateError.message }),
+        JSON.stringify({ error: msg }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
