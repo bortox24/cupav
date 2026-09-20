@@ -275,17 +275,9 @@ function ResetPasswordDialog({ utente, open, onOpenChange }: { utente: UserWithS
     if (open) { setValue(''); setShow(false); setDone(null); }
   }, [open]);
 
-  const genera = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-    const bytes = new Uint8Array(10);
-    crypto.getRandomValues(bytes);
-    setValue(Array.from(bytes, (b) => chars[b % chars.length]).join(''));
-    setShow(true);
-  };
-
   const conferma = async () => {
-    const res = await setPassword.mutateAsync({ userId: utente.id, password: value });
-    setDone(res.password);
+    await setPassword.mutateAsync({ userId: utente.id, password: value });
+    setDone(value);
   };
 
   const copia = (pwd: string) => {
@@ -337,7 +329,7 @@ function ResetPasswordDialog({ utente, open, onOpenChange }: { utente: UserWithS
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Scrivi la password che preferisci: sarà quella attiva. Premi "Genera" solo se vuoi una password casuale.
+                Scrivi la password che preferisci: premendo Conferma verrà salvata esattamente questa password.
               </p>
               {value.length > 0 && value.length < 6 && (
                 <p className="text-xs text-destructive">Servono almeno 6 caratteri.</p>
