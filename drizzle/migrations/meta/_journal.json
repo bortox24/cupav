@@ -36,6 +36,13 @@
       "when": 1789463762716,
       "tag": "0004_festa_campeggio_invitato",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789883612005,
+      "tag": "0005_festa_checkin_page_access",
+      "breakpoints": true
     }
   ]
 }
