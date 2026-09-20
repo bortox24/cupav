@@ -44,10 +44,12 @@ serve(async (req) => {
     );
 
     let callerId: string | null = null;
-    const { data: claimsData } = await authClient.auth.getClaims(token);
-    if (claimsData?.claims?.sub) {
-      callerId = claimsData.claims.sub as string;
-    } else {
+    const getClaims = (authClient.auth as unknown as { getClaims?: (t: string) => Promise<{ data: { claims?: { sub?: string } } | null }> }).getClaims;
+    if (typeof getClaims === 'function') {
+      const { data: claimsData } = await getClaims.call(authClient.auth, token);
+      callerId = claimsData?.claims?.sub ?? null;
+    }
+    if (!callerId) {
       const { data: userData } = await authClient.auth.getUser(token);
       callerId = userData?.user?.id ?? null;
     }
