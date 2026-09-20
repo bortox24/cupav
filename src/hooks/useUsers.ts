@@ -189,3 +189,32 @@ export function useToggleActive() {
     },
   });
 }
+
+// Set (or generate) a new password for a user
+export function useSetUserPassword() {
+  return useMutation({
+    mutationFn: async ({ userId, password }: { userId: string; password?: string }) => {
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: { userId, password },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      return data as { password: string };
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Password aggiornata',
+        description: 'La nuova password è attiva da subito',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: error.message,
+      });
+    },
+  });
+}
