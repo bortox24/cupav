@@ -6,13 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function generatePassword(length = 10): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
-  return Array.from(array, (b) => chars[b % chars.length]).join('');
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -79,7 +72,7 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const userId: string | undefined = body?.userId;
-    const requested: string | undefined = body?.password;
+    const requested: unknown = body?.password;
 
     if (!userId || typeof userId !== 'string') {
       return new Response(
@@ -88,17 +81,14 @@ serve(async (req) => {
       );
     }
 
-    let newPassword: string;
-    if (requested === undefined || requested === null || requested === '') {
-      newPassword = generatePassword(10);
-    } else if (typeof requested !== 'string' || requested.length < 6 || requested.length > 72) {
+    if (typeof requested !== 'string' || requested.length < 6 || requested.length > 72) {
       return new Response(
-        JSON.stringify({ error: "La password deve avere tra 6 e 72 caratteri" }),
+        JSON.stringify({ error: "Scrivi una password compresa tra 6 e 72 caratteri" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    } else {
-      newPassword = requested;
     }
+
+    const newPassword = requested;
 
     const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
       password: newPassword,
@@ -107,7 +97,7 @@ serve(async (req) => {
     if (updateError) {
       console.error('Error updating password:', updateError.message);
       const msg = /weak|pwned|easy to guess/i.test(updateError.message)
-        ? "Questa password è troppo comune e non è sicura: scegline una diversa (es. con lettere, numeri e un simbolo) oppure premi 'Genera'."
+        ? "Questa password è troppo comune e non è sicura: scegline una diversa, per esempio con lettere, numeri e un simbolo."
         : updateError.message;
       return new Response(
         JSON.stringify({ error: msg }),
@@ -122,7 +112,7 @@ serve(async (req) => {
       .eq('user_id', userId);
 
     return new Response(
-      JSON.stringify({ password: newPassword }),
+      JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 

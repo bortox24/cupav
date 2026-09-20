@@ -190,10 +190,10 @@ export function useToggleActive() {
   });
 }
 
-// Set (or generate) a new password for a user
+// Set the exact password chosen by the administrator
 export function useSetUserPassword() {
   return useMutation({
-    mutationFn: async ({ userId, password }: { userId: string; password?: string }) => {
+    mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
       const { data, error } = await supabase.functions.invoke('reset-user-password', {
         body: { userId, password },
       });
@@ -201,7 +201,7 @@ export function useSetUserPassword() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      return data as { password: string };
+      return data as { success: true };
     },
     onSuccess: () => {
       toast({
