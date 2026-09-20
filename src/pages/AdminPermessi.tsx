@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Loader2, UserPlus, Shield, Info, Check, X, Trash2, RotateCcw, Users, Copy, RefreshCw, FileKey, Power, PowerOff } from 'lucide-react';
+import { Plus, Loader2, UserPlus, Shield, Info, Check, X, Trash2, RotateCcw, Users, Copy, RefreshCw, FileKey, Power, PowerOff, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +48,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useUsers, useCreateUser, useToggleAdmin, useToggleActive, useDeleteUser, type UserWithStatus } from '@/hooks/useUsers';
+import { useUsers, useCreateUser, useToggleAdmin, useToggleActive, useDeleteUser, useSetUserPassword, type UserWithStatus } from '@/hooks/useUsers';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth';
 import {
   useAllPagePermissions,
@@ -227,9 +228,14 @@ function GestioneUtentiTab() {
                       )}
                     </div>
 
-                    <Button variant="outline" className="w-full gap-2" onClick={() => setPermessiUser(u)}>
-                      <FileKey className="h-4 w-4" />Gestisci permessi
-                    </Button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button variant="outline" className="w-full gap-2" onClick={() => setPermessiUser(u)}>
+                        <FileKey className="h-4 w-4" />Gestisci permessi
+                      </Button>
+                      <Button variant="outline" className="w-full gap-2" onClick={() => setPasswordUser(u)}>
+                        <KeyRound className="h-4 w-4" />Reimposta password
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
