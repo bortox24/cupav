@@ -222,6 +222,16 @@ const allQuickAccessCards: QuickAccessCard[] = [
     iconColor: 'text-white',
   },
   {
+    title: 'Check-in Festa',
+    description: 'Registra gli arrivi della festa campeggio',
+    icon: <PartyPopper className="h-7 w-7" />,
+    path: '/festa-campeggio-checkin',
+    gradient: 'bg-gradient-to-br from-fuchsia-100 via-pink-50 to-rose-50 dark:from-fuchsia-950/50 dark:via-pink-950/30 dark:to-rose-950/30',
+    borderColor: 'border-fuchsia-300 dark:border-fuchsia-700',
+    iconBg: 'bg-gradient-to-br from-fuchsia-500 to-pink-600',
+    iconColor: 'text-white',
+  },
+  {
     title: 'Regolamento',
     description: 'Visualizza il regolamento del campeggio',
     icon: <BookOpen className="h-7 w-7" />,

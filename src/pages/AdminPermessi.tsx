@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Loader2, UserPlus, Shield, Info, Check, X, Trash2, RotateCcw, Users, Copy, RefreshCw, FileKey, Power, PowerOff } from 'lucide-react';
+import { Plus, Loader2, UserPlus, Shield, Info, Check, X, Trash2, RotateCcw, Users, Copy, RefreshCw, FileKey, Power, PowerOff, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +48,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useUsers, useCreateUser, useToggleAdmin, useToggleActive, useDeleteUser, type UserWithStatus } from '@/hooks/useUsers';
+import { useUsers, useCreateUser, useToggleAdmin, useToggleActive, useDeleteUser, useSetUserPassword, type UserWithStatus } from '@/hooks/useUsers';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth';
 import {
   useAllPagePermissions,
@@ -85,6 +86,7 @@ function GestioneUtentiTab() {
   const toggleActive = useToggleActive();
   const deleteUser = useDeleteUser();
   const [permessiUser, setPermessiUser] = useState<UserWithStatus | null>(null);
+  const [passwordUser, setPasswordUser] = useState<UserWithStatus | null>(null);
   const { data: pagePermissions = [] } = useAllPagePermissions();
   const { data: turnoPermissions = [] } = useAllTurnoPermissions();
 
@@ -227,9 +229,14 @@ function GestioneUtentiTab() {
                       )}
                     </div>
 
-                    <Button variant="outline" className="w-full gap-2" onClick={() => setPermessiUser(u)}>
-                      <FileKey className="h-4 w-4" />Gestisci permessi
-                    </Button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button variant="outline" className="w-full gap-2" onClick={() => setPermessiUser(u)}>
+                        <FileKey className="h-4 w-4" />Gestisci permessi
+                      </Button>
+                      <Button variant="outline" className="w-full gap-2" onClick={() => setPasswordUser(u)}>
+                        <KeyRound className="h-4 w-4" />Reimposta password
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -245,7 +252,103 @@ function GestioneUtentiTab() {
           onOpenChange={(v) => { if (!v) setPermessiUser(null); }}
         />
       )}
+
+      {passwordUser && (
+        <ResetPasswordDialog
+          utente={passwordUser}
+          open={!!passwordUser}
+          onOpenChange={(v) => { if (!v) setPasswordUser(null); }}
+        />
+      )}
     </div>
+  );
+}
+
+// ==================== Reimposta password utente ====================
+function ResetPasswordDialog({ utente, open, onOpenChange }: { utente: UserWithStatus; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const setPassword = useSetUserPassword();
+  const [value, setValue] = useState('');
+  const [show, setShow] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+
+  const genera = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    const bytes = new Uint8Array(10);
+    crypto.getRandomValues(bytes);
+    setValue(Array.from(bytes, (b) => chars[b % chars.length]).join(''));
+    setShow(true);
+  };
+
+  const conferma = async () => {
+    const res = await setPassword.mutateAsync({ userId: utente.id, password: value });
+    setDone(res.password);
+  };
+
+  const copia = (pwd: string) => {
+    navigator.clipboard.writeText(pwd);
+    toast({ title: 'Password copiata' });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" />Reimposta password</DialogTitle>
+          <DialogDescription className="text-left">
+            {utente.full_name} · {utente.email}
+          </DialogDescription>
+        </DialogHeader>
+
+        {done ? (
+          <div className="space-y-3">
+            <div className="rounded-xl border bg-muted/40 p-4 space-y-2">
+              <p className="text-sm text-muted-foreground">Nuova password attiva:</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 font-mono text-lg break-all">{done}</code>
+                <Button variant="outline" size="icon" onClick={() => copia(done)}><Copy className="h-4 w-4" /></Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Comunicala all'utente: non sarà più visibile dopo la chiusura.</p>
+            <DialogFooter>
+              <Button onClick={() => onOpenChange(false)}>Chiudi</Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nuova password</Label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    type={show ? 'text' : 'password'}
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    placeholder="Almeno 6 caratteri"
+                    className="pr-10"
+                  />
+                  <button type="button" onClick={() => setShow(!show)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <Button type="button" variant="outline" className="gap-2 shrink-0" onClick={genera}>
+                  <RefreshCw className="h-4 w-4" />Genera
+                </Button>
+              </div>
+              {value.length > 0 && value.length < 6 && (
+                <p className="text-xs text-destructive">Servono almeno 6 caratteri.</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Annulla</Button>
+              <Button onClick={conferma} disabled={value.length < 6 || setPassword.isPending}>
+                {setPassword.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvataggio...</> : 'Conferma'}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 

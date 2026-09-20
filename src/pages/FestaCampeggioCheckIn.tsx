@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { useMyPagePermissions } from "@/hooks/usePagePermissions";
 import {
   useFestaCampeggio,
   useUpdateFestaCampeggio,
@@ -38,6 +39,8 @@ export default function FestaCampeggioCheckIn() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const fullName = profile?.full_name || "Sistema";
+  const { canAccessPage } = useMyPagePermissions();
+  const puoVedereIncassi = canAccessPage("/festa-campeggio-iscrizioni");
   const { data: items = [], isLoading, realtimeConnected } = useFestaCampeggio();
   const update = useUpdateFestaCampeggio();
 
@@ -177,7 +180,7 @@ export default function FestaCampeggioCheckIn() {
         {/* Header */}
         <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" size="sm" className="rounded-xl gap-1 -ml-2"
-            onClick={() => (selected ? closeItem() : navigate("/festa-campeggio-iscrizioni"))}>
+            onClick={() => (selected ? closeItem() : navigate(puoVedereIncassi ? "/festa-campeggio-iscrizioni" : "/home"))}>
             <ArrowLeft className="h-4 w-4" /> {selected ? "Indietro" : "Esci"}
           </Button>
           <Badge variant="outline" className={realtimeConnected
@@ -188,17 +191,19 @@ export default function FestaCampeggioCheckIn() {
         </div>
 
         {/* Contatori */}
-        <div className="grid grid-cols-2 gap-3 mt-3">
+        <div className={`grid gap-3 mt-3 ${puoVedereIncassi ? "grid-cols-2" : "grid-cols-1"}`}>
           <div className="rounded-2xl bg-background/70 border p-3 text-center">
             <p className="text-2xl font-bold tabular-nums">
               {stats.entrate}<span className="text-base text-muted-foreground">/{stats.previste}</span>
             </p>
             <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><Users className="h-3 w-3" /> Persone entrate</p>
           </div>
-          <div className="rounded-2xl bg-background/70 border p-3 text-center">
-            <p className="text-2xl font-bold tabular-nums text-fuchsia-600">{stats.incassato}€</p>
-            <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><Banknote className="h-3 w-3" /> Incassato</p>
-          </div>
+          {puoVedereIncassi && (
+            <div className="rounded-2xl bg-background/70 border p-3 text-center">
+              <p className="text-2xl font-bold tabular-nums text-fuchsia-600">{stats.incassato}€</p>
+              <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><Banknote className="h-3 w-3" /> Incassato</p>
+            </div>
+          )}
         </div>
 
         {isLoading ? (

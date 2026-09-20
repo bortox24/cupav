@@ -101,6 +101,11 @@ export const availablePages: PageInfo[] = [
     description: 'Gestione adesioni e contributi festa campeggio',
   },
   {
+    path: '/festa-campeggio-checkin',
+    title: 'Check-in Festa Campeggio',
+    description: 'Postazione rapida per registrare gli arrivi (senza dati sensibili)',
+  },
+  {
     path: '/gestione-pagamenti',
     title: 'Gestione Pagamenti',
     description: 'Gestisci stato pagamenti delle iscrizioni',
