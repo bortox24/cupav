@@ -56,7 +56,7 @@ serve(async (req) => {
 
     if (!callerId) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
+        JSON.stringify({ error: "Sessione scaduta: accedi di nuovo e riprova" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
