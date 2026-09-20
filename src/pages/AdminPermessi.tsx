@@ -86,6 +86,7 @@ function GestioneUtentiTab() {
   const toggleActive = useToggleActive();
   const deleteUser = useDeleteUser();
   const [permessiUser, setPermessiUser] = useState<UserWithStatus | null>(null);
+  const [passwordUser, setPasswordUser] = useState<UserWithStatus | null>(null);
   const { data: pagePermissions = [] } = useAllPagePermissions();
   const { data: turnoPermissions = [] } = useAllTurnoPermissions();
 
