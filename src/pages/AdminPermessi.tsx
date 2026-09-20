@@ -271,6 +271,10 @@ function ResetPasswordDialog({ utente, open, onOpenChange }: { utente: UserWithS
   const [show, setShow] = useState(false);
   const [done, setDone] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (open) { setValue(''); setShow(false); setDone(null); }
+  }, [open]);
+
   const genera = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     const bytes = new Uint8Array(10);
