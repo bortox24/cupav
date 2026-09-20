@@ -43,6 +43,13 @@
       "when": 1789883612005,
       "tag": "0005_festa_checkin_page_access",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789883631535,
+      "tag": "0006_festa_campeggio_grants",
+      "breakpoints": true
     }
   ]
 }
